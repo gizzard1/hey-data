@@ -1,0 +1,1 @@
+    @include('livewire.agenda.resource-hour-grid')

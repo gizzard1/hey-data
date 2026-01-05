@@ -1,0 +1,21 @@
+!.gitignore
+*.py
+Calendar.php
+CartView.php
+CartViewServices.php
+Checador copy.php
+Checador.php
+cliente.php
+Corte copy2.php
+Corte copy.php
+Empleados copy2.php
+Empleados copy.php
+Informe copy.php
+LiveSearch.php
+MainPage.php
+Momosalon.php
+PaymentServices.php
+Productos copy.php
+Reserva.php
+Suscripcion.php
+WebPage.php
