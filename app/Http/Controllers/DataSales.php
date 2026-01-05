@@ -13,12 +13,11 @@ use App\Models\producto;
 
 class DataSales extends Controller
 {
-    public static function updateOrCreateSale(Request $request)
+    public static function updateOrCreateSale(Request $request, $SaleOnly = true)
     {
         try{
-            $details = $request->input('details');
+            $details = $request->input('details') ?? $request->input('methods');
             $sale = $details['detailsVenta'][0]['sale'];
-            Log::info($details['detailsVenta']);
             $sale_id = $sale['id'] ?? venta::create([
                 'salon_id' => $request->user()->salon_id,
                 'total' => 0,
@@ -37,6 +36,7 @@ class DataSales extends Controller
             $total_date = 0;
             $total_items = 0;
             foreach($details['detailsVenta'] as $detail){
+                if(!isset($detail['selected_item'])) continue;
                 $priceOutOfDiscounts = DRG::determinatePriceOutOfDiscounts($detail);
                 $total_date += $priceOutOfDiscounts * $detail['quantity'];
                 $comisionItem = self::defineComisionProduct(self::generateItemToCalculateComision($detail,$detail['empleado_id']));
@@ -83,7 +83,11 @@ class DataSales extends Controller
                         'items'=>$total_items,
                     ]
                 );
-            return response()->json(['message' => 'Sale updated successfully']);
+            if($SaleOnly){
+                return response()->json(['message' => 'Sale updated successfully']);
+            }else{
+                return $sale_id;
+            }
         }catch(\Throwable $th){
             Log::error($th->getMessage());
         }
