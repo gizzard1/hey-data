@@ -46,19 +46,19 @@ class HistoricoCliente extends Component
         switch($window){
             case 1:
                 $infoDates = $start && $end ? $this->customerSelected->citas()->whereBetween('start', [$start, $end])->orderBy('start','desc')->get() : $this->customerSelected->citas()->orderBy('start','desc')->get();
-                $infoSales = $start && $end ? $this->customerSelected->compras()->whereBetween('created_at', [$start, $end])->get() : $this->customerSelected->compras()->get();
+                $infoSales = $start && $end ? $this->customerSelected->compras()->whereBetween('created_at', [$start, $end])->orderBy('created_at','desc')->get() : $this->customerSelected->compras()->orderBy('created_at','desc')->get();
                 break;
             case 2:
                 $infoDates = $start && $end ? $this->customerSelected->citas()->where('status','Pendiente')->whereBetween('start', [$start, $end])->orderBy('start','desc')->get() : $this->customerSelected->citas()->where('status','Pendiente')->orderBy('start','desc')->get();
-                $infoSales = $start && $end ? $this->customerSelected->compras()->where('status','Pendiente')->whereBetween('created_at', [$start, $end])->get() : $this->customerSelected->compras()->where('status','Pendiente')->get();
+                $infoSales = $start && $end ? $this->customerSelected->compras()->where('status','Pendiente')->whereBetween('created_at', [$start, $end])->orderBy('created_at','desc')->get() : $this->customerSelected->compras()->where('status','Pendiente')->orderBy('created_at','desc')->get();
                 break;
             case 3:
                 $infoDates = $start && $end ? $this->customerSelected->citas()->where('status','Pagada')->whereBetween('start', [$start, $end])->orderBy('start','desc')->get() : $this->customerSelected->citas()->where('status','Pagada')->orderBy('start','desc')->get();
-                $infoSales = $start && $end ? $this->customerSelected->compras()->where('status','Pagada')->whereBetween('created_at', [$start, $end])->get() : $this->customerSelected->compras()->where('status','Pagada')->get();
+                $infoSales = $start && $end ? $this->customerSelected->compras()->where('status','Pagada')->whereBetween('created_at', [$start, $end])->orderBy('created_at','desc')->get() : $this->customerSelected->compras()->where('status','Pagada')->orderBy('created_at','desc')->get();
                 break;
             case 4:
                 $infoDates = $start && $end ? $this->customerSelected->citas()->where('status','Cancelada')->whereBetween('start', [$start, $end])->orderBy('start','desc')->get() : $this->customerSelected->citas()->where('status','Cancelada')->orderBy('start','desc')->get();
-                $infoSales = $start && $end ? $this->customerSelected->compras()->where('status','Cancelada')->whereBetween('created_at', [$start, $end])->get() : $this->customerSelected->compras()->where('status','Cancelada')->get();
+                $infoSales = $start && $end ? $this->customerSelected->compras()->where('status','Cancelada')->whereBetween('created_at', [$start, $end])->orderBy('created_at','desc')->get() : $this->customerSelected->compras()->where('status','Cancelada')->orderBy('created_at','desc')->get();
                 break;
             case 5:
                 $infoDates = $start && $end ? $this->customerSelected->citas()->where('status','Agendada')->whereBetween('start', [$start, $end])->orderBy('start','desc')->get() : $this->customerSelected->citas()->where('status','Agendada')->orderBy('start','desc')->get();

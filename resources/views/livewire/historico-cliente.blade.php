@@ -108,13 +108,11 @@
                                 
                             </td>
                             <td>
-                                <span>Cita: {{ $venta->status }}</span>
+                                <span>Venta: {{ $venta->status }}</span>
                             </td>
                             <td>
                                 <div class="text-right">
-                                    <span>{{ Carbon\Carbon::parse($venta->start)->locale('es')->isoFormat('dddd, D MMMM YYYY') }}</span>
-                                    <span>Desde {{ Carbon\Carbon::parse($venta->start)->format('H:i') }} hasta: {{ Carbon\Carbon::parse($venta->end)->format('H:i') }}</span>
-
+                                    <span>{{ Carbon\Carbon::parse($venta->created_at)->locale('es')->isoFormat('dddd, D MMMM YYYY hh:mm a') }}</span>
                                 </div>
                             </td>
                             <td>
