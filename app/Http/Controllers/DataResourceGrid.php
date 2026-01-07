@@ -621,7 +621,10 @@ class DataResourceGrid extends Controller
     {
         try{
             $priceOrDiscount = self::priceOrDiscount($app);
-            $finalPriceOutOfDiscounts = ($app->discount_qty ?? $app['discount_qty']) > 0 ? (($app->discount_type ?? $app['discount_type']) == 'Porcentaje' ? floatval($priceOrDiscount - ((($app->discount_qty ?? $app['discount_qty'])/100)*$priceOrDiscount)) : floatval($priceOrDiscount - ($app->discount_qty ?? $app['discount_qty']))) : floatval($priceOrDiscount);
+            $qty = $app['quantity'] ?? 1;
+            $discount_qty = $app['discount_qty'] ?? $app->discount_qty;
+            $discount_type = $app->discount_type ?? $app['discount_type'];
+            $finalPriceOutOfDiscounts = $discount_qty > 0 ? ($discount_type == 'Porcentaje' ? (floatval($priceOrDiscount - (($discount_qty/100)*$priceOrDiscount)) * $qty) : floatval(($priceOrDiscount * $qty) - $discount_qty)) : floatval($priceOrDiscount * $qty);
 
             return $finalPriceOutOfDiscounts;
         }catch(\Throwable $th){

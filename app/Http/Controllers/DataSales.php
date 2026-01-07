@@ -104,7 +104,7 @@ class DataSales extends Controller
             foreach($details['detailsVenta'] as $detail){
                 if(!isset($detail['selected_item'])) continue;
                 $priceOutOfDiscounts = DRG::determinatePriceOutOfDiscounts($detail);
-                $total_date += $priceOutOfDiscounts * $detail['quantity'];
+                $total_date += $priceOutOfDiscounts;
                 $comisionItem = self::defineComisionProduct(self::generateItemToCalculateComision($detail,$detail['empleado_id']));
                 $gen_points = DRG::calculateRewardPoints($detail['selected_item'],false,$priceOutOfDiscounts);
                 $total_rp += $gen_points * $detail['quantity'];

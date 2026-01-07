@@ -100,7 +100,7 @@ class DataPayment extends Controller
 
                 if($method->payment_method_id==1){
                     $remaining = $total_discount+$total_methods-$total_date;
-                    $method->change = $remaining;
+                    $method->change = $remaining > 0 ? $remaining : 0;
                 }
                 
                 if($method->payment_method_id==99999){
