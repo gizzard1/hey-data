@@ -16,8 +16,11 @@ class DataSales extends Controller
     public static function updateOrCreateSale(Request $request, $SaleOnly = true)
     {
         try{
+            // Obtener los datos de la venta desde la solicitud
             $details = $request->input('details') ?? $request->input('methods');
             $sale = $details['detailsVenta'][0]['sale'];
+
+            // Crear o actualizar la venta
             $sale_id = $sale['id'] ?? venta::create([
                 'salon_id' => $request->user()->salon_id,
                 'total' => 0,
@@ -28,8 +31,71 @@ class DataSales extends Controller
                 'items' => 0,
             ])->id;
 
+            // Obtener los métodos de pago asociados a la venta
             $paymentMethods = metodo_pago_venta::where('venta_id',$sale_id)->orderBy('id','asc')->get();
 
+            // Crear o actualizar los detalles de la venta
+            $data_details = self::createSaleDetails($details, $sale_id);
+
+            // Obtener los totales calculados
+            $total_rp = $data_details['total_rp'];
+            $total_date = $data_details['total_date'];
+            $total_items = $data_details['total_items'];
+            $keptIds = $data_details['keptIds'];
+
+            // Obtener las asignaciones actuales de la venta
+            $asignacionesToDelete = Asignacion_venta::where('venta_id', $sale_id)
+                ->whereNotIn('id', $keptIds)
+                ->get();
+
+            // Actualizar el stock de los productos eliminados
+            self::updateStockAfterSale($asignacionesToDelete);
+
+            // Recalcular el descuento total
+            $discount = DRG::getTotalDiscounts($paymentMethods,$total_date);
+
+            // Actualizar la venta
+            venta::where('id',[$sale_id])
+                ->update([
+                        'generated_points'=>$total_rp,
+                        'status'=>DRG::determineDateStatus($total_date-$discount,$details['payed']),
+                        'total'=>$total_date,
+                        'disccount'=>$discount,
+                        'items'=>$total_items,
+                    ]
+                );
+            
+            // Retornar la respuesta según el contexto
+            if($SaleOnly){
+                return response()->json(['message' => 'Sale updated successfully']);
+            }else{
+                return $sale_id;
+            }
+        }catch(\Throwable $th){
+            Log::error($th->getMessage());
+        }
+    }
+    public static function updateStockAfterSale($asignacionesToDelete)
+    {
+        try{
+            // Actualizar el stock de los productos antes de eliminar las asignaciones
+            foreach ($asignacionesToDelete as $asignacion) {
+                $product = producto::find($asignacion->selected_item);
+                if ($product) {
+                    $product->stock_qty += $asignacion->quantity;
+                    $product->save();
+                }
+            }
+
+            // Borrar asignaciones que ya no aparecen en la petición
+            $asignacionesToDelete->each->delete();
+        }catch(\Throwable $th){
+            Log::error($th->getMessage());
+        }
+    }
+    public static function createSaleDetails($details, $mov_id, $belongsToSale = true)
+    {
+        try{
             // Crear un array para rastrear los IDs que siguen vigentes
             $keptIds = [];
             $total_rp = 0;
@@ -43,6 +109,15 @@ class DataSales extends Controller
                 $gen_points = DRG::calculateRewardPoints($detail['selected_item'],false,$priceOutOfDiscounts);
                 $total_rp += $gen_points * $detail['quantity'];
                 $total_items += $detail['quantity'];
+
+                $qty_before_update = 0;
+                if(isset($detail['id'])){
+                    $existingAsignacion = Asignacion_venta::find($detail['id']);
+                    if($existingAsignacion){
+                        $qty_before_update = $existingAsignacion->quantity;
+                    }
+                }
+
                 $asignacion = Asignacion_venta::updateOrCreate(
                     ['id' => $detail['id'] ?? null], // usa null si no hay id
                     [
@@ -50,7 +125,8 @@ class DataSales extends Controller
                         'current_price' => $detail['current_price'],
                         'comission' => $comisionItem['balance'],
                         'iva' => isset($detail['iva']) ? ($detail['iva'] === '8%' ? '0.08' : ($detail['iva'] === '16%' ? '0.16' : ($detail['iva'] === 'Exento' ? '0' : $detail['iva']))) : '0.16',
-                        'venta_id' => $sale_id,
+                        'venta_id' => $belongsToSale ? $mov_id : null,
+                        'cita_id' => $belongsToSale ? null : $mov_id,
                         'selected_item' => $detail['selected_item'],
                         'empleado_id' => $detail['empleado_id'],
                         'generated_points' => $gen_points,
@@ -62,37 +138,22 @@ class DataSales extends Controller
                 );
                 // Actualizar el stock del producto
                 $product = producto::find($detail['selected_item']);
-                $product->stock_qty -= $detail['quantity'];
+                $product->stock_qty -= $detail['quantity'] - $qty_before_update;
                 $product->save();
+
                 // Guardamos los IDs que quedan vigentes
                 $keptIds[] = $asignacion->id;
             }
-
-            // Borrar asignaciones que ya no aparecen en la petición
-            Asignacion_venta::where('venta_id', $sale_id)
-                ->whereNotIn('id', $keptIds)
-                ->delete();
-            $discount = DRG::getTotalDiscounts($paymentMethods,$total_date);
-
-            venta::where('id',[$sale_id])
-                ->update([
-                        'generated_points'=>$total_rp,
-                        'status'=>DRG::determineDateStatus($total_date-$discount,$details['payed']),
-                        'total'=>$total_date,
-                        'disccount'=>$discount,
-                        'items'=>$total_items,
-                    ]
-                );
-            if($SaleOnly){
-                return response()->json(['message' => 'Sale updated successfully']);
-            }else{
-                return $sale_id;
-            }
+            return [
+                'total_rp' => $total_rp,
+                'total_date' => $total_date,
+                'total_items' => $total_items,
+                'keptIds' => $keptIds
+            ];
         }catch(\Throwable $th){
             Log::error($th->getMessage());
         }
     }
-    
     private static function generateItemToCalculateComision($sale,$empleado)
     {
         $item['pid'] = $sale->selected_item ?? $sale['selected_item'];

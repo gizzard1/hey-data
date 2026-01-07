@@ -46,7 +46,6 @@ class DataProducts extends Controller
             $product = $request->input('product');
             $iva = isset($product['iva']) ? ($product['iva'] === '8%' ? '0.08' : ($product['iva'] === '16%' ? '0.16' : ($product['iva'] === 'Exento' ? '0' : $product['iva']))) : '0.16';
             
-            Log::info($product);
             $newProduct = producto::updateOrCreate(
                 [
                     'id' => $product['id'] ?? null

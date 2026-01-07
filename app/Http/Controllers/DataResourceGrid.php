@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Livewire\Agenda;
 use App\Models\Asignacion_servicio;
 use App\Models\cita;
-use App\Models\cliente;
+use App\Http\Controllers\DataSales as DS;
+use App\Models\Asignacion_venta;
 use App\Models\coupon;
 use App\Models\Empleado;
 use App\Models\metodo_pago;
@@ -69,6 +70,68 @@ class DataResourceGrid extends Controller
                 ])
                 ->where('cita_id', $cita_id) // Filtra por la fecha del día de $currentDateC
                 ->get();
+
+            // Obtener detalles de venta asociados a la cita
+            $detailsVenta = Asignacion_venta::where('cita_id',$cita_id)
+                ->select(
+                    'id',
+                    'selected_item',
+                    'cita_id',
+                    'empleado_id',
+                    'quantity',
+                    'disccount_price',
+                    'discount_qty',
+                    'current_price',
+                    'discount_type',
+                    'disccount_price',
+                    'base_comision',
+                    'iva',
+                )
+                ->with([
+                    'product' => function($q) {
+                        $q->select(
+                            'id',
+                            'name',
+                            'description',
+                            'gross_price',
+                            'iva',
+                            'disccount_price',
+                            'cost',
+                            'unit_type',
+                            'stock_qty',
+                            'min_stock',
+                            'sku',
+                            'brand_id',
+                            'type_product',
+                        ); 
+                    },
+                    'empleado' => function($q) {
+                        $q->select(
+                            'id',
+                            DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
+                            DB::raw("color_preset as color")
+                        );
+                    },
+                    'cita' => function($q) {
+                        $q->select(
+                            'id','customer_id','total','disccount',
+                            DB::raw('SUM(total) - SUM(COALESCE(`disccount`, 0)) as totalSubDiscount'),
+                            DB::raw("DATE_FORMAT(`start`, '%H:%i') as startTime"),
+                            DB::raw("DATE_FORMAT(`end`, '%H:%i') as endTime"),
+                            DB::raw("DATE(start) as date"),
+                            DB::raw("status as estado"),
+                            DB::raw("customer_id as clienteId"),
+                        )->with(['customer' => function($q) {
+                            $q->select('id', 
+                                DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"), 
+                                DB::raw("phone as telefono"),
+                            )->with(['tarjetaPuntos' => function($q){
+                                $q->select('id','intern_barcode','balance','cliente_id');
+                            }]); 
+                        }]);
+                    },
+                ])
+                ->get();
                 
             $payed = metodo_pago_servicio::where('cita_id', $cita_id)
                 ->where('payment_method_id', '!=', 4)
@@ -117,7 +180,7 @@ class DataResourceGrid extends Controller
                 ])
                 ->get();
 
-            return ['details' => $dates,'payed' => $payed,'methods' => $methods, 'tips' => $tips];
+            return ['details' => $dates,'payed' => $payed,'methods' => $methods, 'tips' => $tips, 'detailsVenta' => $detailsVenta];
         }catch(\Throwable $th){
             Log::error($th->getMessage());
         }
@@ -280,8 +343,11 @@ class DataResourceGrid extends Controller
     public static function updateDetails(Request $request)
     {
         try{
+            // Obtener los datos de la cita desde la solicitud
             $details = $request->input('details');
             $date = $details['details'][0]['date'];
+
+            // Crear o actualizar la cita
             $date_id = $date['id'] ?? cita::create([
                 'salon_id' => $request->user()->salon_id,
                 'start' => Carbon::parse($date['date'] . ' ' . '00:00'),
@@ -293,6 +359,8 @@ class DataResourceGrid extends Controller
                 'customer_id' => $date['clienteId'],
                 'user_id' => $request->user()->id,
             ])->id;
+
+            // Obtener los métodos de pago asociados a la cita
             $paymentMethods = metodo_pago_servicio::where('cita_id',$date_id)->orderBy('id','asc')->get();
 
             // Crear un array para rastrear los IDs que siguen vigentes
@@ -305,6 +373,8 @@ class DataResourceGrid extends Controller
                 $priceOutOfDiscounts = self::determinatePriceOutOfDiscounts($detail);
                 $total_date += $priceOutOfDiscounts;
                 $startDetailToMinutes = self::timeToMinutes($detail['inicioServicio']);
+
+                // Actualizar el tiempo de inicio más temprano
                 if ($startDetailToMinutes < $startTimeToMinutes) {
                     $startTimeToMinutes = $startDetailToMinutes;
                 }
@@ -338,12 +408,35 @@ class DataResourceGrid extends Controller
                 $keptIds[] = $asignacion->id;
             }
 
+            // Actualizar los detalles de ventas en la cita
+            if(isset($details['detailsVenta'])){
+                // Procesar los detalles de la venta asociados a la cita
+                $data_details = DS::createSaleDetails($details, $date_id, false);
+
+                // Actualizar los totales acumulados
+                $total_rp += $data_details['total_rp'];
+                $total_date += $data_details['total_date'];
+
+                // Obtener los IDs que se deben mantener
+                $keptSaleIds = $data_details['keptIds'] ?? [];
+
+                // Obtener las asignaciones actuales de la venta
+                $asignacionesToDelete = Asignacion_venta::where('cita_id', $date_id)
+                    ->whereNotIn('id', $keptSaleIds)
+                    ->get();
+
+                DS::updateStockAfterSale($asignacionesToDelete);
+            }
+
             // Borrar asignaciones que ya no aparecen en la petición
             Asignacion_servicio::where('cita_id', $date_id)
                 ->whereNotIn('id', $keptIds)
                 ->delete();
+
+            // Recalcular el descuento total
             $discount = self::getTotalDiscounts($paymentMethods,$total_date);
 
+            // Actualizar la cita
             cita::where('id',[$date_id])
                 ->update([
                         'start'=>Carbon::parse($date['date'] . ' ' . self::minutesToTime($startTimeToMinutes)),
