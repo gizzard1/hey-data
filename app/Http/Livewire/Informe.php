@@ -181,7 +181,7 @@ class Informe extends Component
     {
         try{
             $this->emit('dateUpdated', $this->currentDate,$this->currentDateEnd);
-            $this->emit('refrescarCharts',['dataSales' => $this->dataSales,'dataPeriodNormalizado' => $this->dataPeriodNormalizado, 'ranking_services' => $this->ranking_services, 'ranking_categories' => $this->ranking_categories]);
+            $this->emit('refrescarCharts',['dataSales' => $this->dataSales,'dataPeriodNormalizado' => $this->dataPeriodNormalizado, 'ranking_services' => $this->ranking_services, 'ranking_categories' => $this->ranking_categories, 'dataEmpleados' => $this->dataEmpleados]);
             // $this->emit('refrescarCharts',['dataSales' => $this->dataSales,'dataExpenses' => $this->dataExpenses]);
             // $this->emit('refrescarCharts',['dataSales' => $this->dataSales,'dataExpenses' => $this->dataExpenses,'totalIncomes' => $this->totalIncomes]);
         }catch(\Throwable $th){
@@ -645,6 +645,11 @@ class Informe extends Component
     //         $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 173133Informe"] );
     //     }
     // }
+    private function getRandomColor()
+    {
+        $presets = ['#3DC5AB','#41B8D5','#2E8BBA','#5E7391','#EBD99E'];
+        return $presets[array_rand($presets)];
+    }
     private function loadDataEmpleados($items_p, $items_s, $empleados)
     {
         try{
@@ -655,6 +660,7 @@ class Informe extends Component
             $uniqueCustomerIdsD = [];
             foreach ($empleados as $empleado) {
                 $dataEmpleados[] = [
+                    'color' => $empleado->color_preset ?? $this->getRandomColor(),
                     'name' => $empleado->first_name . ' ' . $empleado->last_name,
                     'total_v' => 0,
                     'total_v_neto' => 0,
@@ -965,6 +971,7 @@ class Informe extends Component
             $this->totales = $this->obtenerTotales();
             $this->clientesAtendidos = $this->contarClientesAtendidos([$info['asignaciones_ventas']['items_v'],$info['asignaciones_servicios']]);
             $this->obtenerPorcentajes();
+            $this->dataEmpleados = json_encode($this->dataEmpleados);
         }catch(\Throwable $th){
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 350138Informe"] );
         }
@@ -1264,6 +1271,8 @@ class Informe extends Component
 
                 // Asignar el valor calculado a la clave 'percent' del empleado
                 $empleado['percent'] = $percent;
+                $empleado['label'] = $empleado['name'];
+                $empleado['amount'] = $empleado['total_v_neto'] + $empleado['total_d_neto'];
             }
 
             // Asegurarse de desvincular la referencia al último elemento del array

@@ -151,7 +151,7 @@
         </div>
         </div>
 
-        <!-- TABLA -->
+        <!-- TABLA SERVICIOS MAS SOLICITADOS -->
         <div class="col-lg-5 mb-4">
         <div class="panel">
             <div class="d-flex justify-content-between align-items-center">
@@ -174,13 +174,54 @@
                         <th>Monto</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody"></tbody>
+                <tbody id="tableServices"></tbody>
                 </table>
             </div>
 
         </div>
         </div>
+        
+        <!-- HISTÓRICO / GRÁFICA DESEMPEÑO -->
+        <div class="col-lg-7 mb-4">
+            <div class="panel">
+                <h4>Histórico</h4>
+                <div class="subtitle">Ingresos por Empleado</div>
+                
+                <div class="row align-items-center">
+                    <div class="col-md-6 text-center">
+                        <canvas id="donutChartEmployees" width="260" height="260"></canvas>
+                    </div>
+                    <div class="col-md-6" id="legendEmployees"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TABLA DESEMPEÑO -->
+        <div class="col-lg-5 mb-4">
+            <div class="panel">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4>Histórico</h4>
+                        <div class="subtitle">Desempeño</div>
+                    </div>
+                </div>
+                <div class="ranking-table">
+                    <table class="table table-fixed-sm">
+                        <thead>
+                            <tr>
+                                <th>Empleado</th>
+                                <th>Clientes Atendidos</th>
+                                <th>Venta por Servicios</th>
+                                <th>Venta por Productos</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                    <tbody id="tableEmployees"></tbody>
+                    </table>
+                </div>
 
+            </div>
+        </div>
     </div>
 </div>
 
@@ -194,16 +235,34 @@
     let categoryData = [];
         
     function renderTable(data) {
-        const tbody = document.getElementById('tableBody');
+        const tbody = document.getElementById('tableServices');
         tbody.innerHTML = '';
 
         data.forEach((item, index) => {
         tbody.innerHTML += `
             <tr>
-            <td>${index + 1}</td>
-            <td class="nombre-column">${item.name}</td>
-            <td>${item.percent.toFixed(2)} %</td>
-            <td>$${item.qty}</td>
+                <td>${index + 1}</td>
+                <td class="nombre-column">${item.name}</td>
+                <td>${item.percent.toFixed(2)} %</td>
+                <td>$${item.qty}</td>
+            </tr>
+        `;
+        });
+    }
+
+    function renderTableEmployees(data) {
+        const tbody = document.getElementById('tableEmployees');
+        tbody.innerHTML = '';
+
+        data.forEach((item, index) => {
+        if (item.amount === 0) return; // Omitir empleados con amount 0
+        tbody.innerHTML += `
+            <tr>
+                <td class="nombre-column">${item.name}</td>
+                <td>${item.total_cust}</td>
+                <td>$${item.total_d_neto.toLocaleString()}</td>
+                <td>$${item.total_v_neto.toLocaleString()}</td>
+                <td>$${item.amount.toLocaleString()}</td>
             </tr>
         `;
         });

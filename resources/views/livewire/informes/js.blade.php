@@ -2,7 +2,9 @@
 <script>
 document.addEventListener('livewire:load', function () {
     Livewire.on('refrescarCharts',data =>{
-        var parsedDataSales=JSON.parse(data.dataSales)
+        var eData=JSON.parse(data.dataEmpleados);
+
+        var parsedDataSales=JSON.parse(data.dataSales);
         parsedDataSales = transformPaymentData(parsedDataSales); // Transformar al formato correcto
 
         var parsedDataPeriod=JSON.parse(data.dataPeriodNormalizado);
@@ -22,8 +24,11 @@ document.addEventListener('livewire:load', function () {
         drawBarChart('barChart', parsedDataPeriod);
 
         renderTable(dataRanking);
-        
         showDatesByStatus('Pendiente');
+        
+        drawDonut('donutChartEmployees', eData);
+        renderLegend('legendEmployees', eData);
+        renderTableEmployees(eData);
     })
     Livewire.on('dateUpdated', function (newDate,newDateEnd,newDataEmpleados) {
         // Actualizar el contenido donde se muestra la fecha
@@ -88,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function(){
     initFlats();
     
     var vData = JSON.parse('<?php echo $dataSales; ?>')
+    var eData = JSON.parse('<?php echo $dataEmpleados; ?>')
     var parsedDataPeriod = JSON.parse('<?php echo $dataPeriodNormalizado; ?>')
     serviceData = JSON.parse('<?php echo $ranking_services; ?>')
     categoryData = JSON.parse('<?php echo $ranking_categories; ?>')
@@ -96,13 +102,16 @@ document.addEventListener('DOMContentLoaded', function(){
     
     drawDonut('donutChart', vData);
     renderLegend('legend', vData);
-
+    
     drawBarChart('barChart', parsedDataPeriod);
-
+    
     setView('service'); // Inicialmente mostrar servicios
     renderTable(serviceData);
-
     showDatesByStatus('Pendiente');
+
+    drawDonut('donutChartEmployees', eData);
+    renderLegend('legendEmployees', eData);
+    renderTableEmployees(eData);
 })
 
 /* ==============================
@@ -331,6 +340,7 @@ function drawDonut(canvasId, data) {
     const slices = [];
 
     data.forEach(item => {
+        if(item.label==='Total' || item.amount === 0) return; // Omitir 'total'
         const sliceAngle = (item.percent / 100) * (2 * Math.PI);
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
@@ -484,6 +494,7 @@ function renderLegend(containerId, data) {
     let total = 0;
 
     data.forEach(item => {
+    if(item.label==='Total' || item.amount === 0) return; // Omitir 'total'
     total += item.amount;
     container.innerHTML += `
         <div class="legend-item">
