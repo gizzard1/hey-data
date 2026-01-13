@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\DataResourceGrid as DRG;
 use App\Models\metodo_pago_venta;
+use App\Models\Salon;
 use App\Models\venta;
 
 class DataPayment extends Controller
@@ -115,8 +116,18 @@ class DataPayment extends Controller
             $sale_id ? self::deleteSaleMethods($keptMethodsIds, $keptTipsIds, $mov) : self::deleteDateMethods($keptMethodsIds, $keptTipsIds, $mov);
 
             // Actualizar el status y descuento de la venta o cita
-            $sale_id ? self::updateStatusNDiscountSale($mov,$total_date,$total_methods,$total_discount) : self::updateStatusNDiscountDate($mov,$total_date,$total_methods,$total_discount);
+            $status = $sale_id ? self::updateStatusNDiscountSale($mov,$total_date,$total_methods,$total_discount) : self::updateStatusNDiscountDate($mov,$total_date,$total_methods,$total_discount);
             
+            // Si la cita o venta queda como Pagada, retornar datos adicionales
+            if ($status === 'Pagada'){
+                $data = [
+                    'mov_id' => $sale_id ? $mov->id : $mov['id'],
+                    'business_data' => $sale_id ? $mov->salon->only(['name','file']) : cita::find($mov['id'])->salon->only(['name','file']),
+                    'user_data' => $sale_id ? $mov->user->only(['name','role','email']) : cita::find($mov['id'])->user->only(['name','role','email']),
+                ];
+                return response()->json(['message' => 'Appointment updated successfully','data' => $data]);
+            }
+
             return response()->json(['message' => 'Appointment updated successfully']);
         }catch(\Throwable $th){
             Log::error($th->getMessage());
@@ -125,12 +136,14 @@ class DataPayment extends Controller
     private static function updateStatusNDiscountSale($mov,$total_date,$total_methods,$total_discount)
     {
         try{
+            $status = DRG::determineDateStatus($total_date,$total_methods+$total_discount);
             venta::where('id',[$mov->id])
                 ->update([
-                        'status'=>DRG::determineDateStatus($total_date,$total_methods+$total_discount),
+                        'status'=>$status,
                         'disccount'=>$total_discount,
                     ]
                 );
+            return $status;
         }catch(\Throwable $th){
             Log::error($th->getMessage());
         }
@@ -138,12 +151,14 @@ class DataPayment extends Controller
     private static function updateStatusNDiscountDate($mov,$total_date,$total_methods,$total_discount)
     {
         try{
+            $status = DRG::determineDateStatus($total_date,$total_methods+$total_discount);
             cita::where('id',[$mov['id']])
                 ->update([
-                        'status'=>DRG::determineDateStatus($total_date,$total_methods+$total_discount),
+                        'status'=>$status,
                         'disccount'=>$total_discount,
                     ]
                 );
+            return $status;
         }catch(\Throwable $th){
             Log::error($th->getMessage());
         }
