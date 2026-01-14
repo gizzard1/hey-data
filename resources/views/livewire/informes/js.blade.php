@@ -24,7 +24,7 @@ document.addEventListener('livewire:load', function () {
         drawBarChart('barChart', parsedDataPeriod);
 
         renderTable(dataRanking);
-        showDatesByStatus('Pendiente');
+        showDatesByStatus('Agendada');
         
         drawDonut('donutChartEmployees', eData);
         renderLegend('legendEmployees', eData);
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function(){
     
     setView('service'); // Inicialmente mostrar servicios
     renderTable(serviceData);
-    showDatesByStatus('Pendiente');
+    showDatesByStatus('Agendada');
 
     drawDonut('donutChartEmployees', eData);
     renderLegend('legendEmployees', eData);

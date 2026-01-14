@@ -110,9 +110,9 @@
                 <div class="dropdown-menu p-3" aria-labelledby="showFilters">
                     <li class="orderByMenu">
                         <a onclick="showDatesByStatus('Agendada')">Agendadas</a>
-                        <a onclick="showDatesByStatus('Pendiente')">Pendientes</a>
-                        <a onclick="showDatesByStatus('Pagada')">Pagadas</a>
                         <a onclick="showDatesByStatus('Cancelada')">Canceladas</a>
+                        <a onclick="showDatesByStatus('Pagada')">Pagadas</a>
+                        <a onclick="showDatesByStatus('Pendiente')">Pendientes</a>
                     </li>
                 </div>
             </div>
