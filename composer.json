@@ -1,12 +1,11 @@
 {
-    "name": "laravel/laravel",
+    "name": "heydata/laravel-app",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Agenda de citas, punto de venta, manejo de inventarios, CRM, API de hey-data-mobile y más...",
+    "keywords": ["agenda de citas", "pos", "crm", "inventarios", "laravel 10", "heydata", "livewire 2", "mysql"],
     "license": "MIT",
     "require": {
         "php": "8.2.29",
-        "automattic/woocommerce": "^3.1",
         "barryvdh/laravel-dompdf": "^3.1",
         "guzzlehttp/guzzle": "^7.2",
         "inertiajs/inertia-laravel": "^1.3",
