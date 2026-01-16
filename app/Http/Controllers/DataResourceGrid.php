@@ -7,6 +7,7 @@ use App\Models\Asignacion_servicio;
 use App\Models\cita;
 use App\Http\Controllers\DataSales as DS;
 use App\Models\Asignacion_venta;
+use App\Models\bloqueo;
 use App\Models\coupon;
 use App\Models\Empleado;
 use App\Models\metodo_pago;
@@ -252,7 +253,17 @@ class DataResourceGrid extends Controller
                 ->whereDate('start', $currentDate) // Filtra por la fecha del día de $currentDateC
                 ->get();
 
-            return ['mainTimeSlots' => $timeSlots,'citas' => $dates];
+            // Obtener bloqueos
+            $bloqueos = bloqueo::where('salon_id',$salon_id)
+                ->whereDate('start', $currentDate)
+                ->select('id','empleado_id','color','description',
+                    DB::raw("DATE_FORMAT(`start`, '%H:%i') as inicioServicio"),
+                    DB::raw("DATE_FORMAT(`end`, '%H:%i') as finServicio"),
+                    'start','end')
+                ->with('empleado')
+                ->get();
+
+            return ['mainTimeSlots' => $timeSlots, 'citas' => $dates, 'bloqueos' => $bloqueos];
         }catch(\Throwable $th){
             Log::error($th->getMessage());
         }
