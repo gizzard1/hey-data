@@ -572,30 +572,55 @@ class DataResourceGrid extends Controller
         }
     }
     
-    public static function updateAppointment(Request $request, $type)
+    public static function updateAppointment(Request $request, $type, $isDate = true)
     {
         try{
-            $appointment = asignacion_servicio::with(['date.details'])
-                ->find($request->input('appointmentId'));
+            $isDate = filter_var($isDate, FILTER_VALIDATE_BOOLEAN);
+            // Buscar la cita o el bloqueo según el tipo
+            $appointment = $isDate ? asignacion_servicio::with(['date.details'])
+                ->find($request->input('appointmentId')) : bloqueo::find($request->input('appointmentId'));
 
-            if($appointment->date->salon_id !== $request->user()->salon_id){
+            // Verificar que la cita o bloqueo pertenezca al salón del usuario autenticado
+            if(($isDate && $appointment->date->salon_id !== $request->user()->salon_id) || (!$isDate && $appointment->salon_id !== $request->user()->salon_id)){
                 return response()->json(['message' => 'No autorizado'], 403);
             }
+
+            // Actualizar start (en ambos casos es el mismo proceso)
             $dateBase = Carbon::parse($appointment->start)->format('Y-m-d');
             $appointment->start = $dateBase . ' ' . $request->input('newStart');
-            $appointment->duration = self::calculateNewDuration($appointment,$dateBase . ' ' .$request->input('newEnd'));
+
+            // Actualizar end o duration según el tipo
+            if($isDate){
+                $appointment->duration = self::calculateNewDuration($appointment,$dateBase . ' ' .$request->input('newEnd'));
+            } else {
+                $appointment->end = $dateBase . ' ' . $request->input('newEnd');
+            }
+
+
+            // Actualizar empleado si el tipo es 'employee' y es diferente al actual
             if ($type == 'employee') {
                 if($appointment->empleado_id !== $request->input('newEmployeeId')){
+                    // Actualizar campos en común
                     $empleado = $request->input('employee');
                     $appointment->empleado_id = $empleado;
                     $appointment->color = empleado::select('color_preset')->find($empleado)->color_preset;
-                    $itemToCalculatecomision = self::generateItemToCalculateComision($appointment,$empleado);
-                    $comision = self::defineComisionService($itemToCalculatecomision,'servicio');
-                    $appointment->comission = $comision['balance'];
-                    $appointment->type_comision_calculated = $comision['type'];
+                    // Recalcular comisión si es una cita
+                    if($isDate){
+                        $itemToCalculatecomision = self::generateItemToCalculateComision($appointment,$empleado);
+                        $comision = self::defineComisionService($itemToCalculatecomision,'servicio');
+                        $appointment->comission = $comision['balance'];
+                        $appointment->type_comision_calculated = $comision['type'];
+                    }
                 }
             }
+
+            // Guardar el objeto y retornar respuesta en caso de ser bloqueo
             $appointment->save();
+            if(!$isDate){
+                return response()->json(['message' => 'Appointment updated successfully']);
+            }
+
+            // Recalcular start y end de la cita
             $date = $appointment->date;
             $data = self::calculateStartEndDate($date);
             $date->start = $data['start'];

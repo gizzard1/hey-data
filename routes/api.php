@@ -23,7 +23,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/event-details', [DataResourceGrid::class, 'loadEventDetails']);
     Route::get('/validate-giftcard', [DataResourceGrid::class, 'validateGiftCard']);
 
-    Route::put('/update-appointment/{type?}', [DataResourceGrid::class, 'updateAppointment']);
+    Route::put('/update-appointment/{type?}/{isDate?}', [DataResourceGrid::class, 'updateAppointment']);
     Route::put('/update-details', [DataResourceGrid::class, 'updateDetails']);
     
     Route::delete('/delete-date', [DataResourceGrid::class, 'deleteDate']);
