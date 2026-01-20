@@ -494,11 +494,18 @@ class Informe extends Component
             }
             //Arreglo asociativo para mostrar en la primer gráfica
             $dataSales = [
-                'label' => ['Efectivo','Tarjeta','MSI','Otros','Propina'],
-                'amount' => [number_format($this->ingresoEfectivo,2,'.',','),number_format($this->ingresoCard,2,'.',','),number_format($this->ingresoMsi,2,'.',','),number_format($other_total,2,'.',','),number_format($this->totalTips,2,'.',',')],
-                'percent' => [number_format($this->ingresoEfectivo/$total_donut,2,'.',','),number_format($this->ingresoCard/$total_donut,2,'.',','),number_format($this->ingresoMsi/$total_donut,2,'.',','),number_format($other_total/$total_donut,2,'.',','),number_format($this->totalTips/$total_donut,2,'.',',')],
-                'color' => ['#3DC5AB','#41B8D5','#2E8BBA','#5E7391','#EBD99E'],
+                'label' => ['Efectivo','Tarjeta','MSI','Propina','Otros'],
+                'amount' => [number_format($this->ingresoEfectivo,2,'.',','),number_format($this->ingresoCard,2,'.',','),number_format($this->ingresoMsi,2,'.',','),number_format($this->totalTips,2,'.',','),number_format($other_total,2,'.',',')],
+                'percent' => [number_format($this->ingresoEfectivo/$total_donut,2,'.',','),number_format($this->ingresoCard/$total_donut,2,'.',','),number_format($this->ingresoMsi/$total_donut,2,'.',','),number_format($this->totalTips/$total_donut,2,'.',','),number_format($other_total/$total_donut,2,'.',',')],
+                'color' => ['#3DC5AB','#41B8D5','#2E8BBA','#EBD99E','#5E7391'],
             ];
+
+            foreach($this->ingresoTarjeta as $label => $qty){
+                $dataSales['label'][] = $label;
+                $dataSales['amount'][] = number_format($qty,2,'.',',');
+                $dataSales['percent'][] = number_format($qty/$total_donut,2,'.',',');
+                $dataSales['color'][] = '#5E7391';
+            }
 
             //Se guarda el arreglo en caso de que el usuario exporte a pdf el informe
             $this->dataSalesPdf = $dataSales;

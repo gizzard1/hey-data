@@ -371,10 +371,30 @@ canvas { max-width:100%; }
     font-size:14px;
 }
 
+.legend-item.expandable .legend-left {
+    cursor: pointer;
+}
+
+.legend-item.expandable:hover .legend-left {
+    opacity: 0.7;
+}
+
+.legend-item.legend-secondary {
+    opacity: 0.85;
+    font-size: 13px;
+}
+
 .legend-left {
     display:flex;
     align-items:center;
     gap:8px;
+}
+
+.expand-icon {
+    display: inline-block;
+    margin-right: 5px;
+    color: #666;
+    font-size: 12px;
 }
 
 .legend-color {

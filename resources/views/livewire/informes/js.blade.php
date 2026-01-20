@@ -89,6 +89,43 @@ function transformPaymentData(data) {
   return data;
 }
 
+// Estructura global para rastrear métodos de pago expandidos
+const paymentMethodsState = {
+    expandedSecondary: {}
+};
+
+const NUM_PRIMARY_METHODS = 4; // Los primeros 4 conceptos son primarios
+
+function separatePaymentMethods(data) {
+  const primary = [];
+  const secondary = [];
+  let fourthItemForSecondary = null;
+
+  // Filtrar items válidos y separarlos por posición
+  const validItems = data.filter(item => item.label !== 'Total' && item.amount !== 0);
+
+  validItems.forEach((item, index) => {
+    if (index < NUM_PRIMARY_METHODS) {
+      // Los primeros 4 son primarios
+      primary.push(item);
+      // El 4to item puede contener los secundarios
+      if (index === NUM_PRIMARY_METHODS - 1) {
+        fourthItemForSecondary = item;
+      }
+    } else {
+      // El resto son secundarios
+      secondary.push(item);
+    }
+  });
+
+  // Agrupar métodos secundarios bajo el 4to item (Otros)
+  if (secondary.length > 0 && fourthItemForSecondary) {
+    fourthItemForSecondary.secondary = secondary;
+  }
+
+  return primary;
+}
+
 document.addEventListener('DOMContentLoaded', function(){
     initFlats();
     
@@ -338,8 +375,11 @@ function drawDonut(canvasId, data) {
 
     // Almacenar información de cada slice para detectar hover
     const slices = [];
+    
+    // Separar métodos primarios de secundarios para la gráfica
+    const processedData = separatePaymentMethods(data);
 
-    data.forEach(item => {
+    processedData.forEach(item => {
         if(item.label==='Total' || item.amount === 0) return; // Omitir 'total'
         const sliceAngle = (item.percent / 100) * (2 * Math.PI);
         ctx.beginPath();
@@ -467,6 +507,84 @@ function drawDonut(canvasId, data) {
     });
 }
 
+function renderLegend(containerId, data) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    // Filtrar items válidos
+    const validItems = data.filter(item => item.label !== 'Total' && item.amount !== 0);
+    
+    let total = 0;
+    const primary = [];
+    const secondary = [];
+
+    // Separar por posición
+    validItems.forEach((item, index) => {
+        if (index < NUM_PRIMARY_METHODS) {
+            total += item.amount;
+            primary.push(item);
+        } else {
+            secondary.push(item);
+        }
+    });
+
+    // Renderizar items primarios
+    primary.forEach((item, index) => {
+        const isExpandable = index === NUM_PRIMARY_METHODS - 1 && secondary.length > 0;
+        const isExpanded = paymentMethodsState.expandedSecondary[containerId + '_' + item.label];
+        
+        container.innerHTML += `
+            <div class="legend-item ${isExpandable ? 'expandable' : ''}" ${isExpandable ? `data-expandable="${containerId}_${item.label}"` : ''}>
+                <div class="legend-left" ${isExpandable ? `style="cursor: pointer;"` : ''}>
+                    ${isExpandable ? `<span class="expand-icon" style="display: inline-block; margin-right: 5px; transform: rotate(${isExpanded ? '90' : '0'}deg); transition: transform 0.2s;">▶</span>` : '<span style="display: inline-block; margin-right: 5px; width: 14px;"></span>'}
+                    <span class="legend-color" style="background:${item.color}"></span>
+                    ${item.label}
+                </div>
+                <strong>$${item.amount.toLocaleString()}</strong>
+            </div>
+        `;
+        
+        // Renderizar items secundarios (ocultos por defecto)
+        if (isExpandable) {
+            secondary.forEach(secItem => {
+                container.innerHTML += `
+                    <div class="legend-item legend-secondary" data-parent="${containerId}_${item.label}" style="display: ${isExpanded ? 'flex' : 'none'}; padding-left: 30px; font-size: 0.9em;">
+                        <div class="legend-left">
+                            <span class="legend-color" style="background:${secItem.color}"></span>
+                            ${secItem.label}
+                        </div>
+                        <strong>$${secItem.amount.toLocaleString()}</strong>
+                    </div>
+                `;
+            });
+        }
+    });
+
+    container.innerHTML += `<hr><strong>Total: $${total.toLocaleString()}</strong>`;
+    
+    // Agregar event listeners para expandir/contraer
+    container.querySelectorAll('.legend-item.expandable').forEach(item => {
+        item.addEventListener('click', function() {
+            const expandableId = this.getAttribute('data-expandable');
+            paymentMethodsState.expandedSecondary[expandableId] = !paymentMethodsState.expandedSecondary[expandableId];
+            
+            // Actualizar visibilidad de secundarios
+            const secondaryItems = container.querySelectorAll(`[data-parent="${expandableId}"]`);
+            const isExpanded = paymentMethodsState.expandedSecondary[expandableId];
+            secondaryItems.forEach(sec => {
+                sec.style.display = isExpanded ? 'flex' : 'none';
+            });
+            
+            // Rotar icono
+            const icon = this.querySelector('.expand-icon');
+            if (icon) {
+                icon.style.transform = `rotate(${isExpanded ? '90' : '0'}deg)`;
+            }
+        });
+    });
+}
+
+
 // Función auxiliar para verificar si un ángulo está dentro de un rango
 function angleInRange(angle, startAngle, endAngle) {
     // Normalizar ángulos a rango -π a π
@@ -485,29 +603,6 @@ function angleInRange(angle, startAngle, endAngle) {
     } else {
         return angle >= startAngle || angle <= endAngle;
     }
-}
-
-function renderLegend(containerId, data) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = '';
-
-    let total = 0;
-
-    data.forEach(item => {
-    if(item.label==='Total' || item.amount === 0) return; // Omitir 'total'
-    total += item.amount;
-    container.innerHTML += `
-        <div class="legend-item">
-        <div class="legend-left">
-            <span class="legend-color" style="background:${item.color}"></span>
-            ${item.label}
-        </div>
-        <strong>$${item.amount.toLocaleString()}</strong>
-        </div>
-    `;
-    });
-
-    container.innerHTML += `<hr><strong>Total: $${total.toLocaleString()}</strong>`;
 }
 </script>
 
