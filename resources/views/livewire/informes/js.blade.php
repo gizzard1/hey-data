@@ -26,8 +26,8 @@ document.addEventListener('livewire:load', function () {
         renderTable(dataRanking);
         showDatesByStatus('Agendada');
         
-        drawDonut('donutChartEmployees', eData);
-        renderLegend('legendEmployees', eData);
+        drawDonut('donutChartEmployees', eData, true);
+        renderLegend('legendEmployees', eData, true);
         renderTableEmployees(eData);
     })
     Livewire.on('dateUpdated', function (newDate,newDateEnd,newDataEmpleados) {
@@ -96,7 +96,7 @@ const paymentMethodsState = {
 
 const NUM_PRIMARY_METHODS = 4; // Los primeros 4 conceptos son primarios
 
-function separatePaymentMethods(data) {
+function separatePaymentMethods(data, useAllData) {
   const primary = [];
   const secondary = [];
   let fourthItemForSecondary = null;
@@ -105,11 +105,11 @@ function separatePaymentMethods(data) {
   const validItems = data.filter(item => item.label !== 'Total' && item.amount !== 0);
 
   validItems.forEach((item, index) => {
-    if (index < NUM_PRIMARY_METHODS) {
+    if (index < NUM_PRIMARY_METHODS || useAllData) {
       // Los primeros 4 son primarios
       primary.push(item);
       // El 4to item puede contener los secundarios
-      if (index === NUM_PRIMARY_METHODS - 1) {
+      if (index === NUM_PRIMARY_METHODS - 1 && !useAllData) {
         fourthItemForSecondary = item;
       }
     } else {
@@ -146,8 +146,8 @@ document.addEventListener('DOMContentLoaded', function(){
     renderTable(serviceData);
     showDatesByStatus('Agendada');
 
-    drawDonut('donutChartEmployees', eData);
-    renderLegend('legendEmployees', eData);
+    drawDonut('donutChartEmployees', eData, true);
+    renderLegend('legendEmployees', eData, true);
     renderTableEmployees(eData);
 })
 
@@ -362,7 +362,7 @@ function drawBarChart(canvasId, data) {
     });
 }
 
-function drawDonut(canvasId, data) {
+function drawDonut(canvasId, data, useAllData=false) {
     const canvas = document.getElementById(canvasId);
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -377,7 +377,7 @@ function drawDonut(canvasId, data) {
     const slices = [];
     
     // Separar métodos primarios de secundarios para la gráfica
-    const processedData = separatePaymentMethods(data);
+    const processedData = separatePaymentMethods(data, useAllData);
 
     processedData.forEach(item => {
         if(item.label==='Total' || item.amount === 0) return; // Omitir 'total'
@@ -507,7 +507,7 @@ function drawDonut(canvasId, data) {
     });
 }
 
-function renderLegend(containerId, data) {
+function renderLegend(containerId, data, useAllData=false) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
 
@@ -520,7 +520,7 @@ function renderLegend(containerId, data) {
 
     // Separar por posición
     validItems.forEach((item, index) => {
-        if (index < NUM_PRIMARY_METHODS) {
+        if (index < NUM_PRIMARY_METHODS || useAllData) {
             total += item.amount;
             primary.push(item);
         } else {
@@ -530,7 +530,7 @@ function renderLegend(containerId, data) {
 
     // Renderizar items primarios
     primary.forEach((item, index) => {
-        const isExpandable = index === NUM_PRIMARY_METHODS - 1 && secondary.length > 0;
+        const isExpandable = index === NUM_PRIMARY_METHODS - 1 && secondary.length > 0 && !useAllData;
         const isExpanded = paymentMethodsState.expandedSecondary[containerId + '_' + item.label];
         
         container.innerHTML += `
