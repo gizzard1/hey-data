@@ -31,7 +31,7 @@
                                     @endif
                                 </div>
                                 
-                                <div wire:model="currentDateC" id="flatResource" class="flatpickrInd" wire:change.prevent="dateSelected">
+                                <div wire:model="currentDateC" id="flatResource" class="flatpickrInd flatpickrArea" wire:change.prevent="dateSelected">
                                     <h5 class="center mt-2 ml-4 mr-4 float-right " id="flatCalendar" style="justify-content: space-between;transform: translate(10px, 10px);" >{{ $currentDate }}</h5>
                                 </div>
 
@@ -287,6 +287,9 @@
 
 @include('livewire.calendar.js')
 <style>
+.flatpickrArea{
+    cursor: pointer;
+}
 .icons-data-popover{
     display: flex;
     align-items: center;
