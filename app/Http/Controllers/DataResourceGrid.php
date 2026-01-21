@@ -351,6 +351,28 @@ class DataResourceGrid extends Controller
             Log::error($th->getMessage());
         }
     }
+    public static function updateBlocking(Request $request)
+    {
+        try{
+            $blockingData = $request->input('blocking');
+
+            bloqueo::updateOrCreate(
+                ['id' => $blockingData['id'] ?? null], // usa null si no hay id
+                [
+                    'salon_id' => $request->user()->salon_id,
+                    'empleado_id' => $blockingData['empleado_id'],
+                    'color' => $blockingData['color'],
+                    'description' => $blockingData['description'],
+                    'start' => Carbon::parse($blockingData['start']),
+                    'end' => Carbon::parse($blockingData['end']),
+                ]
+            );
+
+            return response()->json(['message' => 'Blocking updated successfully']);
+        }catch(\Throwable $th){
+            Log::error($th->getMessage());
+        }
+    }
     public static function updateDetails(Request $request)
     {
         try{
@@ -575,6 +597,7 @@ class DataResourceGrid extends Controller
     public static function updateAppointment(Request $request, $type, $isDate = true)
     {
         try{
+            // $continuousAppointments = collect();
             $isDate = filter_var($isDate, FILTER_VALIDATE_BOOLEAN);
             // Buscar la cita o el bloqueo según el tipo
             $appointment = $isDate ? asignacion_servicio::with(['date.details'])
@@ -585,9 +608,26 @@ class DataResourceGrid extends Controller
                 return response()->json(['message' => 'No autorizado'], 403);
             }
 
+            // Identificar citas continuas
+            // if($isDate) $continuousAppointments = self::identifyContinuousAppointments($appointment);
+
             // Actualizar start (en ambos casos es el mismo proceso)
             $dateBase = Carbon::parse($appointment->start)->format('Y-m-d');
             $appointment->start = $dateBase . ' ' . $request->input('newStart');
+
+            // Actualizar citas continuas si existen
+            // if($isDate && !$continuousAppointments->isEmpty()){
+            //     foreach($continuousAppointments as $contApp){
+            //        // Cita continua después de la actual
+            //         if(Carbon::parse($contApp->start)->eq(Carbon::parse($appointment->start)->addMinutes($appointment->duration))){
+            //             $contApp->start = Carbon::parse($appointment->start)->addMinutes($appointment->duration)->format('Y-m-d H:i:s');
+            //         // Cita continua antes de la actual
+            //         } else {
+            //             $contApp->start = Carbon::parse($appointment->start)->subMinutes($contApp->duration)->format('Y-m-d H:i:s');
+            //         }
+            //         $contApp->save();
+            //     }
+            // }
 
             // Actualizar end o duration según el tipo
             if($isDate){
@@ -595,7 +635,6 @@ class DataResourceGrid extends Controller
             } else {
                 $appointment->end = $dateBase . ' ' . $request->input('newEnd');
             }
-
 
             // Actualizar empleado si el tipo es 'employee' y es diferente al actual
             if ($type == 'employee') {
@@ -611,6 +650,19 @@ class DataResourceGrid extends Controller
                         $appointment->comission = $comision['balance'];
                         $appointment->type_comision_calculated = $comision['type'];
                     }
+                    // // Actualizar citas continuas si existen
+                    // if(!$continuousAppointments->isEmpty()){
+                    //     foreach($continuousAppointments as $contApp){
+                    //         $contApp->empleado_id = $empleado;
+                    //         $contApp->color = empleado::select('color_preset')->find($empleado)->color_preset;
+                    //         // Recalcular comisión
+                    //         $itemToCalculatecomision = self::generateItemToCalculateComision($contApp,$empleado);
+                    //         $comision = self::defineComisionService($itemToCalculatecomision,'servicio');
+                    //         $contApp->comission = $comision['balance'];
+                    //         $contApp->type_comision_calculated = $comision['type'];
+                    //         $contApp->save();
+                    //     }
+                    // }
                 }
             }
 
@@ -628,6 +680,30 @@ class DataResourceGrid extends Controller
             $date->save();
 
             return response()->json(['message' => 'Appointment updated successfully']);
+        }catch(\Throwable $th){
+            Log::error($th->getMessage());
+        }
+    }
+    private static function identifyContinuousAppointments($appointment)
+    {
+        try{
+            $end = Carbon::parse($appointment->start)->addMinutes($appointment->duration)->format('Y-m-d H:i:s');
+
+            // Buscar citas continuas antes y después de la cita actual
+            $continuousAppointments = asignacion_servicio::where('cita_id', $appointment->cita_id)
+                ->where(function ($query) use ($appointment, $end) {
+                    $query->where(function ($q) use ($appointment) {
+                        $q->where('id', '!=', $appointment->id)
+                          ->whereRaw("ADDTIME(`start`, SEC_TO_TIME(duration * 60)) = ?", [$appointment->start]);
+                    })
+                    ->orWhere(function ($q) use ($appointment, $end) {
+                        $q->where('id', '!=', $appointment->id)
+                          ->where('start', '=', $end);
+                    });
+                })
+                ->get();
+
+            return $continuousAppointments; 
         }catch(\Throwable $th){
             Log::error($th->getMessage());
         }
@@ -786,6 +862,21 @@ class DataResourceGrid extends Controller
             //     bloqueo::find($this->asignacion_id)->delete();  
             //     $this->dispatchBrowserEvent('cerrarBlockMenuForm');
             // }
+            return response()->json(['message' => 'ok']);
+        
+        }catch(\Throwable $th){
+            Log::error($th->getMessage());
+        }
+    }
+    public static function deleteBlocking(Request $request)
+    {
+        try{
+            $blocking_id = $request->input('blocking_id'); 
+            $blocking = bloqueo::find($blocking_id);
+            if (!$blocking) {
+                return response()->json(['message' => 'not found']);
+            }
+            $blocking->delete();
             return response()->json(['message' => 'ok']);
         
         }catch(\Throwable $th){
