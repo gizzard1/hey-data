@@ -614,7 +614,7 @@ class DataResourceGrid extends Controller
     public static function updateAppointment(Request $request, $type, $isDate = true)
     {
         try{
-            // $continuousAppointments = collect();
+            $continuousAppointments = collect();
             $isDate = filter_var($isDate, FILTER_VALIDATE_BOOLEAN);
             // Buscar la cita o el bloqueo según el tipo
             $appointment = $isDate ? asignacion_servicio::with(['date.details'])
@@ -625,37 +625,42 @@ class DataResourceGrid extends Controller
                 return response()->json(['message' => 'No autorizado'], 403);
             }
 
-            // Identificar citas continuas
-            // if($isDate) $continuousAppointments = self::identifyContinuousAppointments($appointment);
-
             // Actualizar start (en ambos casos es el mismo proceso)
             $dateBase = Carbon::parse($appointment->start)->format('Y-m-d');
             $appointment->start = $dateBase . ' ' . $request->input('newStart');
 
-            // Actualizar citas continuas si existen
-            // if($isDate && !$continuousAppointments->isEmpty()){
-            //     foreach($continuousAppointments as $contApp){
-            //        // Cita continua después de la actual
-            //         if(Carbon::parse($contApp->start)->eq(Carbon::parse($appointment->start)->addMinutes($appointment->duration))){
-            //             $contApp->start = Carbon::parse($appointment->start)->addMinutes($appointment->duration)->format('Y-m-d H:i:s');
-            //         // Cita continua antes de la actual
-            //         } else {
-            //             $contApp->start = Carbon::parse($appointment->start)->subMinutes($contApp->duration)->format('Y-m-d H:i:s');
-            //         }
-            //         $contApp->save();
-            //     }
-            // }
-
             // Actualizar end o duration según el tipo
             if($isDate){
-                $appointment->duration = self::calculateNewDuration($appointment,$dateBase . ' ' .$request->input('newEnd'));
+                $newDuration = self::calculateNewDuration($appointment,$dateBase . ' ' .$request->input('newEnd'));
             } else {
                 $appointment->end = $dateBase . ' ' . $request->input('newEnd');
             }
 
+            // Identificar citas continuas
+            if($isDate) $continuousAppointments = self::identifyContinuousAppointments($appointment, $request->input('mergeQuantity'));
+
+            // Actualizar citas continuas si existen
+            if($isDate && !$continuousAppointments->isEmpty()){
+                // Calcular nueva duración por servicio
+                $duration_per_service = round( $newDuration/($continuousAppointments->count()>0?$continuousAppointments->count(): 1),0,PHP_ROUND_HALF_DOWN);
+                $new_start = Carbon::parse($appointment->start);
+
+                // Actualizar la duración y start de cada cita continua
+                foreach($continuousAppointments as $appointment)
+                {
+                    $appointment->duration = $duration_per_service;
+                    $appointment->start = $new_start;
+                    $appointment->save();
+                    $new_start->addMinutes($duration_per_service);
+                }
+                
+                $appointment->duration = $duration_per_service;
+                $appointment->save();
+            }
+
             // Actualizar empleado si el tipo es 'employee' y es diferente al actual
             if ($type == 'employee') {
-                if($appointment->empleado_id !== $request->input('newEmployeeId')){
+                if($appointment->empleado_id !== $request->input('employee')){
                     // Actualizar campos en común
                     $empleado = $request->input('employee');
                     $appointment->empleado_id = $empleado;
@@ -667,19 +672,19 @@ class DataResourceGrid extends Controller
                         $appointment->comission = $comision['balance'];
                         $appointment->type_comision_calculated = $comision['type'];
                     }
-                    // // Actualizar citas continuas si existen
-                    // if(!$continuousAppointments->isEmpty()){
-                    //     foreach($continuousAppointments as $contApp){
-                    //         $contApp->empleado_id = $empleado;
-                    //         $contApp->color = empleado::select('color_preset')->find($empleado)->color_preset;
-                    //         // Recalcular comisión
-                    //         $itemToCalculatecomision = self::generateItemToCalculateComision($contApp,$empleado);
-                    //         $comision = self::defineComisionService($itemToCalculatecomision,'servicio');
-                    //         $contApp->comission = $comision['balance'];
-                    //         $contApp->type_comision_calculated = $comision['type'];
-                    //         $contApp->save();
-                    //     }
-                    // }
+                    // Actualizar citas continuas si existen
+                    if(!$continuousAppointments->isEmpty()){
+                        foreach($continuousAppointments as $contApp){
+                            $contApp->empleado_id = $empleado;
+                            $contApp->color = empleado::select('color_preset')->find($empleado)->color_preset;
+                            // Recalcular comisión
+                            $itemToCalculatecomision = self::generateItemToCalculateComision($contApp,$empleado);
+                            $comision = self::defineComisionService($itemToCalculatecomision,'servicio');
+                            $contApp->comission = $comision['balance'];
+                            $contApp->type_comision_calculated = $comision['type'];
+                            $contApp->save();
+                        }
+                    }
                 }
             }
 
@@ -701,26 +706,24 @@ class DataResourceGrid extends Controller
             Log::error($th->getMessage());
         }
     }
-    private static function identifyContinuousAppointments($appointment)
+    private static function identifyContinuousAppointments($detail, $grouped)
     {
         try{
-            $end = Carbon::parse($appointment->start)->addMinutes($appointment->duration)->format('Y-m-d H:i:s');
+            // Ordenamos los detalles por hora de inicio
+            $details_sorted = $detail->date->details
+                ->sortBy(fn ($d) => [$d->empleado_id,$d->start])
+                ->values();
+            // Obtenemos el índice del detalle actual
+            $index = $details_sorted->search(fn ($d) => $d->id === $detail->id);
 
-            // Buscar citas continuas antes y después de la cita actual
-            $continuousAppointments = asignacion_servicio::where('cita_id', $appointment->cita_id)
-                ->where(function ($query) use ($appointment, $end) {
-                    $query->where(function ($q) use ($appointment) {
-                        $q->where('id', '!=', $appointment->id)
-                          ->whereRaw("ADDTIME(`start`, SEC_TO_TIME(duration * 60)) = ?", [$appointment->start]);
-                    })
-                    ->orWhere(function ($q) use ($appointment, $end) {
-                        $q->where('id', '!=', $appointment->id)
-                          ->where('start', '=', $end);
-                    });
-                })
-                ->get();
+            if ($index === false) {
+                return collect(); // Por seguridad, si no se encuentra
+            }
 
-            return $continuousAppointments; 
+            // Tomamos desde el actual hasta los siguientes $grouped elementos
+            $remaining = $details_sorted->slice($index, intval($grouped + $index))->values();
+
+            return $remaining;
         }catch(\Throwable $th){
             Log::error($th->getMessage());
         }
