@@ -351,10 +351,27 @@ class DataResourceGrid extends Controller
             Log::error($th->getMessage());
         }
     }
+    public static function loadBlocking(Request $request)
+    {
+        try{
+            $blocking_id = $request->query('blocking_id');
+            $blocking = bloqueo::where('id',$blocking_id)
+                ->select('id','empleado_id','color','description','start','end')
+                ->with('empleado:id,first_name,last_name,color_preset,visible')
+                ->first();
+            return $blocking;
+        }catch(\Throwable $th){
+            Log::error($th->getMessage());
+        }
+    }
     public static function updateBlocking(Request $request)
     {
         try{
             $blockingData = $request->input('blocking');
+            // Concatenar fecha con la hora para start y end
+            $date = explode('T', $blockingData['date'])[0];
+            $blockingData['start'] = $date . ' ' . $blockingData['start'];
+            $blockingData['end'] = $date . ' ' . $blockingData['end'];
 
             bloqueo::updateOrCreate(
                 ['id' => $blockingData['id'] ?? null], // usa null si no hay id

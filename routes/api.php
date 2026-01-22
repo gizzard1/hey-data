@@ -22,6 +22,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/workers-w-payment', [DataResourceGrid::class, 'loadWorkersNPayment']);
     Route::get('/event-details', [DataResourceGrid::class, 'loadEventDetails']);
     Route::get('/validate-giftcard', [DataResourceGrid::class, 'validateGiftCard']);
+    Route::get('/load-blocking', [DataResourceGrid::class, 'loadBlocking']);
 
     Route::put('/update-appointment/{type?}/{isDate?}', [DataResourceGrid::class, 'updateAppointment']);
     Route::put('/update-details', [DataResourceGrid::class, 'updateDetails']);
