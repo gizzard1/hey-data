@@ -673,25 +673,19 @@ class Clientes extends Component
                                         });
                                     });
                                 });
-
-                                
-                                    
                                 }else {
-                                    
                                     // Filtrar por compras dentro del rango de fecha y gasto, y que no estén canceladas
-                                    $query->whereHas('compras', function($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
+                                    $query->whereHas('compras', function($query) use ($minGasto, $maxGasto) {
                                         $query->where('status', '!=', 'Cancelada')
-                                                ->whereHas('metodosPago', function($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
-                                                    $query->whereBetween('created_at', [Carbon::parse($fecha_inicio)->startOfDay(), Carbon::parse($fecha_fin)->endOfDay()])
-                                                        ->whereRaw('(amount - COALESCE(`change`, 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
+                                                ->whereHas('metodosPago', function($query) use ($minGasto, $maxGasto) {
+                                                    $query->whereRaw('(amount - COALESCE(`change`, 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
                                                 });
                                     });
                                     // Filtrar por citas dentro del rango de fecha y gasto, y que no estén canceladas
-                                    $query->orWhereHas('citas', function($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
+                                    $query->orWhereHas('citas', function($query) use ($minGasto, $maxGasto) {
                                         $query->where('status', '!=', 'Cancelada')
-                                            ->whereHas('metodosPago', function($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
-                                                $query->whereBetween('created_at', [Carbon::parse($fecha_inicio)->startOfDay(), Carbon::parse($fecha_fin)->endOfDay()])
-                                                        ->whereRaw('(amount - COALESCE(`change`, 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
+                                            ->whereHas('metodosPago', function($query) use ($minGasto, $maxGasto) {
+                                                $query->whereRaw('(amount - COALESCE(`change`, 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
                                             });
                                     });
                                 }
