@@ -8,6 +8,7 @@ use App\Http\Controllers\DataServices;
 use App\Http\Controllers\DataEmployees;
 use App\Http\Controllers\DataPayment;
 use App\Http\Controllers\DataSales;
+use App\Http\Controllers\DataSalon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -58,6 +59,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/update-or-create-service', [DataServices::class,'storeService']);
 
     Route::put('/update-details-sale', [DataSales::class, 'updateOrCreateSale']);
+
+    Route::get('/data-salon', [DataSalon::class, 'loadSalon']);
+    Route::put('/is-unique-email', [DataSalon::class, 'isUniqueSalonEmail']);
+    Route::put('/update-salon-data', [DataSalon::class, 'updateSalonData']);
 });
 
 // Rutas públicas (sin autenticación)
