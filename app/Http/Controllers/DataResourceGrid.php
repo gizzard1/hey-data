@@ -24,56 +24,79 @@ class DataResourceGrid extends Controller
 {
     public static function loadEventDetails(Request $request)
     {
-        try{
+        try {
             $cita_id = $request->query('date_id');
-            
-            $dates = Asignacion_servicio::select('id','empleado_id','cita_id','color','selected_service','disccount_price','discount_qty','discount_type','current_price','base_comision','iva',
-                    DB::raw("duration as duracionMinutos"),
-                    DB::raw("selected_service as servicioId"),
-                    DB::raw("empleado_id as empleadoId"),
-                    DB::raw("current_price as precio"),
-                    DB::raw("DATE_FORMAT(`start`, '%H:%i') as inicioServicio"),
-                    DB::raw("DATE_FORMAT('start', 'Y-m-d') as fecha"),
-                    DB::raw("DATE_FORMAT(ADDTIME(`start`, SEC_TO_TIME(duration * 60)), '%H:%i') as finServicio"),
-                )->with([
-                    'servicio' => function($q) {
-                        $q->select('id', 
-                            DB::raw("name as nombre"), 
-                            DB::raw("gross_price as precio"), 
-                            DB::raw("duration as duracionMinutos"), 
-                        ); 
-                    },
-                    'empleado' => function($q) {
-                        $q->select(
-                            'id',
-                            DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
-                            DB::raw("color_preset as color")
-                        );
-                    },
-                    'date' => function($q) {
-                        $q->select(
-                            'id','customer_id','total','disccount',
-                            DB::raw('SUM(total) - SUM(COALESCE(`disccount`, 0)) as totalSubDiscount'),
-                            DB::raw("DATE_FORMAT(`start`, '%H:%i') as startTime"),
-                            DB::raw("DATE_FORMAT(`end`, '%H:%i') as endTime"),
-                            DB::raw("DATE(start) as date"),
-                            DB::raw("status as estado"),
-                            DB::raw("customer_id as clienteId"),
-                        )->with(['customer' => function($q) {
-                            $q->select('id', 
-                                DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"), 
+
+            $dates = Asignacion_servicio::select(
+                'id',
+                'empleado_id',
+                'cita_id',
+                'color',
+                'selected_service',
+                'disccount_price',
+                'discount_qty',
+                'discount_type',
+                'current_price',
+                'base_comision',
+                'iva',
+                DB::raw("duration as duracionMinutos"),
+                DB::raw("selected_service as servicioId"),
+                DB::raw("empleado_id as empleadoId"),
+                DB::raw("current_price as precio"),
+                DB::raw("DATE_FORMAT(`start`, '%H:%i') as inicioServicio"),
+                DB::raw("DATE_FORMAT('start', 'Y-m-d') as fecha"),
+                DB::raw("DATE_FORMAT(ADDTIME(`start`, SEC_TO_TIME(duration * 60)), '%H:%i') as finServicio"),
+            )->with([
+                'servicio' => function ($q) {
+                    $q->select(
+                        'id',
+                        DB::raw("name as nombre"),
+                        DB::raw("gross_price as precio"),
+                        DB::raw("duration as duracionMinutos"),
+                    );
+                },
+                'empleado' => function ($q) {
+                    $q->select(
+                        'id',
+                        DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
+                        DB::raw("color_preset as color")
+                    );
+                },
+                'date' => function ($q) {
+                    $q->select(
+                        'id',
+                        'customer_id',
+                        'total',
+                        'disccount',
+                        DB::raw('SUM(total) - SUM(COALESCE(`disccount`, 0)) as totalSubDiscount'),
+                        DB::raw("DATE_FORMAT(`start`, '%H:%i') as startTime"),
+                        DB::raw("DATE_FORMAT(`end`, '%H:%i') as endTime"),
+                        DB::raw("DATE(start) as date"),
+                        DB::raw("status as estado"),
+                        DB::raw("customer_id as clienteId"),
+                    )->with([
+                        'customer' => function ($q) {
+                            $q->select(
+                                'id',
+                                DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"),
                                 DB::raw("phone as telefono"),
-                            )->with(['tarjetaPuntos' => function($q){
-                                $q->select('id','intern_barcode','balance','cliente_id');
-                            }]); 
-                        }]);
-                    },
-                ])
+                            )->with([
+                                'tarjetaPuntos' => function ($q) {
+                                    $q->select('id', 'intern_barcode', 'balance', 'cliente_id');
+                                }
+                            ]);
+                        },
+                        'etiquetas' => function ($q) {
+                            $q->select('name', 'color');
+                        }
+                    ]);
+                },
+            ])
                 ->where('cita_id', $cita_id) // Filtra por la fecha del día de $currentDateC
                 ->get();
 
             // Obtener detalles de venta asociados a la cita
-            $detailsVenta = Asignacion_venta::where('cita_id',$cita_id)
+            $detailsVenta = Asignacion_venta::where('cita_id', $cita_id)
                 ->select(
                     'id',
                     'selected_item',
@@ -89,7 +112,7 @@ class DataResourceGrid extends Controller
                     'iva',
                 )
                 ->with([
-                    'product' => function($q) {
+                    'product' => function ($q) {
                         $q->select(
                             'id',
                             'name',
@@ -104,42 +127,46 @@ class DataResourceGrid extends Controller
                             'sku',
                             'brand_id',
                             'type_product',
-                        ); 
+                        );
                     },
-                    'empleado' => function($q) {
+                    'empleado' => function ($q) {
                         $q->select(
                             'id',
                             DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
                             DB::raw("color_preset as color")
                         );
                     },
-                    'cita' => function($q) {
+                    'cita' => function ($q) {
                         $q->select(
-                            'id','customer_id','total','disccount',
+                            'id',
+                            'customer_id',
+                            'total',
+                            'disccount',
                             DB::raw('SUM(total) - SUM(COALESCE(`disccount`, 0)) as totalSubDiscount'),
                             DB::raw("DATE_FORMAT(`start`, '%H:%i') as startTime"),
                             DB::raw("DATE_FORMAT(`end`, '%H:%i') as endTime"),
                             DB::raw("DATE(start) as date"),
                             DB::raw("status as estado"),
                             DB::raw("customer_id as clienteId"),
-                        )->with(['customer' => function($q) {
-                            $q->select('id', 
-                                DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"), 
+                        )->with(['customer' => function ($q) {
+                            $q->select(
+                                'id',
+                                DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"),
                                 DB::raw("phone as telefono"),
-                            )->with(['tarjetaPuntos' => function($q){
-                                $q->select('id','intern_barcode','balance','cliente_id');
-                            }]); 
+                            )->with(['tarjetaPuntos' => function ($q) {
+                                $q->select('id', 'intern_barcode', 'balance', 'cliente_id');
+                            }]);
                         }]);
                     },
                 ])
                 ->get();
-                
+
             $payed = metodo_pago_servicio::where('cita_id', $cita_id)
                 ->where('payment_method_id', '!=', 4)
                 ->selectRaw('SUM(amount) - SUM(COALESCE(`change`, 0)) as payed')
                 ->value('payed');
 
-            $methods = metodo_pago_servicio::where('cita_id',$cita_id)
+            $methods = metodo_pago_servicio::where('cita_id', $cita_id)
                 ->select(
                     'id',
                     'payment_method_id',
@@ -149,15 +176,16 @@ class DataResourceGrid extends Controller
                     'change'
                 )
                 ->with([
-                    'metodoPago' => function($q) {
-                        $q->select('id', 
-                            DB::raw("Payment_method as name"), 
-                        ); 
+                    'metodoPago' => function ($q) {
+                        $q->select(
+                            'id',
+                            DB::raw("Payment_method as name"),
+                        );
                     }
                 ])
                 ->get();
-            
-            $tips = Propina::where('cita_id',$cita_id)
+
+            $tips = Propina::where('cita_id', $cita_id)
                 ->select(
                     'id',
                     'payment_method_id',
@@ -166,12 +194,13 @@ class DataResourceGrid extends Controller
                     'empleado_id'
                 )
                 ->with([
-                    'metodoPago' => function($q) {
-                        $q->select('id', 
-                            DB::raw("Payment_method as name"), 
-                        ); 
+                    'metodoPago' => function ($q) {
+                        $q->select(
+                            'id',
+                            DB::raw("Payment_method as name"),
+                        );
                     },
-                    'empleado' => function($q){
+                    'empleado' => function ($q) {
                         $q->select(
                             'id',
                             DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
@@ -181,14 +210,14 @@ class DataResourceGrid extends Controller
                 ])
                 ->get();
 
-            return ['details' => $dates,'payed' => $payed,'methods' => $methods, 'tips' => $tips, 'detailsVenta' => $detailsVenta];
-        }catch(\Throwable $th){
+            return ['details' => $dates, 'payed' => $payed, 'methods' => $methods, 'tips' => $tips, 'detailsVenta' => $detailsVenta];
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function loadDates(Request $request)
     {
-        try{
+        try {
             $salon_id = $request->user()->salon_id;
             $currentDate = $request->query('currentDate');
             $horas = Agenda::loadSalonTimes($request->user()->salon_id);
@@ -199,123 +228,138 @@ class DataResourceGrid extends Controller
             }
             $currentDate = date('Y-m-d', strtotime($currentDate));
 
-            $dates = Asignacion_servicio::select('id','empleado_id','cita_id','color','selected_service',
-                    DB::raw("duration as duracionMinutos"),
-                    DB::raw("selected_service as servicioId"),
-                    DB::raw("empleado_id as empleadoId"),
-                    DB::raw("current_price as precio"),
-                    DB::raw("DATE_FORMAT(`start`, '%H:%i') as inicioServicio"),
-                    DB::raw("DATE_FORMAT('start', 'Y-m-d') as fecha"),
-                    DB::raw("DATE_FORMAT(ADDTIME(`start`, SEC_TO_TIME(duration * 60)), '%H:%i') as finServicio"),
-                )->with([
-                    'servicio' => function($q) {
-                        $q->select('id', 
-                            DB::raw("name as nombre"), 
-                            DB::raw("gross_price as precio"), 
-                            DB::raw("duration as duracionMinutos"), 
-                        ); 
-                    },
-                    'empleado' => function($q) {
+            $dates = Asignacion_servicio::select(
+                'id',
+                'empleado_id',
+                'cita_id',
+                'color',
+                'selected_service',
+                DB::raw("duration as duracionMinutos"),
+                DB::raw("selected_service as servicioId"),
+                DB::raw("empleado_id as empleadoId"),
+                DB::raw("current_price as precio"),
+                DB::raw("DATE_FORMAT(`start`, '%H:%i') as inicioServicio"),
+                DB::raw("DATE_FORMAT('start', 'Y-m-d') as fecha"),
+                DB::raw("DATE_FORMAT(ADDTIME(`start`, SEC_TO_TIME(duration * 60)), '%H:%i') as finServicio"),
+            )->with([
+                'servicio' => function ($q) {
+                    $q->select(
+                        'id',
+                        DB::raw("name as nombre"),
+                        DB::raw("gross_price as precio"),
+                        DB::raw("duration as duracionMinutos"),
+                    );
+                },
+                'empleado' => function ($q) {
+                    $q->select(
+                        'id',
+                        DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
+                        DB::raw("color_preset as color")
+                    );
+                },
+                'date' => function ($q) {
+                    $q->select(
+                        'id',
+                        'customer_id',
+                        'description',
+                        DB::raw("DATE_FORMAT(`start`, '%H:%i') as startTime"),
+                        DB::raw("DATE_FORMAT(`end`, '%H:%i') as endTime"),
+                        DB::raw("DATE(start) as date"),
+                        DB::raw("status as estado"),
+                        DB::raw("customer_id as clienteId"),
+                        'total',
+                    )->with(['customer' => function ($q) {
                         $q->select(
                             'id',
-                            DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
-                            DB::raw("color_preset as color")
-                        );
-                    },
-                    'date' => function($q) {
-                        $q->select(
-                            'id','customer_id','description',
-                            DB::raw("DATE_FORMAT(`start`, '%H:%i') as startTime"),
-                            DB::raw("DATE_FORMAT(`end`, '%H:%i') as endTime"),
-                            DB::raw("DATE(start) as date"),
-                            DB::raw("status as estado"),
-                            DB::raw("customer_id as clienteId"),
-                            'total',
-                        )->with(['customer' => function($q) {
-                            $q->select('id', 
-                                DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"), 
-                                DB::raw("phone as telefono"),
-                            )->with([
-                                'categorias' => function($q){
-                                    $q->select('name');
-                                }
-                            ]); 
-                        }])
-                        ->with([
-                            'etiquetas' => function($q){
-                                $q->select('name','color');
+                            DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"),
+                            DB::raw("phone as telefono"),
+                        )->with([
+                            'categorias' => function ($q) {
+                                $q->select('name');
                             }
                         ]);
-                    },
-                ])->whereHas('date', function($q) use ($currentDate, $salon_id) {
-                    $q->where('salon_id', $salon_id);
-                })
+                    }])
+                        ->with([
+                            'etiquetas' => function ($q) {
+                                $q->select('name', 'color');
+                            }
+                        ]);
+                },
+            ])->whereHas('date', function ($q) use ($currentDate, $salon_id) {
+                $q->where('salon_id', $salon_id);
+            })
                 ->whereDate('start', $currentDate) // Filtra por la fecha del día de $currentDateC
                 ->get();
 
             // Obtener bloqueos
-            $bloqueos = bloqueo::where('salon_id',$salon_id)
+            $bloqueos = bloqueo::where('salon_id', $salon_id)
                 ->whereDate('start', $currentDate)
-                ->select('id','empleado_id','color','description',
+                ->select(
+                    'id',
+                    'empleado_id',
+                    'color',
+                    'description',
                     DB::raw("DATE_FORMAT(`start`, '%H:%i') as inicioServicio"),
                     DB::raw("DATE_FORMAT(`end`, '%H:%i') as finServicio"),
-                    'start','end')
+                    'start',
+                    'end'
+                )
                 ->with('empleado')
                 ->get();
 
             return ['mainTimeSlots' => $timeSlots, 'citas' => $dates, 'bloqueos' => $bloqueos];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function loadWorkersNPayment(Request $request)
     {
-        try{
+        try {
             $salon_id = $request->user()->salon_id;
             $data = self::loadWorkers($request);
             $data['methods'] = metodo_pago::select(
-                    'id',
-                    DB::raw("Payment_method as name")
-                )
-                ->where('salon_id',$salon_id)
-                ->orWhere('salon_id',null)
-                ->where('id','!=',99999)
-                ->where('id','!=',5)
-                ->where('id','!=',4)
+                'id',
+                DB::raw("Payment_method as name")
+            )
+                ->where('salon_id', $salon_id)
+                ->orWhere('salon_id', null)
+                ->where('id', '!=', 99999)
+                ->where('id', '!=', 5)
+                ->where('id', '!=', 4)
                 ->get();
 
             return $data;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     private static function getEmployees($salon_id)
     {
-        try{
+        try {
             return Empleado::select(
                 'id',
                 DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
                 DB::raw("color_preset as color")
             )
-            ->where('salon_id', $salon_id)
-            ->get();
-        }catch(\Throwable $th){
+                ->where('salon_id', $salon_id)
+                ->get();
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function loadWorkers(Request $request)
     {
-        try{
+        try {
             $salon_id = $request->user()->salon_id;
             $empleados = self::getEmployees($salon_id);
             return ['workers' => $empleados];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function determinateTypeOfDiscount($type)
     {
-        switch($type){
+        switch ($type) {
             case '$':
                 $type = 'Cantidad';
                 break;
@@ -329,7 +373,7 @@ class DataResourceGrid extends Controller
     }
     public static function validateGiftCard(Request $request)
     {
-        try{
+        try {
             $pass = $request->query('pass');
             $cupon = Coupon::firstWhere('password', $pass);
 
@@ -346,27 +390,26 @@ class DataResourceGrid extends Controller
             }
 
             return response()->json(['message' => 'ok', 'giftCard' => $cupon]);
-
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function loadBlocking(Request $request)
     {
-        try{
+        try {
             $blocking_id = $request->query('blocking_id');
-            $blocking = bloqueo::where('id',$blocking_id)
-                ->select('id','empleado_id','color','description','start','end')
+            $blocking = bloqueo::where('id', $blocking_id)
+                ->select('id', 'empleado_id', 'color', 'description', 'start', 'end')
                 ->with('empleado:id,first_name,last_name,color_preset,visible')
                 ->first();
             return $blocking;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function updateBlocking(Request $request)
     {
-        try{
+        try {
             $blockingData = $request->input('blocking');
             // Concatenar fecha con la hora para start y end
             $date = explode('T', $blockingData['date'])[0];
@@ -386,13 +429,13 @@ class DataResourceGrid extends Controller
             );
 
             return response()->json(['message' => 'Blocking updated successfully']);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function updateDetails(Request $request)
     {
-        try{
+        try {
             // Obtener los datos de la cita desde la solicitud
             $details = $request->input('details');
             $date = $details['details'][0]['date'];
@@ -411,7 +454,7 @@ class DataResourceGrid extends Controller
             ])->id;
 
             // Obtener los métodos de pago asociados a la cita
-            $paymentMethods = metodo_pago_servicio::where('cita_id',$date_id)->orderBy('id','asc')->get();
+            $paymentMethods = metodo_pago_servicio::where('cita_id', $date_id)->orderBy('id', 'asc')->get();
 
             // Crear un array para rastrear los IDs que siguen vigentes
             $keptIds = [];
@@ -419,7 +462,7 @@ class DataResourceGrid extends Controller
             $endTimeToMinutes = 0;
             $total_rp = 0;
             $total_date = 0;
-            foreach($details['details'] as $detail){
+            foreach ($details['details'] as $detail) {
                 $priceOutOfDiscounts = self::determinatePriceOutOfDiscounts($detail);
                 $total_date += $priceOutOfDiscounts;
                 $startDetailToMinutes = self::timeToMinutes($detail['inicioServicio']);
@@ -432,26 +475,26 @@ class DataResourceGrid extends Controller
                 if ($endTimeToMinutes < $endDetailToMinutes) {
                     $endTimeToMinutes = $endDetailToMinutes;
                 }
-                $comisionItem = self::defineComisionService(self::generateItemToCalculateComision($detail,$detail['empleadoId']),'servicio');
-                $gen_points = self::calculateRewardPoints($detail['servicioId'],true,$priceOutOfDiscounts);
+                $comisionItem = self::defineComisionService(self::generateItemToCalculateComision($detail, $detail['empleadoId']), 'servicio');
+                $gen_points = self::calculateRewardPoints($detail['servicioId'], true, $priceOutOfDiscounts);
                 $total_rp += $gen_points;
                 $asignacion = Asignacion_servicio::updateOrCreate(
                     ['id' => $detail['id'] ?? null], // usa null si no hay id
                     [
-                        'cita_id'=>$date_id,
-                        'selected_service'=>$detail['servicioId'],
-                        'empleado_id'=>$detail['empleadoId'],
-                        'discount_qty'=>floatval($detail['discount_qty']),
-                        'discount_type'=>$detail['discount_type'],
-                        'generated_points'=>$gen_points,
-                        'current_price'=>$detail['precio'],
-                        'disccount_price'=>$detail['disccount_price'],
-                        'comission'=>$comisionItem['balance'],
-                        'type_comision_calculated'=>$comisionItem['type'],
-                        'iva'=>isset($detail['iva']) ? ($detail['iva'] === '8%' ? '0.08' : ($detail['iva'] === '16%' ? '0.16' : ($detail['iva'] === 'Exento' ? '0' : $detail['iva']))) : '0.16',
-                        'start'=>Carbon::parse($date['date'] . ' ' . $detail['inicioServicio']),
-                        'color'=>$detail['color'],
-                        'duration'=>$detail['duracionMinutos']
+                        'cita_id' => $date_id,
+                        'selected_service' => $detail['servicioId'],
+                        'empleado_id' => $detail['empleadoId'],
+                        'discount_qty' => floatval($detail['discount_qty']),
+                        'discount_type' => $detail['discount_type'],
+                        'generated_points' => $gen_points,
+                        'current_price' => $detail['precio'],
+                        'disccount_price' => $detail['disccount_price'],
+                        'comission' => $comisionItem['balance'],
+                        'type_comision_calculated' => $comisionItem['type'],
+                        'iva' => isset($detail['iva']) ? ($detail['iva'] === '8%' ? '0.08' : ($detail['iva'] === '16%' ? '0.16' : ($detail['iva'] === 'Exento' ? '0' : $detail['iva']))) : '0.16',
+                        'start' => Carbon::parse($date['date'] . ' ' . $detail['inicioServicio']),
+                        'color' => $detail['color'],
+                        'duration' => $detail['duracionMinutos']
                     ]
                 );
                 // Guardamos los IDs que quedan vigentes
@@ -459,7 +502,7 @@ class DataResourceGrid extends Controller
             }
 
             // Actualizar los detalles de ventas en la cita
-            if(isset($details['detailsVenta'])){
+            if (isset($details['detailsVenta'])) {
                 // Procesar los detalles de la venta asociados a la cita
                 $data_details = DS::createSaleDetails($details, $date_id, false);
 
@@ -484,136 +527,139 @@ class DataResourceGrid extends Controller
                 ->delete();
 
             // Recalcular el descuento total
-            $discount = self::getTotalDiscounts($paymentMethods,$total_date);
+            $discount = self::getTotalDiscounts($paymentMethods, $total_date);
 
             // Actualizar la cita
-            cita::where('id',[$date_id])
-                ->update([
-                        'start'=>Carbon::parse($date['date'] . ' ' . self::minutesToTime($startTimeToMinutes)),
-                        'end'=>Carbon::parse($date['date'] . ' ' . self::minutesToTime($endTimeToMinutes)),
-                        'generated_points'=>$total_rp,
-                        'status'=>$date['estado'] === 'Agendada' ? 'Agendada' : self::determineDateStatus($total_date-$discount,$details['payed']),
-                        'customer_id'=>$date['clienteId'],
-                        'total'=>$total_date,
-                        'disccount'=>$discount,
+            cita::where('id', [$date_id])
+                ->update(
+                    [
+                        'start' => Carbon::parse($date['date'] . ' ' . self::minutesToTime($startTimeToMinutes)),
+                        'end' => Carbon::parse($date['date'] . ' ' . self::minutesToTime($endTimeToMinutes)),
+                        'generated_points' => $total_rp,
+                        'status' => $date['estado'] === 'Agendada' ? 'Agendada' : self::determineDateStatus($total_date - $discount, $details['payed']),
+                        'customer_id' => $date['clienteId'],
+                        'total' => $total_date,
+                        'disccount' => $discount,
                     ]
                 );
             return response()->json(['message' => 'Appointment updated successfully']);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
-    public static function getTotalDiscounts($methods,$total)
+    public static function getTotalDiscounts($methods, $total)
     {
-        try{
+        try {
             $final = 0;
-            foreach($methods as $method){
+            foreach ($methods as $method) {
                 $qty = $method->amount - ($method->change ?? 0);
-                if($method->payment_method_id !== 4){
+                if ($method->payment_method_id !== 4) {
                     $total -= $qty;
-                }else{
-                    $discount = $method->tipo === 'Porcentaje' ? $total*($qty/100) : $qty;
+                } else {
+                    $discount = $method->tipo === 'Porcentaje' ? $total * ($qty / 100) : $qty;
                     $final += $discount;
                     $total -= $discount;
                 }
             }
             return $final;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
-    public static function determineDateStatus($total,$payed)
+    public static function determineDateStatus($total, $payed)
     {
-        if($payed >= $total){
+        if ($payed >= $total) {
             return 'Pagada';
-        }else{
+        } else {
             return 'Pendiente';
         }
     }
-    private static function minutesToTime(int $minutes): string {
+    private static function minutesToTime(int $minutes): string
+    {
         $hours = floor($minutes / 60);
         $mins = $minutes % 60;
         return sprintf('%02d:%02d', $hours, $mins);
     }
     private static function timeToMinutes($time)
     {
-        try{
+        try {
             [$hours, $minutes] = explode(':', $time);
             return ((int)$hours * 60) + (int)$minutes;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function calculateRewardPoints($item_id, $is_service, $total)
     {
-        try{
+        try {
             // Obtener el item con eager loading de relaciones
             if ($is_service) {
                 $item = servicio::with('excepciones', 'categorias.excepciones')
-                                ->find($item_id);
+                    ->find($item_id);
             } else {
                 $item = producto::with('excepciones', 'categorias.excepciones')
-                                ->find($item_id);
+                    ->find($item_id);
             }
-        
+
             // Verificar si el item existe
             if (!$item) {
                 return 0; // Retorna 0 si el item no se encuentra
             }
-        
+
             // Buscar excepciones asociadas al item
             $excepcion = $item->excepciones()
-                              ->whereNotNull('programa_recompensa_id')
-                              ->latest()
-                              ->first();
-        
+                ->whereNotNull('programa_recompensa_id')
+                ->latest()
+                ->first();
+
             if ($excepcion) {
                 return self::getRewardPoints($excepcion, $total);
             }
-        
+
             // Buscar categorías y excepciones asociadas a las categorías
             $categoria = $item->categorias()->latest()->first();
-        
+
             if ($categoria) {
                 $excepcion = $categoria->excepciones()
-                                       ->whereNotNull('programa_recompensa_id')
-                                       ->latest()
-                                       ->first();
-        
+                    ->whereNotNull('programa_recompensa_id')
+                    ->latest()
+                    ->first();
+
                 if ($excepcion) {
                     return self::getRewardPoints($excepcion, $total);
                 }
             }
-        
+
             // Si no hay excepciones ni categorías, retornar 0
             return 0;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
-    
-    private static function getRewardPoints($excepcion,$total){
-        try{
-            switch($excepcion->type_comission){
+
+    private static function getRewardPoints($excepcion, $total)
+    {
+        try {
+            switch ($excepcion->type_comission) {
                 case 'percent':
-                    $points = ($total*$excepcion->qty)/100;
+                    $points = ($total * $excepcion->qty) / 100;
                     break;
                 case 'qty':
                     $points = $excepcion->qty;
                     break;
                 default:
-                    $points=0;
+                    $points = 0;
                     break;
             }
             return $points;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
-    
+
     public static function updateAppointment(Request $request, $type, $isDate = true)
     {
-        try{
+        try {
             $continuousAppointments = collect();
             $isDate = filter_var($isDate, FILTER_VALIDATE_BOOLEAN);
             // Buscar la cita o el bloqueo según el tipo
@@ -621,7 +667,7 @@ class DataResourceGrid extends Controller
                 ->find($request->input('appointmentId')) : bloqueo::find($request->input('appointmentId'));
 
             // Verificar que la cita o bloqueo pertenezca al salón del usuario autenticado
-            if(($isDate && $appointment->date->salon_id !== $request->user()->salon_id) || (!$isDate && $appointment->salon_id !== $request->user()->salon_id)){
+            if (($isDate && $appointment->date->salon_id !== $request->user()->salon_id) || (!$isDate && $appointment->salon_id !== $request->user()->salon_id)) {
                 return response()->json(['message' => 'No autorizado'], 403);
             }
 
@@ -630,56 +676,55 @@ class DataResourceGrid extends Controller
             $appointment->start = $dateBase . ' ' . $request->input('newStart');
 
             // Actualizar end o duration según el tipo
-            if($isDate){
-                $newDuration = self::calculateNewDuration($appointment,$dateBase . ' ' .$request->input('newEnd'));
+            if ($isDate) {
+                $newDuration = self::calculateNewDuration($appointment, $dateBase . ' ' . $request->input('newEnd'));
             } else {
                 $appointment->end = $dateBase . ' ' . $request->input('newEnd');
             }
 
             // Identificar citas continuas
-            if($isDate) $continuousAppointments = self::identifyContinuousAppointments($appointment, $request->input('mergeQuantity'));
+            if ($isDate) $continuousAppointments = self::identifyContinuousAppointments($appointment, $request->input('mergeQuantity'));
 
             // Actualizar citas continuas si existen
-            if($isDate && !$continuousAppointments->isEmpty()){
+            if ($isDate && !$continuousAppointments->isEmpty()) {
                 // Calcular nueva duración por servicio
-                $duration_per_service = round( $newDuration/($continuousAppointments->count()>0?$continuousAppointments->count(): 1),0,PHP_ROUND_HALF_DOWN);
+                $duration_per_service = round($newDuration / ($continuousAppointments->count() > 0 ? $continuousAppointments->count() : 1), 0, PHP_ROUND_HALF_DOWN);
                 $new_start = Carbon::parse($appointment->start);
 
                 // Actualizar la duración y start de cada cita continua
-                foreach($continuousAppointments as $appointment)
-                {
+                foreach ($continuousAppointments as $appointment) {
                     $appointment->duration = $duration_per_service;
                     $appointment->start = $new_start;
                     $appointment->save();
                     $new_start->addMinutes($duration_per_service);
                 }
-                
+
                 $appointment->duration = $duration_per_service;
                 $appointment->save();
             }
 
             // Actualizar empleado si el tipo es 'employee' y es diferente al actual
             if ($type == 'employee') {
-                if($appointment->empleado_id !== $request->input('employee')){
+                if ($appointment->empleado_id !== $request->input('employee')) {
                     // Actualizar campos en común
                     $empleado = $request->input('employee');
                     $appointment->empleado_id = $empleado;
                     $appointment->color = empleado::select('color_preset')->find($empleado)->color_preset;
                     // Recalcular comisión si es una cita
-                    if($isDate){
-                        $itemToCalculatecomision = self::generateItemToCalculateComision($appointment,$empleado);
-                        $comision = self::defineComisionService($itemToCalculatecomision,'servicio');
+                    if ($isDate) {
+                        $itemToCalculatecomision = self::generateItemToCalculateComision($appointment, $empleado);
+                        $comision = self::defineComisionService($itemToCalculatecomision, 'servicio');
                         $appointment->comission = $comision['balance'];
                         $appointment->type_comision_calculated = $comision['type'];
                     }
                     // Actualizar citas continuas si existen
-                    if(!$continuousAppointments->isEmpty()){
-                        foreach($continuousAppointments as $contApp){
+                    if (!$continuousAppointments->isEmpty()) {
+                        foreach ($continuousAppointments as $contApp) {
                             $contApp->empleado_id = $empleado;
                             $contApp->color = empleado::select('color_preset')->find($empleado)->color_preset;
                             // Recalcular comisión
-                            $itemToCalculatecomision = self::generateItemToCalculateComision($contApp,$empleado);
-                            $comision = self::defineComisionService($itemToCalculatecomision,'servicio');
+                            $itemToCalculatecomision = self::generateItemToCalculateComision($contApp, $empleado);
+                            $comision = self::defineComisionService($itemToCalculatecomision, 'servicio');
                             $contApp->comission = $comision['balance'];
                             $contApp->type_comision_calculated = $comision['type'];
                             $contApp->save();
@@ -690,7 +735,7 @@ class DataResourceGrid extends Controller
 
             // Guardar el objeto y retornar respuesta en caso de ser bloqueo
             $appointment->save();
-            if(!$isDate){
+            if (!$isDate) {
                 return response()->json(['message' => 'Appointment updated successfully']);
             }
 
@@ -702,19 +747,19 @@ class DataResourceGrid extends Controller
             $date->save();
 
             return response()->json(['message' => 'Appointment updated successfully']);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     private static function identifyContinuousAppointments($detail, $grouped)
     {
-        try{
+        try {
             // Ordenamos los detalles por hora de inicio
             $details_sorted = $detail->date->details
-                ->sortBy(fn ($d) => [$d->empleado_id,$d->start])
+                ->sortBy(fn($d) => [$d->empleado_id, $d->start])
                 ->values();
             // Obtenemos el índice del detalle actual
-            $index = $details_sorted->search(fn ($d) => $d->id === $detail->id);
+            $index = $details_sorted->search(fn($d) => $d->id === $detail->id);
 
             if ($index === false) {
                 return collect(); // Por seguridad, si no se encuentra
@@ -724,11 +769,11 @@ class DataResourceGrid extends Controller
             $remaining = $details_sorted->slice($index, intval($grouped + $index))->values();
 
             return $remaining;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
-    private static function generateItemToCalculateComision($appointment,$empleado)
+    private static function generateItemToCalculateComision($appointment, $empleado)
     {
         $item['sid'] = $appointment->selected_service ?? $appointment['servicioId'];
         $item['vendedor'] = $empleado;
@@ -751,54 +796,54 @@ class DataResourceGrid extends Controller
     }
     public static function determinatePriceOutOfDiscounts($app)
     {
-        try{
+        try {
             $priceOrDiscount = self::priceOrDiscount($app);
             $qty = $app['quantity'] ?? 1;
             $discount_qty = $app['discount_qty'] ?? $app->discount_qty;
             $discount_type = $app->discount_type ?? $app['discount_type'];
-            $finalPriceOutOfDiscounts = $discount_qty > 0 ? ($discount_type == 'Porcentaje' ? (floatval($priceOrDiscount - (($discount_qty/100)*$priceOrDiscount)) * $qty) : floatval(($priceOrDiscount * $qty) - $discount_qty)) : floatval($priceOrDiscount * $qty);
+            $finalPriceOutOfDiscounts = $discount_qty > 0 ? ($discount_type == 'Porcentaje' ? (floatval($priceOrDiscount - (($discount_qty / 100) * $priceOrDiscount)) * $qty) : floatval(($priceOrDiscount * $qty) - $discount_qty)) : floatval($priceOrDiscount * $qty);
 
             return $finalPriceOutOfDiscounts;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
-    private static function calculateNewDuration($appointment,$end)
+    private static function calculateNewDuration($appointment, $end)
     {
-        try{
+        try {
             $diff = Carbon::parse($end)->diffInMinutes($appointment->start);
             return $diff;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     private static function calculateStartEndDate($date)
     {
-        try{
+        try {
             // Ordenar los detalles por el campo 'start'
             $details = $date->details->sortBy('start');
-        
+
             // Obtener el primer y último elemento después de ordenar
             $newStart = $details->first()->start;
             $lastDetail = $details->last();
-        
+
             // Calcular 'newEnd' sumando la duración del último detalle al 'start' del último detalle
             $lastStart = Carbon::parse($lastDetail->start);
             $newEnd = $lastStart->addMinutes($lastDetail->duration)->format('Y-m-d H:i:s');
-        
+
             return [
                 'start' => $newStart,
                 'end' => $newEnd
             ];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
-    
+
     public static function defineComisionService($item)
     {
-        try{
-            $empleado = Empleado::with('comision.excepcion_servicio','comision.excepcion_cat_servicio')->find($item['vendedor']);
+        try {
+            $empleado = Empleado::with('comision.excepcion_servicio', 'comision.excepcion_cat_servicio')->find($item['vendedor']);
             $balance = 0;
             $type = 'percent';
 
@@ -847,73 +892,71 @@ class DataResourceGrid extends Controller
             }
 
             return ['balance' => $balance, 'type' => $type];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function defineBasePrice($item)
     {
-        try{
-            if($item['base_comision']){
+        try {
+            if ($item['base_comision']) {
                 return $item['total'];
-            }else{
+            } else {
                 return $item['disccount_price'] ? $item['disccount_price'] : $item['sale_price'];
             }
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function deleteDate(Request $request)
     {
-        try{
-            $date_id = $request->input('date_id'); 
-            $date = cita::with('files','metodosPago','propinas','details.materiales','etiquetas','details_product','abonos','abonoPropinas')->find($date_id);
+        try {
+            $date_id = $request->input('date_id');
+            $date = cita::with('files', 'metodosPago', 'propinas', 'details.materiales', 'etiquetas', 'details_product', 'abonos', 'abonoPropinas')->find($date_id);
             if (!$date) {
                 return response()->json(['message' => 'not found']);
             }
             // if($type == 'cita'){
-                // self::cancelarStock();
-                self::cancelarPuntos($date);
-                // $respaldoData = $this->respaldarInfo();
-                // $this->recuperarMensajes();
-                self::deleteRelations($date);
+            // self::cancelarStock();
+            self::cancelarPuntos($date);
+            // $respaldoData = $this->respaldarInfo();
+            // $this->recuperarMensajes();
+            self::deleteRelations($date);
             // }
             // elseif($type == 'bloqueo'){
             //     bloqueo::find($this->asignacion_id)->delete();  
             //     $this->dispatchBrowserEvent('cerrarBlockMenuForm');
             // }
             return response()->json(['message' => 'ok']);
-        
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function deleteBlocking(Request $request)
     {
-        try{
-            $blocking_id = $request->input('blocking_id'); 
+        try {
+            $blocking_id = $request->input('blocking_id');
             $blocking = bloqueo::find($blocking_id);
             if (!$blocking) {
                 return response()->json(['message' => 'not found']);
             }
             $blocking->delete();
             return response()->json(['message' => 'ok']);
-        
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
-    
+
     private static function deleteRelations($date)
     {
-        if(isset($date->files)){
+        if (isset($date->files)) {
             self::deleteFiles($date->files);
         }
         self::deleteItems($date->metodosPago);
         self::deleteItems($date->propinas);
         // self::deleteItems($date->mensajesEnviados);
-        foreach($date->details as $detail){
-            if(isset($detail->materiales)){
+        foreach ($date->details as $detail) {
+            if (isset($detail->materiales)) {
                 self::deleteItems($detail->materiales);
             }
         }
@@ -925,40 +968,39 @@ class DataResourceGrid extends Controller
         $date->delete();
     }
 
-    private static function deleteItems($relation,$metodo=false)
+    private static function deleteItems($relation, $metodo = false)
     {
-        try{
-            foreach($relation as $item){
+        try {
+            foreach ($relation as $item) {
                 $item->delete();
             }
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     private static function deleteFiles($files)
     {
-        try{
-            foreach($files as $file) {
-                $filename = 'storage/citas/' . $file->file; 
+        try {
+            foreach ($files as $file) {
+                $filename = 'storage/citas/' . $file->file;
                 unlink($filename);
                 $file->delete();
             }
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
 
     private static function cancelarPuntos($date)
     {
-        try{
-            if(isset($date->customer->tarjetaPuntos)){
+        try {
+            if (isset($date->customer->tarjetaPuntos)) {
                 $tarjeta = $date->customer->tarjetaPuntos;
                 $tarjeta->balance -= $date->generated_points;
                 $tarjeta->save();
             }
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
 }
-
