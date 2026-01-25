@@ -254,6 +254,9 @@
         const tbody = document.getElementById('tableEmployees');
         tbody.innerHTML = '';
 
+        // Ordenar datos por amount descendente excluyendo name = "Total"
+        data = data.filter(item => item.name !== "Total").sort((a, b) => b.amount - a.amount);
+
         data.forEach((item, index) => {
         if (item.amount === 0) return; // Omitir empleados con amount 0
         tbody.innerHTML += `
