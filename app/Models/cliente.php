@@ -68,6 +68,11 @@ class cliente extends Model
     {
         return $this->hasMany(excepcion_cliente::class);
     }
+    public function scopeVisits(Builder $query, $direction = 'asc')
+    {
+        return $query->withCount('citas', 'compras')
+                    ->orderByRaw("(citas_count + compras_count) {$direction}");
+    }
     public function scopeOrderByBirthdayProximity(Builder $query, $direction = 'asc')
     {
         $today = now();

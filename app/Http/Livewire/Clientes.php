@@ -999,6 +999,8 @@ class Clientes extends Component
             if($wPag){
                 if($this->by=='birth_dateC'){
                     $query = cliente::orderByBirthdayProximity('asc')->paginate(12);
+                }elseif($this->by=='visits'){
+                    $query = cliente::visits($this->sort)->where('salon_id', Auth::user()->salon_id)->paginate(12);
                 }else{
                     $query = $query->orderBy($this->by, $this->sort)->paginate(12);
                 }
@@ -1479,6 +1481,9 @@ class Clientes extends Component
                 break;
             case 'añadido':
                 $this->by = 'created_at';
+                break;
+            case 'visitas':
+                $this->by = 'visits';
                 break;
         }
         if($type){

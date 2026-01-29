@@ -36,6 +36,15 @@
         </ul>
         <br>
         <hr>
+        <ul>
+            Visitas
+            <li class="float-right">
+                <a wire:click.defer="$emit('orderBy', 'visitas',1)"><ul>Más visitas</ul></a>
+                <a wire:click.defer="$emit('orderBy', 'visitas',0)"><ul>Menos visitas</ul></a>
+            </li>
+        </ul>
+        <br>
+        <hr>
         <ul>Cumpleaños
             <li class="float-right">
                 <a wire:click.defer="$emit('orderBy', 'cumpleaños',0)"><ul>Más próximo</ul></a>

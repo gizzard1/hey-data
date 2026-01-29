@@ -32,6 +32,9 @@
                             <th  class="ult-ver"style="background-color:transparent;color:#9D1466 !important">Email</th>
                             <th style="background-color:transparent;color:#9D1466 !important">Teléfono</th>
                             <th  class="ult-ver"style="background-color:transparent;color:#9D1466 !important">Añadido</th>
+                            @if($by == 'visits')
+                            <th  class="ult-ver"style="background-color:transparent;color:#9D1466 !important">Visitas</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody id="controls">
@@ -53,6 +56,9 @@
                             <td class="ult-ver"> <a style="color:#515457" href="mailto:{{ $item->email ?? $item['email'] }}">{{ $item->email ? $item['email'] : '-' }} </a></td>
                             <td> {{ $item->phone ? $item['phone'] : '-' }} </td>
                             <td class="ult-ver"> {{ $item->created_at ? $item['created_at'] : '-' }} </td>
+                            @if($by == 'visits')
+                            <td class="ult-ver"> {{ ($item->citas_count ?? 0) + ($item->compras_count ?? 0) }} </td>
+                            @endif
                         </tr>
                         @empty
                         <tr>
