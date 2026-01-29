@@ -1,6 +1,6 @@
 @push('my-scripts')
 <script>
-document.addEventListener('livewire:load', function () {
+    document.addEventListener('livewire:load', function () {
     Livewire.on('refrescarCharts',data =>{
         var eData=JSON.parse(data.dataEmpleados);
 
@@ -80,6 +80,7 @@ function transformPaymentData(data) {
   if (!Array.isArray(data)) {
     // Transformar el objeto con arrays en array de objetos
     return data.label.map((label, index) => ({
+      id: data.index ? data.index[index] : index + 1,
       label: label,
       percent: parseFloat(data.percent[index]) * 100, // Convertir a porcentaje
       color: data.color[index],
@@ -94,7 +95,7 @@ const paymentMethodsState = {
     expandedSecondary: {}
 };
 
-const NUM_PRIMARY_METHODS = 4; // Los primeros 4 conceptos son primarios
+const NUM_PRIMARY_METHODS = 5; // Los primeros 5 conceptos son primarios
 
 function separatePaymentMethods(data, useAllData) {
   const primary = [];
@@ -105,11 +106,11 @@ function separatePaymentMethods(data, useAllData) {
   const validItems = data.filter(item => item.label !== 'Total' && item.amount !== 0);
 
   validItems.forEach((item, index) => {
-    if (index < NUM_PRIMARY_METHODS || useAllData) {
-      // Los primeros 4 son primarios
+    if (item.id <= NUM_PRIMARY_METHODS || useAllData) {
+      // Los primeros 5 son primarios
       primary.push(item);
       // El 4to item puede contener los secundarios
-      if (index === NUM_PRIMARY_METHODS - 1 && !useAllData) {
+      if (item.id === NUM_PRIMARY_METHODS && !useAllData) {
         fourthItemForSecondary = item;
       }
     } else {
@@ -117,7 +118,7 @@ function separatePaymentMethods(data, useAllData) {
       secondary.push(item);
     }
   });
-
+  
   // Agrupar métodos secundarios bajo el 4to item (Otros)
   if (secondary.length > 0 && fourthItemForSecondary) {
     fourthItemForSecondary.secondary = secondary;
@@ -520,7 +521,7 @@ function renderLegend(containerId, data, useAllData=false) {
 
     // Separar por posición
     validItems.forEach((item, index) => {
-        if (index < NUM_PRIMARY_METHODS || useAllData) {
+        if (item.id <= NUM_PRIMARY_METHODS || useAllData) {
             total += item.amount;
             primary.push(item);
         } else {
@@ -530,7 +531,7 @@ function renderLegend(containerId, data, useAllData=false) {
 
     // Renderizar items primarios
     primary.forEach((item, index) => {
-        const isExpandable = index === NUM_PRIMARY_METHODS - 1 && secondary.length > 0 && !useAllData;
+        const isExpandable = item.id === NUM_PRIMARY_METHODS && secondary.length > 0 && !useAllData;
         const isExpanded = paymentMethodsState.expandedSecondary[containerId + '_' + item.label];
         
         container.innerHTML += `
