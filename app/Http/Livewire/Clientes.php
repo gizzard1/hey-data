@@ -552,7 +552,7 @@ class Clientes extends Component
                             })->get();
                             // $query = $this->atendidosPor($filtro['query'],$query);
                         }elseif($filtro['type'] == 'inactivo'){
-                            $query->where(function ($query) use ($itemQuery, $fecha_inicio, $fecha_fin,$is_interval) {
+                            $query->where(function ($query) use ($fecha_inicio, $fecha_fin,$is_interval) {
                                 if($is_interval){
                                     $query->whereDoesntHave('citas', function ($q) use ($fecha_inicio, $fecha_fin) {
                                         $q->whereBetween('created_at', [
@@ -563,7 +563,7 @@ class Clientes extends Component
                                 }else{
                                     $query->whereDoesntHave('citas');
                                 }
-                            })->orWhere(function ($query) use ($itemQuery, $fecha_inicio, $fecha_fin,$is_interval) {
+                            })->orWhere(function ($query) use ($fecha_inicio, $fecha_fin,$is_interval) {
                                 if($is_interval){
                                     $query->whereDoesntHave('compras', function ($q) use ($fecha_inicio, $fecha_fin) {
                                         $q->whereBetween('created_at', [
@@ -574,7 +574,8 @@ class Clientes extends Component
                                 }else{
                                     $query->whereDoesntHave('compras');
                                 }
-                            })->get();
+                            });
+                            $query->where('salon_id',Auth::user()->salon->id);
                         }elseif($filtro['type'] == 'birth_date'){
                             if($is_interval){
                                 // Extraer mes y día de las fechas de inicio y fin
