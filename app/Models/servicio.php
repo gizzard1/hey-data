@@ -14,7 +14,7 @@ class servicio extends Model
         'description',
         'iva',
         'gross_price',
-        'discount_price',
+        'disccount_price',
         'duration',
         'brand_id',
         'reward_points',
