@@ -56,7 +56,7 @@
                             <td class="ult-ver"> <a style="color:#515457" href="mailto:{{ $item->email ?? $item['email'] }}">{{ $item->email ? $item['email'] : '-' }} </a></td>
                             <td> {{ $item->phone ? $item['phone'] : '-' }} </td>
                             <td class="ult-ver"> {{ $item->created_at ? $item['created_at'] : '-' }} </td>
-                            @if($by == 'visits')
+                            @if($by == 'visits' || $item->citas_count || $item->compras_count)
                             <td class="ult-ver"> {{ ($item->citas_count ?? 0) + ($item->compras_count ?? 0) }} </td>
                             @endif
                         </tr>

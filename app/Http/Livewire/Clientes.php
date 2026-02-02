@@ -29,51 +29,51 @@ use Maatwebsite\Excel\Facades\Excel;
 class Clientes extends Component
 {
     use WithPagination;
-    use CustomerTrait;  
-    public $is_modal=0;
+    use CustomerTrait;
+    public $is_modal = 0;
 
-    public $search, $records,  $editing, $action = 1,$infoSelected=1,$card, $customerSelected, $categorias,$cliente_id;
+    public $search, $records,  $editing, $action = 1, $infoSelected = 1, $card, $customerSelected, $categorias, $cliente_id;
     public cliente $cliente; // propiedad de tipo cliente
     public $tax_data; // databinding / vinculacion de datos anidados con la notacion dot
 
-    public $currentDate, $currentDateEnd,$is_interval=false;
-    public $start,$currentDateC,$end,$currentDateCEnd;
-    private $dataMovimientos,$clientes;
-    private $hay_query=false;
-    public $sort='asc', $by='first_name';
+    public $currentDate, $currentDateEnd, $is_interval = false;
+    public $start, $currentDateC, $end, $currentDateCEnd;
+    private $dataMovimientos, $clientes;
+    private $hay_query = false;
+    public $sort = 'asc', $by = 'first_name';
     public Collection $filtros;
-    public $listCategories=[],$promedio,$topProducts,$topServices;
+    public $listCategories = [], $promedio, $topProducts, $topServices;
     private $empleados;
 
-    public $customer_card,$barcode;
+    public $customer_card, $barcode;
 
-    public $selectedItems = [],$merge = [], $sumPoints=0, $puntaje=0, $clientes_tarjeta=0;
-    public $servicesAverage=0,$productsAverage=0;
-    public $pestaña=1,$infoSales=[],$infoDates=[],$lada,$procedencias=[];
-    public $showmeMore=0,$productos=[],$categoriaProductos=[],$servicios=[],$categoriaServicios=[],$proveedores = [];
-    public $editingTaxData=false;
+    public $selectedItems = [], $merge = [], $sumPoints = 0, $puntaje = 0, $clientes_tarjeta = 0;
+    public $servicesAverage = 0, $productsAverage = 0;
+    public $pestaña = 1, $infoSales = [], $infoDates = [], $lada, $procedencias = [];
+    public $showmeMore = 0, $productos = [], $categoriaProductos = [], $servicios = [], $categoriaServicios = [], $proveedores = [];
+    public $editingTaxData = false;
     public $tax_systems = [
-        "601"=>"General de Ley Personas Morales",
-        "603"=>"Personas Morales con Fines no Lucrativos",
-        "605"=>"Sueldos y Salarios e Ingresos Asimilados a Salarios",
-        "606"=>"Arrendamiento",
-        "607"=>"Régimen de Enajenación o Adquisición de Bienes",
-        "608"=>"Demás ingresos",
-        "609"=>"Consolidación",
-        "611"=>"Ingresos por Dividendos (socios y accionistas)",
-        "612"=>"Personas Físicas con Actividades Empresariales y Profesionales",
-        "614"=>"Ingresos por intereses",
-        "615"=>"Régimen de los ingresos por obtención de premios",
-        "616"=>"Sin obligaciones fiscales",
-        "620"=>"Sociedades Cooperativas de Producción que optan por Diferir sus Ingresos",
-        "621"=>"Incorporación Fiscal",
-        "622"=>"Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras",
-        "623"=>"Opcional para Grupos de Sociedades",
-        "624"=>"Coordinados",
-        "626"=>"Régimen Simplificado de Confianza (RESICO)",
-        "628"=>"Hidrocarburos",
-        "629"=>"De los Regímenes Fiscales Preferentes y de las Empresas Multinacionales",
-        "630"=>"Enajenación de acciones en bolsa de valores",
+        "601" => "General de Ley Personas Morales",
+        "603" => "Personas Morales con Fines no Lucrativos",
+        "605" => "Sueldos y Salarios e Ingresos Asimilados a Salarios",
+        "606" => "Arrendamiento",
+        "607" => "Régimen de Enajenación o Adquisición de Bienes",
+        "608" => "Demás ingresos",
+        "609" => "Consolidación",
+        "611" => "Ingresos por Dividendos (socios y accionistas)",
+        "612" => "Personas Físicas con Actividades Empresariales y Profesionales",
+        "614" => "Ingresos por intereses",
+        "615" => "Régimen de los ingresos por obtención de premios",
+        "616" => "Sin obligaciones fiscales",
+        "620" => "Sociedades Cooperativas de Producción que optan por Diferir sus Ingresos",
+        "621" => "Incorporación Fiscal",
+        "622" => "Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras",
+        "623" => "Opcional para Grupos de Sociedades",
+        "624" => "Coordinados",
+        "626" => "Régimen Simplificado de Confianza (RESICO)",
+        "628" => "Hidrocarburos",
+        "629" => "De los Regímenes Fiscales Preferentes y de las Empresas Multinacionales",
+        "630" => "Enajenación de acciones en bolsa de valores",
     ];
     protected $rules =
     [
@@ -90,7 +90,7 @@ class Clientes extends Component
         'cliente.want_custom_messages' => 'nullable',
         'cliente.platform_id' => 'nullable',
 
-        
+
         'tax_data.rfc' => ['required', 'regex:/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/i'],
         'tax_data.company_name' => 'required|min:3|max:100',
         'tax_data.tax_system' => 'required|max:3',
@@ -115,7 +115,7 @@ class Clientes extends Component
     protected $paginationTheme = 'bootstrap';
     public function changeNorma()
     {
-        foreach($this->selectedItems as $cliente){
+        foreach ($this->selectedItems as $cliente) {
             $cust = cliente::find($cliente);
             $cust->procedencia_id = 1;
             $cust->save();
@@ -124,26 +124,26 @@ class Clientes extends Component
         $this->dispatchBrowserEvent('noty', ['msg' => 'SOLICITUD PROCESADA CON ÉXITO']);
     }
 
-    public function mount($custId=null,$search=null)
+    public function mount($custId = null, $search = null)
     {
-        try{
-            if($custId){
+        try {
+            if ($custId) {
                 $this->viewCust($custId);
             }
-            $this->search=$search;
+            $this->search = $search;
             $this->loadDefault();
 
             $this->clientes = $this->loadCustomers();
 
             $this->empleados = $this->loadEmpleados();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41180Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41180Clientes"]);
         }
     }
 
     private function loadProcedencias()
     {
-        return procedencia::where('salon_id',null)->orWhere('salon_id',Auth::user()->salon->id)->get();
+        return procedencia::where('salon_id', null)->orWhere('salon_id', Auth::user()->salon->id)->get();
     }
 
 
@@ -163,7 +163,7 @@ class Clientes extends Component
         } else {
             $this->selectedItems[] = $itemId;
         }
-        
+
         $this->selectedItems = array_values($this->selectedItems); // Reindexar el array
 
     }
@@ -172,15 +172,15 @@ class Clientes extends Component
     {
         $this->cliente = new cliente;
         $this->clientes_tarjeta = 0;
-        foreach($this->selectedItems as $cliente){
-            $cust = cliente::with('tarjetaPuntos','procedencia')->find($cliente); 
+        foreach ($this->selectedItems as $cliente) {
+            $cust = cliente::with('tarjetaPuntos', 'procedencia')->find($cliente);
             $this->merge[] = $cust;
-            if(isset($cust->tarjetaPuntos)){
+            if (isset($cust->tarjetaPuntos)) {
                 $this->sumPoints += $cust->tarjetaPuntos->balance;
                 $this->barcode = $cust->tarjetaPuntos->intern_barcode;
                 $this->clientes_tarjeta += 1;
             }
-            
+
             $this->cliente->salon_id = $cust->salon_id;
             $this->cliente->first_name = $cust->first_name;
             $this->cliente->last_name = $cust->last_name;
@@ -192,7 +192,6 @@ class Clientes extends Component
             $this->cliente->procedencia_id = $cust->procedencia_id;
             $this->cliente->email = $cust->email;
             $this->cliente->phone = $cust->phone;
-
         }
     }
     public function mergeCustomers()
@@ -202,8 +201,8 @@ class Clientes extends Component
             'cliente.procedencia_id' => "nullable",
         ]);
 
-        try{
-            
+        try {
+
             $had_card = false;
 
             // Si la asignación no existe, crea una nueva
@@ -225,53 +224,52 @@ class Clientes extends Component
 
             $newCustId = $newCust->id;
 
-            foreach($this->selectedItems as $cliente){
-                $cust = cliente::with('excepciones','tarjetaPuntos','calificaciones','reviews','materiales','respuestas','citas','categorias','compras')->find($cliente);
+            foreach ($this->selectedItems as $cliente) {
+                $cust = cliente::with('excepciones', 'tarjetaPuntos', 'calificaciones', 'reviews', 'materiales', 'respuestas', 'citas', 'categorias', 'compras')->find($cliente);
 
-                if(isset($cust->tarjetaPuntos)){
+                if (isset($cust->tarjetaPuntos)) {
                     $had_card = true;
                 }
-                if(isset($cust->calificaciones)){
-                    $this->transferRelation($cust->calificaciones,$newCustId);
+                if (isset($cust->calificaciones)) {
+                    $this->transferRelation($cust->calificaciones, $newCustId);
                 }
-                if(isset($cust->reviews)){
-                    $this->transferRelation($cust->reviews,$newCustId);
+                if (isset($cust->reviews)) {
+                    $this->transferRelation($cust->reviews, $newCustId);
                 }
-                if(isset($cust->datosFacturacion)){
-                    $this->transferRelation($cust->datosFacturacion,$newCustId);
+                if (isset($cust->datosFacturacion)) {
+                    $this->transferRelation($cust->datosFacturacion, $newCustId);
                 }
-                if(isset($cust->respuestas)){
-                    $this->transferRelation($cust->respuestas,$newCustId);
+                if (isset($cust->respuestas)) {
+                    $this->transferRelation($cust->respuestas, $newCustId);
                 }
-                if(isset($cust->excepciones)){
-                    $this->transferRelation($cust->excepciones,$newCustId);
+                if (isset($cust->excepciones)) {
+                    $this->transferRelation($cust->excepciones, $newCustId);
                 }
-                if(isset($cust->materiales)){
-                    $this->transferRelation($cust->materiales,$newCustId,1);
+                if (isset($cust->materiales)) {
+                    $this->transferRelation($cust->materiales, $newCustId, 1);
                 }
-                if(isset($cust->compras)){
-                    $this->transferRelation($cust->compras,$newCustId,1);
+                if (isset($cust->compras)) {
+                    $this->transferRelation($cust->compras, $newCustId, 1);
                 }
-                if(isset($cust->citas)){
-                    $this->transferRelation($cust->citas,$newCustId,1);
+                if (isset($cust->citas)) {
+                    $this->transferRelation($cust->citas, $newCustId, 1);
                 }
-        
-                if(isset($cust->categorias)){
+
+                if (isset($cust->categorias)) {
                     // Transferir las categorias al nuevo cliente
                     $categoriesList = $cust->categorias->pluck('id'); // Obtener los IDs de las categorias
                     // Asignar las categorias al nuevo cliente
                     $newCust->categorias()->attach($categoriesList);
                 }
-
             }
-            
-            foreach($this->selectedItems as $cliente){
-                $cust = cliente::with('datosFacturacion','tarjetaPuntos','calificaciones','reviews','materiales','respuestas','citas','categorias','compras','excepciones')->find($cliente);
+
+            foreach ($this->selectedItems as $cliente) {
+                $cust = cliente::with('datosFacturacion', 'tarjetaPuntos', 'calificaciones', 'reviews', 'materiales', 'respuestas', 'citas', 'categorias', 'compras', 'excepciones')->find($cliente);
 
                 // Buscar el índice del valor a eliminar
                 $key = array_search($cust->id, $this->selectedItems);
                 unset($this->selectedItems[$key]);
-                
+
                 $this->destroy($cust);
             }
 
@@ -280,42 +278,41 @@ class Clientes extends Component
                 $newCust->phone = $this->cliente->phone;
 
                 $newCust->save();
-                
-                if($had_card){
+
+                if ($had_card) {
                     $this->customer_card = $newCust;
                     $this->StoreCard();
                 }
-                
+
                 $this->endMerge();
             }
 
             if (session()->has('customDate')) {
                 Carbon::setTestNow();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41340Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41340Clientes"]);
         }
     }
-    private function transferRelation($items,$id,$mov=0)
+    private function transferRelation($items, $id, $mov = 0)
     {
-        foreach($items as $item){
-            if($mov){
+        foreach ($items as $item) {
+            if ($mov) {
                 $item->customer()->associate($id);
-            }else{
+            } else {
                 $item->cliente()->associate($id);
             }
             $item->save();
         }
-
     }
 
     public function endMerge()
     {
-        $this->merge = []; 
+        $this->merge = [];
         $this->sumPoints = 0;
         $this->selectedItems = [];
         $this->clientes_tarjeta = 0;
-        $this->barcode=null;
+        $this->barcode = null;
         $this->dispatchBrowserEvent('closeMerge');
     }
     private function loadDefault()
@@ -326,15 +323,18 @@ class Clientes extends Component
         $this->cliente->procedencia_id = null;
 
         $this->lada = '+52';
-        $this->tax_data = ['state' => 'JC','city' => '120',
-            'type' => 'shipping','country' => 'MX'
+        $this->tax_data = [
+            'state' => 'JC',
+            'city' => '120',
+            'type' => 'shipping',
+            'country' => 'MX'
         ];
 
         $this->customer_card = null;
         $this->barcode = null;
 
-        $this->listCategories=[];
-        
+        $this->listCategories = [];
+
         if (session()->has('filtros')) {
             $this->filtros = session('filtros');
         } else {
@@ -346,11 +346,24 @@ class Clientes extends Component
         $this->loadDefaultTax();
     }
     protected $listeners = [
-        'refreshComponent' => '$refresh','updateRange',
-        'search' => 'searching','updateQueryMoney',
-        'eliminar', 'updateType', 'updateQuery','deleteFilter','deleteCard',
-        'datesSelected'=>'setDatesFromPeriod','orderBy','dateSelected'=> 'setDate',
-        'datesForFilters','activateCard','activateCardWithBalance','activateModalForm','categoriaAgregada','selectedItemToEdit'=>'viewCust',
+        'refreshComponent' => '$refresh',
+        'updateRange',
+        'search' => 'searching',
+        'updateQueryMoney',
+        'eliminar',
+        'updateType',
+        'updateQuery',
+        'deleteFilter',
+        'deleteCard',
+        'datesSelected' => 'setDatesFromPeriod',
+        'orderBy',
+        'dateSelected' => 'setDate',
+        'datesForFilters',
+        'activateCard',
+        'activateCardWithBalance',
+        'activateModalForm',
+        'categoriaAgregada',
+        'selectedItemToEdit' => 'viewCust',
         'viewTaxData'
     ];
     public function categoriaAgregada()
@@ -360,80 +373,80 @@ class Clientes extends Component
 
     public function render()
     {
-        try{
-            return view('livewire.clientes',['merge' => $this->merge,'sumPoints' => $this->sumPoints,'dataServices' => $this->topServices, 'dataProducts' => $this->topProducts, 'calificacion' => $this->promedio,'categoriasCliente' => $this->listCategories,'clientes'=>$this->loadCustomers(),'empleados'=>$this->loadEmpleados(),'productos'=>$this->productos,'categoriaProductos'=>$this->categoriaProductos,'categoriaServicios'=>$this->categoriaServicios,'proveedores'=>$this->proveedores,'servicios'=>$this->servicios,'servicesAverage' => $this->servicesAverage,'productsAverage' => $this->productsAverage]);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 71181Clientes"] );
+        try {
+            return view('livewire.clientes', ['merge' => $this->merge, 'sumPoints' => $this->sumPoints, 'dataServices' => $this->topServices, 'dataProducts' => $this->topProducts, 'calificacion' => $this->promedio, 'categoriasCliente' => $this->listCategories, 'clientes' => $this->loadCustomers(), 'empleados' => $this->loadEmpleados(), 'productos' => $this->productos, 'categoriaProductos' => $this->categoriaProductos, 'categoriaServicios' => $this->categoriaServicios, 'proveedores' => $this->proveedores, 'servicios' => $this->servicios, 'servicesAverage' => $this->servicesAverage, 'productsAverage' => $this->productsAverage]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 71181Clientes"]);
         }
     }
     public function crearCliente()
     {
         $this->activateModalForm();
     }
-    public function activateModalForm($custId=null)
+    public function activateModalForm($custId = null)
     {
         $this->selectedItems[0] = $custId;
         $this->dispatchBrowserEvent('activateModal');
-        if($custId){
+        if ($custId) {
             $this->Edit();
         }
     }
     private function loadEmpleados()
     {
-        $empleados = Empleado::where('salon_id',Auth::user()->salon_id)->get();
+        $empleados = Empleado::where('salon_id', Auth::user()->salon_id)->get();
         return $empleados;
     }
     public function activateCardWithBalance($data)
     {
-        try{
+        try {
             $this->puntaje = $data['puntaje'];
             $this->activateCard($data['id']);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 8432182Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 8432182Clientes"]);
         }
     }
-    public function activateCard($cliente_id=null)
+    public function activateCard($cliente_id = null)
     {
-        try{
-            if($cliente_id){
+        try {
+            if ($cliente_id) {
                 $cliente = cliente::with('tarjetaPuntos')->find($cliente_id);
-            }else{
+            } else {
                 $cliente = cliente::with('tarjetaPuntos')->find($this->selectedItems[0]);
             }
             $this->customer_card = $cliente;
             $this->barcode = $cliente->tarjetaPuntos->intern_barcode ?? null;
             $this->dispatchBrowserEvent('activateCardCustomer');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 82182Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 82182Clientes"]);
         }
     }
     public function editCard($barcode)
     {
-        
-        try{
-            $this->barcode = $barcode ?? tarjetas_punto::where('cliente_id',$this->selectedItems[0])->first()->intern_barcode;
+
+        try {
+            $this->barcode = $barcode ?? tarjetas_punto::where('cliente_id', $this->selectedItems[0])->first()->intern_barcode;
             $this->dispatchBrowserEvent('editCardCustomer');
             $this->emit('refresh');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 82182Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 82182Clientes"]);
         }
     }
-    public function saveCard($wBC=1)
+    public function saveCard($wBC = 1)
     {
-        try{
-            $card = tarjetas_punto::where('cliente_id',$this->selectedItems[0])->first();
-            if($wBC){
+        try {
+            $card = tarjetas_punto::where('cliente_id', $this->selectedItems[0])->first();
+            if ($wBC) {
                 $card->intern_barcode = $this->barcode;
-            }else{
+            } else {
                 $card->intern_barcode = null;
             }
             $card->save();
-            $this->dispatchBrowserEvent('noty', ['msg' =>  "SOLICITUD PROCESADA CON ÉXITO"] );
+            $this->dispatchBrowserEvent('noty', ['msg' =>  "SOLICITUD PROCESADA CON ÉXITO"]);
             $this->dispatchBrowserEvent('closeEC');
             $this->viewCust();
             $this->emit('refresh');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 82312Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 82312Clientes"]);
         }
     }
     public function StoreCard()
@@ -441,109 +454,115 @@ class Clientes extends Component
         $this->validate([
             'barcode' => "nullable|min:1|max:100|unique:tarjetas_puntos,intern_barcode"
         ]);
-        try{
+        try {
             $tarjeta = $this->customer_card->tarjetaPuntos;
-            if($tarjeta){
+            if ($tarjeta) {
                 $tarjeta->intern_barcode = $this->barcode;
                 $tarjeta->save();
-            }else{
+            } else {
                 $card = new tarjetas_punto();
                 $card->intern_barcode = $this->barcode;
                 $card->cliente()->associate($this->customer_card);
                 $card->balance = $this->puntaje;
                 $card->save();
             }
-            
+
             $this->loadDefault();
             $this->dispatchBrowserEvent('closeAC');
-            $this->dispatchBrowserEvent('noty', ['msg' =>  "SOLICITUD PROCESADA CON ÉXITO"] );
+            $this->dispatchBrowserEvent('noty', ['msg' =>  "SOLICITUD PROCESADA CON ÉXITO"]);
             $this->emit('refresh');
-            if($this->puntaje>0){
+            if ($this->puntaje > 0) {
                 $this->emit('continueStoring');
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 113285Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 113285Clientes"]);
         }
     }
     public function deleteCard()
     {
-        try{
+        try {
             $this->customer_card->tarjetaPuntos->delete();
             $this->loadDefault();
             $this->dispatchBrowserEvent('closeAC');
-            $this->dispatchBrowserEvent('noty', ['msg' =>  "SOLICITUD PROCESADA CON ÉXITO"] );
+            $this->dispatchBrowserEvent('noty', ['msg' =>  "SOLICITUD PROCESADA CON ÉXITO"]);
             $this->emit('refresh');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 112385Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 112385Clientes"]);
         }
     }
-    public function loadCustomers($wPag=1)
+    public function loadCustomers($wPag = 1)
     {
-        try{
+        try {
             if (!empty($this->search)) {
-                $query = cliente::with('procedencia','categorias', 'datosFacturacion', 'compras.details', 'citas.details_product', 'citas.details')
-                    ->whereNotNull($this->by)
-                    ->where(function ($query) {
+                $query = cliente::with('procedencia', 'categorias', 'datosFacturacion', 'compras.details', 'citas.details_product', 'citas.details');
+                if ($this->by != 'visits' && $this->by != 'birth_dateC') {
+                    $query->whereNotNull($this->by);
+                }
+                $query->where(function ($query) {
                     $words = preg_split('/\s+/', trim($this->search));
-                
+
                     foreach ($words as $word) {
                         $query->where(function ($q) use ($word) {
                             $q->where('first_name', 'like', "%{$word}%")
-                              ->orWhere('last_name', 'like', "%{$word}%")
-                              ->orWhere(DB::raw("CONCAT_WS(' ', TRIM(first_name), TRIM(last_name))"), 'like', "%{$word}%")
-                              ->orWhere('email', 'like', "%{$word}%")
-                              ->orWhere('phone', 'like', "%{$word}%")
-                              ->orWhereRaw("SOUNDEX(first_name) = SOUNDEX(?)", [$word])
-                              ->orWhereRaw("SOUNDEX(last_name) = SOUNDEX(?)", [$word]);
+                                ->orWhere('last_name', 'like', "%{$word}%")
+                                ->orWhere(DB::raw("CONCAT_WS(' ', TRIM(first_name), TRIM(last_name))"), 'like', "%{$word}%")
+                                ->orWhere('email', 'like', "%{$word}%")
+                                ->orWhere('phone', 'like', "%{$word}%")
+                                ->orWhereRaw("SOUNDEX(first_name) = SOUNDEX(?)", [$word])
+                                ->orWhereRaw("SOUNDEX(last_name) = SOUNDEX(?)", [$word]);
                         });
                     }
                 })
-                ->where('salon_id', Auth::user()->salon->id);
+                    ->where('salon_id', Auth::user()->salon->id);
             } else {
-                $query =  cliente::with('categorias','datosFacturacion','compras.details','citas.details_product','citas.details')->whereNotNull($this->by)->where('salon_id',Auth::user()->salon->id);
+                $query =  cliente::with('categorias', 'datosFacturacion', 'compras.details', 'citas.details_product', 'citas.details');
+                if ($this->by != 'visits' && $this->by != 'birth_dateC') {
+                    $query->whereNotNull($this->by);
+                }
+                $query->where('salon_id', Auth::user()->salon->id);
             }
 
-            if(count($this->filtros)>0){
+            if (count($this->filtros) > 0) {
                 // Apply each filter accumulatively
                 foreach ($this->filtros as $filtro) {
                     $itemQuery = $filtro['query'];
                     $fecha_inicio = $filtro['fecha_inicio'] ?? null;
                     $fecha_fin = $filtro['fecha_fin'] ?? null;
                     $is_interval = $filtro['is_interval'];
-                    if($filtro['type']!='productos' && $filtro['type']!='servicios' && $filtro['type']!='categoria-productos' && $filtro['type']!='categoria-servicios' && $filtro['type']!='proveedor-productos' && $filtro['type']!='proveedor-servicios'){
-                        if($filtro['type']=='atencion'){
+                    if ($filtro['type'] != 'productos' && $filtro['type'] != 'servicios' && $filtro['type'] != 'categoria-productos' && $filtro['type'] != 'categoria-servicios' && $filtro['type'] != 'proveedor-productos' && $filtro['type'] != 'proveedor-servicios') {
+                        if ($filtro['type'] == 'atencion') {
 
-                            $query->where(function ($query) use ($itemQuery, $fecha_inicio, $fecha_fin,$is_interval) {
-                                if($is_interval){
+                            $query->where(function ($query) use ($itemQuery, $fecha_inicio, $fecha_fin, $is_interval) {
+                                if ($is_interval) {
                                     $query->whereHas('citas.details', function ($query) use ($itemQuery, $fecha_inicio, $fecha_fin) {
                                         // Filtrar por `empleado_id` en `citas.details`
                                         $query->where('empleado_id', $itemQuery);
-                                        
+
                                         // Filtrar por el rango de fechas en la creación de la cita
                                         $query->whereBetween('created_at', [
                                             Carbon::parse($fecha_inicio)->startOfDay(),
                                             Carbon::parse($fecha_fin)->endOfDay()
                                         ]);
                                     });
-                                }else{
+                                } else {
                                     $query->whereHas('citas.details', function ($query) use ($itemQuery) {
                                         // Filtrar por `empleado_id` en `citas.details`
                                         $query->where('empleado_id', $itemQuery);
                                     });
                                 }
-                            })->orWhere(function ($query) use ($itemQuery, $fecha_inicio, $fecha_fin,$is_interval) {
-                                if($is_interval){
+                            })->orWhere(function ($query) use ($itemQuery, $fecha_inicio, $fecha_fin, $is_interval) {
+                                if ($is_interval) {
                                     $query->whereHas('compras.details', function ($query) use ($itemQuery, $fecha_inicio, $fecha_fin) {
                                         // Filtrar por `empleado_id` en `compras.details`
                                         $query->where('empleado_id', $itemQuery);
-                                        
+
                                         // Filtrar por el rango de fechas en la creación de la cita
                                         $query->whereBetween('created_at', [
                                             Carbon::parse($fecha_inicio)->startOfDay(),
                                             Carbon::parse($fecha_fin)->endOfDay()
                                         ]);
                                     });
-                                }else{
+                                } else {
                                     $query->whereHas('compras.details', function ($query) use ($itemQuery) {
                                         // Filtrar por `empleado_id` en `compras.details`
                                         $query->where('empleado_id', $itemQuery);
@@ -551,81 +570,92 @@ class Clientes extends Component
                                 }
                             })->get();
                             // $query = $this->atendidosPor($filtro['query'],$query);
-                        }elseif($filtro['type'] == 'inactivo'){
-                            $query->where(function ($query) use ($fecha_inicio, $fecha_fin,$is_interval) {
-                                if($is_interval){
+                        } elseif ($filtro['type'] == 'visitas') {
+                            // Filtro por número de visitas (citas + compras)
+                            if (isset($filtro['min']) && isset($filtro['max'])) {
+                                if ($is_interval) {
+                                    $query->visitsBetween($fecha_inicio, $fecha_fin);
+                                } else {
+                                    $query->visits();
+                                }
+                                $query->havingRaw('citas_count + compras_count BETWEEN ? AND ?', [$filtro['min'], $filtro['max']])
+                                    ->where('salon_id', Auth::user()->salon->id);
+                            }
+                        } elseif ($filtro['type'] == 'inactivo') {
+                            $query->where(function ($query) use ($fecha_inicio, $fecha_fin, $is_interval) {
+                                if ($is_interval) {
                                     $query->whereDoesntHave('citas', function ($q) use ($fecha_inicio, $fecha_fin) {
                                         $q->whereBetween('created_at', [
                                             Carbon::parse($fecha_inicio)->startOfDay(),
                                             Carbon::parse($fecha_fin)->endOfDay()
                                         ]);
                                     });
-                                }else{
+                                } else {
                                     $query->whereDoesntHave('citas');
                                 }
-                            })->orWhere(function ($query) use ($fecha_inicio, $fecha_fin,$is_interval) {
-                                if($is_interval){
+                            })->orWhere(function ($query) use ($fecha_inicio, $fecha_fin, $is_interval) {
+                                if ($is_interval) {
                                     $query->whereDoesntHave('compras', function ($q) use ($fecha_inicio, $fecha_fin) {
                                         $q->whereBetween('created_at', [
                                             Carbon::parse($fecha_inicio)->startOfDay(),
                                             Carbon::parse($fecha_fin)->endOfDay()
                                         ]);
                                     });
-                                }else{
+                                } else {
                                     $query->whereDoesntHave('compras');
                                 }
                             });
-                            $query->where('salon_id',Auth::user()->salon->id);
-                        }elseif($filtro['type'] == 'birth_date'){
-                            if($is_interval){
+                            $query->where('salon_id', Auth::user()->salon->id);
+                        } elseif ($filtro['type'] == 'birth_date') {
+                            if ($is_interval) {
                                 // Extraer mes y día de las fechas de inicio y fin
                                 $start = explode('-', $fecha_inicio);
                                 $end = explode('-', $fecha_fin);
-                    
+
                                 $startMonth = $start[1];
                                 $startDay = $start[2];
-                    
+
                                 $endMonth = $end[1];
                                 $endDay = $end[2];
-                    
+
                                 // Condición para el rango de fechas de cumpleaños
-                                $query->where(function($query) use ($startMonth, $startDay, $endMonth, $endDay) {
+                                $query->where(function ($query) use ($startMonth, $startDay, $endMonth, $endDay) {
                                     $query->whereRaw("(MONTH(birth_date) > ? OR (MONTH(birth_date) = ? AND DAY(birth_date) >= ?))", [$startMonth, $startMonth, $startDay])
                                         ->whereRaw("(MONTH(birth_date) < ? OR (MONTH(birth_date) = ? AND DAY(birth_date) <= ?))", [$endMonth, $endMonth, $endDay]);
                                 });
                             }
-                        }elseif($filtro['type']=='edad'){
-                            if(isset($filtro['min']) && isset($filtro['max'])){
+                        } elseif ($filtro['type'] == 'edad') {
+                            if (isset($filtro['min']) && isset($filtro['max'])) {
                                 $query->selectRaw('clientes.*, FLOOR(DATEDIFF(CURRENT_DATE, birth_date) / 365.25) AS edad')
                                     ->having('edad', '>=', $filtro['min'])
                                     ->having('edad', '<=', $filtro['max']);
                             }
-                        }elseif($filtro['type']=='horario'){
+                        } elseif ($filtro['type'] == 'horario') {
                             if (isset($filtro['min']) && isset($filtro['max'])) {
                                 $minHora = $filtro['min']; // Formato H:i (ej. 08:00)
                                 $maxHora = $filtro['max']; // Formato H:i (ej. 18:00)
-                                
+
                                 if ($is_interval) {
                                     $query->whereHas('citas', function ($q) use ($fecha_inicio, $fecha_fin, $minHora, $maxHora) {
                                         $q->whereBetween('start', [
                                             Carbon::parse($fecha_inicio)->startOfDay(),
                                             Carbon::parse($fecha_fin)->endOfDay()
                                         ])
-                                        // Filtrar citas que comienzan o terminan en el rango de horas
-                                        ->where(function($query) use ($minHora, $maxHora) {
-                                            $query->whereRaw("TIME(start) BETWEEN ? AND ?", [$minHora, $maxHora])
-                                                ->orWhereRaw("TIME(end) BETWEEN ? AND ?", [$minHora, $maxHora])
-                                                // O que la cita esté completamente dentro del rango
-                                                ->orWhere(function ($q) use ($minHora, $maxHora) {
-                                                    $q->whereRaw("? BETWEEN TIME(start) AND TIME(end)", [$minHora])
-                                                        ->whereRaw("? BETWEEN TIME(start) AND TIME(end)", [$maxHora]);
-                                                });
-                                        });
+                                            // Filtrar citas que comienzan o terminan en el rango de horas
+                                            ->where(function ($query) use ($minHora, $maxHora) {
+                                                $query->whereRaw("TIME(start) BETWEEN ? AND ?", [$minHora, $maxHora])
+                                                    ->orWhereRaw("TIME(end) BETWEEN ? AND ?", [$minHora, $maxHora])
+                                                    // O que la cita esté completamente dentro del rango
+                                                    ->orWhere(function ($q) use ($minHora, $maxHora) {
+                                                        $q->whereRaw("? BETWEEN TIME(start) AND TIME(end)", [$minHora])
+                                                            ->whereRaw("? BETWEEN TIME(start) AND TIME(end)", [$maxHora]);
+                                                    });
+                                            });
                                     });
                                 } else {
                                     $query->whereHas('citas', function ($q) use ($minHora, $maxHora) {
                                         // Filtrar citas por horas cuando no hay intervalo de fechas
-                                        $q->where(function($query) use ($minHora, $maxHora) {
+                                        $q->where(function ($query) use ($minHora, $maxHora) {
                                             $query->whereRaw("TIME(start) BETWEEN ? AND ?", [$minHora, $maxHora])
                                                 ->orWhereRaw("TIME(end) BETWEEN ? AND ?", [$minHora, $maxHora])
                                                 // O que la cita esté completamente dentro del rango
@@ -637,68 +667,66 @@ class Clientes extends Component
                                     });
                                 }
                             }
-                            
-                        }elseif($filtro['type']=='created_at'){
-                            if($is_interval){
-                                $query->whereBetween('created_at',[
+                        } elseif ($filtro['type'] == 'created_at') {
+                            if ($is_interval) {
+                                $query->whereBetween('created_at', [
                                     Carbon::parse($fecha_inicio)->startOfDay(),
-                                    Carbon::parse($fecha_fin)->endOfDay()])->get();
+                                    Carbon::parse($fecha_fin)->endOfDay()
+                                ])->get();
                             }
-                        }elseif($filtro['type'] == 'hasReward') {
+                        } elseif ($filtro['type'] == 'hasReward') {
                             $query->whereHas('tarjetaPuntos')->get();
-                        }elseif($filtro['type'] == 'gastado') {
-                            if(isset($filtro['min']) && isset($filtro['max'])){
+                        } elseif ($filtro['type'] == 'gastado') {
+                            if (isset($filtro['min']) && isset($filtro['max'])) {
                                 $minGasto = $filtro['min'];
                                 $maxGasto = $filtro['max'];
-                                
+
                                 if ($is_interval) {
-                                
-                                $query->where(function ($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
+
                                     $query->where(function ($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
-                                        // Filtrar por compras dentro del rango de fecha y gasto, y que no estén canceladas
-                                        $query->whereHas('compras', function($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
-                                            $query->where('status', '!=', 'Cancelada')
-                                                ->whereHas('metodosPago', function($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
-                                                    $query->whereBetween('created_at', [Carbon::parse($fecha_inicio)->startOfDay(), Carbon::parse($fecha_fin)->endOfDay()])
+                                        $query->where(function ($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
+                                            // Filtrar por compras dentro del rango de fecha y gasto, y que no estén canceladas
+                                            $query->whereHas('compras', function ($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
+                                                $query->where('status', '!=', 'Cancelada')
+                                                    ->whereHas('metodosPago', function ($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
+                                                        $query->whereBetween('created_at', [Carbon::parse($fecha_inicio)->startOfDay(), Carbon::parse($fecha_fin)->endOfDay()])
                                                             ->whereRaw('(amount - COALESCE(`change`, 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
-                                                });
-                                        });
-                                
-                                        // Filtrar por citas dentro del rango de fecha y gasto, y que no estén canceladas
-                                        $query->orWhereHas('citas', function($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
-                                            $query->where('status', '!=', 'Cancelada')
-                                                ->whereHas('metodosPago', function($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
-                                                    $query->whereBetween('created_at', [Carbon::parse($fecha_inicio)->startOfDay(), Carbon::parse($fecha_fin)->endOfDay()])
+                                                    });
+                                            });
+
+                                            // Filtrar por citas dentro del rango de fecha y gasto, y que no estén canceladas
+                                            $query->orWhereHas('citas', function ($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
+                                                $query->where('status', '!=', 'Cancelada')
+                                                    ->whereHas('metodosPago', function ($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
+                                                        $query->whereBetween('created_at', [Carbon::parse($fecha_inicio)->startOfDay(), Carbon::parse($fecha_fin)->endOfDay()])
                                                             ->whereRaw('(amount - COALESCE(`change`, 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
-                                                });
+                                                    });
+                                            });
                                         });
                                     });
-                                });
-                                }else {
+                                } else {
                                     // Filtrar por compras dentro del rango de fecha y gasto, y que no estén canceladas
-                                    $query->whereHas('compras', function($query) use ($minGasto, $maxGasto) {
+                                    $query->whereHas('compras', function ($query) use ($minGasto, $maxGasto) {
                                         $query->where('status', '!=', 'Cancelada')
-                                                ->whereHas('metodosPago', function($query) use ($minGasto, $maxGasto) {
-                                                    $query->whereRaw('(amount - COALESCE(`change`, 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
-                                                });
+                                            ->whereHas('metodosPago', function ($query) use ($minGasto, $maxGasto) {
+                                                $query->whereRaw('(amount - COALESCE(`change`, 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
+                                            });
                                     });
                                     // Filtrar por citas dentro del rango de fecha y gasto, y que no estén canceladas
-                                    $query->orWhereHas('citas', function($query) use ($minGasto, $maxGasto) {
+                                    $query->orWhereHas('citas', function ($query) use ($minGasto, $maxGasto) {
                                         $query->where('status', '!=', 'Cancelada')
-                                            ->whereHas('metodosPago', function($query) use ($minGasto, $maxGasto) {
+                                            ->whereHas('metodosPago', function ($query) use ($minGasto, $maxGasto) {
                                                 $query->whereRaw('(amount - COALESCE(`change`, 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
                                             });
                                     });
                                 }
-                                
-                                
                             }
-                        }elseif($filtro['type'] == 'descontadoVentas') {
-                            
+                        } elseif ($filtro['type'] == 'descontadoVentas') {
+
                             if (isset($filtro['min']) && isset($filtro['max'])) {
                                 $minGasto = $filtro['min'];
                                 $maxGasto = $filtro['max'];
-                        
+
                                 if ($is_interval) {
                                     $query->where(function ($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
                                         // Acumular descuentos de compras y sus detalles
@@ -708,14 +736,13 @@ class Clientes extends Component
                                                     Carbon::parse($fecha_inicio)->startOfDay(),
                                                     Carbon::parse($fecha_fin)->endOfDay()
                                                 ])
-                                                ->with(['details' => function($query) {
+                                                ->with(['details' => function ($query) {
                                                     $query->where('disccount_price', '>', 0)
-                                                            ->selectRaw('SUM(current_price - disccount_price) as detail_disccount');
+                                                        ->selectRaw('SUM(current_price - disccount_price) as detail_disccount');
                                                 }])
                                                 ->groupBy('ventas.id')
                                                 ->havingRaw('(SUM(disccount) + COALESCE(SUM((SELECT SUM(current_price - disccount_price) FROM asignacion_ventas WHERE asignacion_ventas.venta_id = ventas.id AND disccount_price > 0)), 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
                                         });
-                        
                                     });
                                 } else {
                                     // Sin intervalo de fecha
@@ -723,24 +750,22 @@ class Clientes extends Component
                                         // Acumular descuentos de compras y sus detalles
                                         $query->whereHas('compras', function ($query) use ($minGasto, $maxGasto) {
                                             $query->where('status', '!=', 'Cancelada')
-                                                ->with(['details' => function($query) {
+                                                ->with(['details' => function ($query) {
                                                     $query->where('disccount_price', '>', 0)
-                                                            ->selectRaw('SUM(current_price - disccount_price) as detail_disccount');
+                                                        ->selectRaw('SUM(current_price - disccount_price) as detail_disccount');
                                                 }])
                                                 ->groupBy('ventas.id')
                                                 ->havingRaw('(SUM(disccount) + COALESCE(SUM((SELECT SUM(current_price - disccount_price) FROM asignacion_ventas WHERE asignacion_ventas.venta_id = ventas.id AND disccount_price > 0)), 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
                                         });
-                        
                                     });
                                 }
                             }
-                        
-                        }elseif($filtro['type'] == 'descontadoCitas') {
-                            
+                        } elseif ($filtro['type'] == 'descontadoCitas') {
+
                             if (isset($filtro['min']) && isset($filtro['max'])) {
                                 $minGasto = $filtro['min'];
                                 $maxGasto = $filtro['max'];
-                        
+
                                 if ($is_interval) {
                                     $query->where(function ($query) use ($minGasto, $maxGasto, $fecha_inicio, $fecha_fin) {
                                         // Acumular descuentos de compras y sus detalles
@@ -750,9 +775,9 @@ class Clientes extends Component
                                                     Carbon::parse($fecha_inicio)->startOfDay(),
                                                     Carbon::parse($fecha_fin)->endOfDay()
                                                 ])
-                                                ->with(['details' => function($query) {
+                                                ->with(['details' => function ($query) {
                                                     $query->where('disccount_price', '>', 0)
-                                                            ->selectRaw('SUM(current_price - disccount_price) as detail_disccount');
+                                                        ->selectRaw('SUM(current_price - disccount_price) as detail_disccount');
                                                 }])
                                                 ->groupBy('citas.id')
                                                 ->havingRaw('(SUM(disccount) + COALESCE(SUM((SELECT SUM(current_price - disccount_price) FROM asignacion_servicios WHERE asignacion_servicios.cita_id = citas.id AND disccount_price > 0)), 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
@@ -764,9 +789,9 @@ class Clientes extends Component
                                         // Acumular descuentos de compras y sus detalles
                                         $query->whereHas('citas', function ($query) use ($minGasto, $maxGasto) {
                                             $query->where('status', '!=', 'Cancelada')
-                                                ->with(['details' => function($query) {
+                                                ->with(['details' => function ($query) {
                                                     $query->where('disccount_price', '>', 0)
-                                                            ->selectRaw('SUM(current_price - disccount_price) as detail_disccount');
+                                                        ->selectRaw('SUM(current_price - disccount_price) as detail_disccount');
                                                 }])
                                                 ->groupBy('citas.id')
                                                 ->havingRaw('(SUM(disccount) + COALESCE(SUM((SELECT SUM(current_price - disccount_price) FROM asignacion_servicios WHERE asignacion_servicios.cita_id = citas.id AND disccount_price > 0)), 0)) BETWEEN ? AND ?', [$minGasto, $maxGasto]);
@@ -774,18 +799,16 @@ class Clientes extends Component
                                     });
                                 }
                             }
-                        
-
-                        }elseif($filtro['type']=='cat'){
-                            if($filtro['query']!=null){
+                        } elseif ($filtro['type'] == 'cat') {
+                            if ($filtro['query'] != null) {
                                 $categoryId = $filtro['query'];
                                 $query->whereHas('categorias', function ($query) use ($categoryId) {
                                     $query->where('categoria_cliente_id', $categoryId);
                                 })->get();
                             }
-                        }elseif ($filtro['type'] == 'hasCancelled') {
+                        } elseif ($filtro['type'] == 'hasCancelled') {
                             $minCancelled = $filtro['query'] ?? 0;
-                        
+
                             if ($is_interval) {
                                 // Filtrar clientes con al menos $minCancelled citas canceladas en el rango de fechas
                                 $query->whereHas('citas', function ($query) use ($fecha_inicio, $fecha_fin) {
@@ -795,25 +818,25 @@ class Clientes extends Component
                                             Carbon::parse($fecha_fin)->endOfDay()
                                         ]);
                                 })
-                                ->withCount(['citas' => function ($query) use ($fecha_inicio, $fecha_fin) {
-                                    $query->where('status', 'Cancelada')
-                                        ->whereBetween('created_at', [
-                                            Carbon::parse($fecha_inicio)->startOfDay(),
-                                            Carbon::parse($fecha_fin)->endOfDay()
-                                        ]);
-                                }])
-                                ->having('citas_count', '>=', $minCancelled);
+                                    ->withCount(['citas' => function ($query) use ($fecha_inicio, $fecha_fin) {
+                                        $query->where('status', 'Cancelada')
+                                            ->whereBetween('created_at', [
+                                                Carbon::parse($fecha_inicio)->startOfDay(),
+                                                Carbon::parse($fecha_fin)->endOfDay()
+                                            ]);
+                                    }])
+                                    ->having('citas_count', '>=', $minCancelled);
                             } else {
                                 // Filtrar clientes con al menos $minCancelled citas canceladas sin un rango de fechas
                                 $query->whereHas('citas', function ($query) {
                                     $query->where('status', 'Cancelada');
                                 })
-                                ->withCount(['citas' => function ($query) {
-                                    $query->where('status', 'Cancelada');
-                                }])
-                                ->having('citas_count', '>=', $minCancelled);
+                                    ->withCount(['citas' => function ($query) {
+                                        $query->where('status', 'Cancelada');
+                                    }])
+                                    ->having('citas_count', '>=', $minCancelled);
                             }
-                        }else{
+                        } else {
                             $query->where($filtro['type'], $filtro['query']);
                         }
                     } elseif ($filtro['type'] == 'productos' && isset($filtro['psid'])) {
@@ -821,7 +844,7 @@ class Clientes extends Component
                         $fecha_inicio = Carbon::parse($fecha_inicio)->startOfDay();
                         $fecha_fin = Carbon::parse($fecha_fin)->endOfDay();
 
-                        if($is_interval){
+                        if ($is_interval) {
                             $query->where(function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                 $query->whereHas('compras', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                     $query->whereHas('details', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
@@ -831,16 +854,16 @@ class Clientes extends Component
                                         ])->where('selected_item', $psid);
                                     });
                                 })
-                                ->orWhereHas('citas', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
-                                    $query->whereHas('details_product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
-                                        $query->whereBetween('created_at', [
-                                            $fecha_inicio,
-                                            $fecha_fin
-                                        ])->where('selected_item', $psid);
+                                    ->orWhereHas('citas', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
+                                        $query->whereHas('details_product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
+                                            $query->whereBetween('created_at', [
+                                                $fecha_inicio,
+                                                $fecha_fin
+                                            ])->where('selected_item', $psid);
+                                        });
                                     });
-                                });
                             });
-                        } else{
+                        } else {
                             $query->where(function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                 $query->whereHas('compras.details', function ($query) use ($psid) {
                                     $query->where('selected_item', $psid);
@@ -849,13 +872,12 @@ class Clientes extends Component
                                 });
                             });
                         }
-                    
                     } elseif ($filtro['type'] == 'categoria-productos' && isset($filtro['psid'])) {
                         $psid = $filtro['psid'];
                         $fecha_inicio = Carbon::parse($fecha_inicio)->startOfDay();
                         $fecha_fin = Carbon::parse($fecha_fin)->endOfDay();
 
-                        if($is_interval){
+                        if ($is_interval) {
                             $query->where(function ($q) use ($psid, $fecha_inicio, $fecha_fin) {
                                 $q->whereHas('compras', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                     $query->whereHas('details', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
@@ -863,28 +885,28 @@ class Clientes extends Component
                                             $fecha_inicio,
                                             $fecha_fin
                                         ])
-                                        ->whereHas('product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
-                                            $query->whereHas('categorias', function ($query) use ($psid) {
-                                                $query->where('categoria_producto_id', $psid);
+                                            ->whereHas('product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
+                                                $query->whereHas('categorias', function ($query) use ($psid) {
+                                                    $query->where('categoria_producto_id', $psid);
+                                                });
                                             });
-                                        });
                                     });
                                 })
-                                ->orWhereHas('citas', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
-                                    $query->whereHas('details_product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
-                                        $query->whereBetween('created_at', [
-                                            $fecha_inicio,
-                                            $fecha_fin
-                                        ])
-                                        ->whereHas('product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
-                                            $query->whereHas('categorias', function ($query) use ($psid) {
-                                                $query->where('categoria_producto_id', $psid);
-                                            });
+                                    ->orWhereHas('citas', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
+                                        $query->whereHas('details_product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
+                                            $query->whereBetween('created_at', [
+                                                $fecha_inicio,
+                                                $fecha_fin
+                                            ])
+                                                ->whereHas('product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
+                                                    $query->whereHas('categorias', function ($query) use ($psid) {
+                                                        $query->where('categoria_producto_id', $psid);
+                                                    });
+                                                });
                                         });
                                     });
-                                });
                             });
-                        } else{
+                        } else {
                             $query->where(function ($q) use ($psid) {
                                 $q->whereHas('compras.details.product.categorias', function ($has_query) use ($psid) {
                                     $has_query->where('categoria_producto_id', $psid);
@@ -898,7 +920,7 @@ class Clientes extends Component
                         $fecha_inicio = Carbon::parse($fecha_inicio)->startOfDay();
                         $fecha_fin = Carbon::parse($fecha_fin)->endOfDay();
 
-                        if($is_interval){
+                        if ($is_interval) {
                             $query->where(function ($q) use ($psid, $fecha_inicio, $fecha_fin) {
                                 $q->whereHas('compras', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                     $query->whereHas('details', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
@@ -906,24 +928,24 @@ class Clientes extends Component
                                             $fecha_inicio,
                                             $fecha_fin
                                         ])
-                                        ->whereHas('product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
-                                            $query->where('brand_id', $psid);
-                                        });
+                                            ->whereHas('product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
+                                                $query->where('brand_id', $psid);
+                                            });
                                     });
                                 })
-                                ->orWhereHas('citas', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
-                                    $query->whereHas('details_product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
-                                        $query->whereBetween('created_at', [
-                                            $fecha_inicio,
-                                            $fecha_fin
-                                        ])
-                                        ->whereHas('product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
-                                            $query->where('brand_id', $psid);
+                                    ->orWhereHas('citas', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
+                                        $query->whereHas('details_product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
+                                            $query->whereBetween('created_at', [
+                                                $fecha_inicio,
+                                                $fecha_fin
+                                            ])
+                                                ->whereHas('product', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
+                                                    $query->where('brand_id', $psid);
+                                                });
                                         });
                                     });
-                                });
                             });
-                        } else{
+                        } else {
                             $query->where(function ($q) use ($psid) {
                                 $q->whereHas('compras.details.product', function ($has_query) use ($psid) {
                                     $has_query->where('brand_id', $psid);
@@ -937,39 +959,38 @@ class Clientes extends Component
                         $fecha_inicio = Carbon::parse($fecha_inicio)->startOfDay();
                         $fecha_fin = Carbon::parse($fecha_fin)->endOfDay();
 
-                        if($is_interval){
+                        if ($is_interval) {
                             $query->whereHas('citas', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                 $query->whereHas('details', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                     $query->whereBetween('created_at', [
                                         $fecha_inicio,
                                         $fecha_fin
                                     ])
-                                    ->whereHas('servicio', function ($query) use ($psid) {
-                                        $query->where('brand_id', $psid);
-                                    });
+                                        ->whereHas('servicio', function ($query) use ($psid) {
+                                            $query->where('brand_id', $psid);
+                                        });
                                 });
                             });
-                        } else{
+                        } else {
                             $query->where(function ($q) use ($psid) {
-                                $q->whereHas('citas.details.servicio', function ($has_query) use ($psid){
+                                $q->whereHas('citas.details.servicio', function ($has_query) use ($psid) {
                                     $has_query->where('brand_id', $psid);
                                 });
                             });
                         }
-                    
                     } elseif ($filtro['type'] == 'servicios' && isset($filtro['psid'])) {
                         $psid = $filtro['psid'];
                         $fecha_inicio = Carbon::parse($fecha_inicio)->startOfDay();
                         $fecha_fin = Carbon::parse($fecha_fin)->endOfDay();
 
-                        if($is_interval){
+                        if ($is_interval) {
                             $query->whereHas('citas', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                 $query->whereHas('details', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                     $query->whereBetween('start', [$fecha_inicio, $fecha_fin])
                                         ->where('selected_service', $psid);
                                 });
                             });
-                        } else{
+                        } else {
                             $query->whereHas('citas.details', function ($query) use ($psid) {
                                 $query->where('selected_service', $psid);
                             })->get();
@@ -979,7 +1000,7 @@ class Clientes extends Component
                         $fecha_inicio = Carbon::parse($fecha_inicio)->startOfDay();
                         $fecha_fin = Carbon::parse($fecha_fin)->endOfDay();
 
-                        if($is_interval){
+                        if ($is_interval) {
                             $query->whereHas('citas', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                 $query->whereHas('details', function ($query) use ($psid, $fecha_inicio, $fecha_fin) {
                                     $query->whereBetween('start', [$fecha_inicio, $fecha_fin])
@@ -988,7 +1009,7 @@ class Clientes extends Component
                                         });
                                 });
                             });
-                        } else{
+                        } else {
                             $query->whereHas('citas.details.servicio.categorias', function ($query) use ($psid) {
                                 $query->where('categoria_servicio_id', $psid);
                             })->get();
@@ -996,27 +1017,30 @@ class Clientes extends Component
                     }
                 }
             }
-            if($wPag){
-                if($this->by=='birth_dateC'){
+            if ($wPag) {
+                if ($this->by == 'birth_dateC') {
                     $query = cliente::orderByBirthdayProximity('asc')->paginate(12);
-                }elseif($this->by=='visits'){
-                    $query = cliente::visits($this->sort)->where('salon_id', Auth::user()->salon_id)->paginate(12);
-                }else{
+                } elseif ($this->by == 'visits') {
+                    $visitsFilter = $this->filtros->firstWhere('type', 'visitas');
+                    $query = !empty($visitsFilter) ?
+                        $query->orderByRaw("(citas_count + compras_count) {$this->sort}")->paginate(12) :
+                        cliente::visits()->where('salon_id', Auth::user()->salon_id)->orderByRaw("(citas_count + compras_count) {$this->sort}")->paginate(12);
+                } else {
                     $query = $query->orderBy($this->by, $this->sort)->paginate(12);
                 }
                 $this->records = $query->total();
                 $this->resetPage();
-            }else{
+            } else {
                 $query = $query->get();
             }
             return $query;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 12385Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 12385Clientes"]);
         }
     }
-    public function filtroPSActualizado($uid,$psid)
+    public function filtroPSActualizado($uid, $psid)
     {
-        try{
+        try {
             $oldItem  = $this->setOldItem($uid);
 
             $newItem = $oldItem;
@@ -1046,55 +1070,55 @@ class Clientes extends Component
             }
             $newItem['query'] = $ps->name;
 
-            $this->desvincularElementoAnterior($uid,$newItem);
+            $this->desvincularElementoAnterior($uid, $newItem);
             $this->clientes = $this->loadCustomers();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1594325Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1594325Clientes"]);
         }
     }
-    private function atendidosPor($id,$query)
+    private function atendidosPor($id, $query)
     {
-        try{
-            $clientesAtendidos =[];
+        try {
+            $clientesAtendidos = [];
             $clientes = $query->get();
-            foreach($clientes as $cliente){
+            foreach ($clientes as $cliente) {
                 $atendidoPor = false;
                 $compras = $cliente->compras;
                 $citas = $cliente->citas;
-                foreach($compras as $compra){
+                foreach ($compras as $compra) {
                     $details = $compra->details;
-                    foreach($details as $detail){
+                    foreach ($details as $detail) {
                         $empleado_id = $detail->empleado_id;
-                        if($empleado_id == $id){
+                        if ($empleado_id == $id) {
                             $atendidoPor = true;
                         }
                     }
                 }
-                foreach($citas as $cita){
+                foreach ($citas as $cita) {
                     $details = $cita->details;
                     $details_product = $cita->details_product;
-                    foreach($details as $detail){
+                    foreach ($details as $detail) {
                         $empleado_id = $detail->empleado_id;
-                        if($empleado_id == $id){
+                        if ($empleado_id == $id) {
                             $atendidoPor = true;
                         }
                     }
-                    foreach($details_product as $detail_product){
+                    foreach ($details_product as $detail_product) {
                         $empleado_id = $detail_product->empleado_id;
-                        if($empleado_id == $id){
+                        if ($empleado_id == $id) {
                             $atendidoPor = true;
                         }
                     }
                 }
-                if($atendidoPor){
+                if ($atendidoPor) {
                     $clientesAtendidos[] = $cliente->id;
                 }
             }
             // Filter the original query to include only the attended clients
             $clientesAtendidosQuery = cliente::whereIn('id', $clientesAtendidos);
             return $clientesAtendidosQuery;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 154235Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 154235Clientes"]);
         }
     }
 
@@ -1104,10 +1128,10 @@ class Clientes extends Component
     }
     public function eliminar()
     {
-        try{
-            foreach($this->selectedItems as $cliente){
-                $cust = cliente::with('datosFacturacion','excepciones','reviews','citas','materiales','compras','calificaciones','categorias','respuestas')->find($cliente);
-                $this -> destroy($cust);
+        try {
+            foreach ($this->selectedItems as $cliente) {
+                $cust = cliente::with('datosFacturacion', 'excepciones', 'reviews', 'citas', 'materiales', 'compras', 'calificaciones', 'categorias', 'respuestas')->find($cliente);
+                $this->destroy($cust);
             }
             $this->selectedItems = [];
 
@@ -1116,46 +1140,46 @@ class Clientes extends Component
 
 
             $this->dispatchBrowserEvent('noty', ['msg' => 'SOLICITUD PROCESADA CON ÉXITO']);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 4235Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 4235Clientes"]);
         }
     }
     public function joinGroup($categoryId)
     {
-        try{
-            foreach($this->selectedItems as $cliente){
+        try {
+            foreach ($this->selectedItems as $cliente) {
                 $cust = cliente::with('categorias')->find($cliente);
                 $cust->categorias()->syncWithoutDetaching([$categoryId]);
             }
-            if($this->action!=1){
+            if ($this->action != 1) {
                 $this->viewCust();
             }
             $this->emit('refresh');
             $this->dispatchBrowserEvent('noty', ['msg' => 'SOLICITUD PROCESADA CON ÉXITO']);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 152315Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 152315Clientes"]);
         }
     }
     public function Add()
     {
-        try{
+        try {
             $this->resetValidation();
             $this->resetExcept('cliente');
             $this->cliente = new cliente();
             $this->action = 2;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 134184Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 134184Clientes"]);
         }
     }
     public function Edit()
     {
-        try{
-            if(isset($this->selectedItems[0])){
+        try {
+            if (isset($this->selectedItems[0])) {
                 $cliente = cliente::with('categorias')->find($this->selectedItems[0]);
-            }else{
+            } else {
                 $cliente = $this->customerSelected;
             }
-            if(count($cliente->categorias)>0){
+            if (count($cliente->categorias) > 0) {
                 $this->listCategories = implode(", ", $cliente->categorias->pluck('name')->toArray());
             }
 
@@ -1170,28 +1194,28 @@ class Clientes extends Component
             $this->cliente->phone = $phone;
             $this->activateModalForm();
             $this->editing = true;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 231Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 231Clientes"]);
         }
     }
     public function cancelEdit()
     {
-        try{
+        try {
             $this->resetValidation();
             $this->cliente = new cliente();
             $this->action = 1;
             $this->editing = false;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 159185Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 159185Clientes"]);
         }
     }
-    
+
 
     public function Store()
     {
         $this->validate($this->onlyClienteRules());
 
-        try{
+        try {
 
             if (session()->has('customDate')) {
                 Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
@@ -1202,12 +1226,12 @@ class Clientes extends Component
             } else {
                 $this->cliente->phone = null; // O manejarlo según tus necesidades
             }
-            
 
-            $this->cliente->salon_id=Auth::user()->salon->id;
+
+            $this->cliente->salon_id = Auth::user()->salon->id;
             //save
             $this->cliente->save();
-            
+
             $listCategories = null;
             if ($this->listCategories != null)  $listCategories =  explode(",", $this->listCategories);
 
@@ -1222,7 +1246,7 @@ class Clientes extends Component
                         // verificar si el elemento no es numérico
                         if (!is_numeric($catName)) {
                             // buscar el ID de la categoría en la tabla correspondiente
-                            $categoria = categoria_cliente::where('name', $catName)->where('salon_id',Auth::user()->salon->id)->first();
+                            $categoria = categoria_cliente::where('name', $catName)->where('salon_id', Auth::user()->salon->id)->first();
                             // reemplazar el elemento con el ID de la categoría si existe
                             if ($categoria) {
                                 return $categoria->id;
@@ -1237,24 +1261,24 @@ class Clientes extends Component
             }
 
 
-            if($this->action==3){
-                $this->emit('enviarCliente',$this->cliente->id);
+            if ($this->action == 3) {
+                $this->emit('enviarCliente', $this->cliente->id);
                 $this->dispatchBrowserEvent('closeModalCust');
                 return;
             }
 
             $this->dispatchBrowserEvent('closeModalCust');
             $this->dispatchBrowserEvent('noty', ['msg' => 'SOLICITUD PROCESADA CON ÉXITO']);
-            if(!$this->editing){
+            if (!$this->editing) {
                 $this->loadDefault();
             }
-            
+
             if (session()->has('customDate')) {
                 Carbon::setTestNow();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 96202Marcas"] );
-        } 
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 96202Marcas"]);
+        }
     }
 
     public function regresarView()
@@ -1270,29 +1294,29 @@ class Clientes extends Component
         $this->viewCust();
         $this->dispatchBrowserEvent('noty', ['msg' => 'SOLICITUD PROCESADA CON ÉXITO']);
     }
-    public function viewCust($cliente=null)
+    public function viewCust($cliente = null)
     {
-        try{
+        try {
             $this->infoSelected = 1;
-            if($cliente==null){
+            if ($cliente == null) {
                 $cliente = $this->selectedItems[0];
             }
-            $cliente = cliente::with('calificaciones','categorias','citas.details.servicio','citas.details.empleado')->find($cliente);
-            if($cliente->birth_date!=null){
+            $cliente = cliente::with('calificaciones', 'categorias', 'citas.details.servicio', 'citas.details.empleado')->find($cliente);
+            if ($cliente->birth_date != null) {
                 // Fecha de nacimiento
                 $birthDate = Carbon::parse($cliente->birth_date);
-        
+
                 // Fecha actual
                 $currentDate = Carbon::now();
-        
+
                 // Calcular la diferencia en años
                 $age = $birthDate->diffInYears($currentDate);
-        
+
                 $cliente->edad = $age;
             }
             $this->customerSelected = $cliente;
-            
-            if(count($cliente->categorias)>0){
+
+            if (count($cliente->categorias) > 0) {
                 $this->listCategories = $this->loadCategories($cliente);
             }
 
@@ -1300,8 +1324,8 @@ class Clientes extends Component
 
             $this->action = 2;
             $this->emit('refresh');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 15913Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 15913Clientes"]);
         }
     }
 
@@ -1312,12 +1336,12 @@ class Clientes extends Component
             $item->delete();
         }
     }
-    private function desvincularRelacion($items,$mov=0)
+    private function desvincularRelacion($items, $mov = 0)
     {
-        foreach($items as $item){
-            if($mov){
+        foreach ($items as $item) {
+            if ($mov) {
                 $item->customer_id = null;
-            }else{
+            } else {
                 $item->cliente_id = null;
             }
             $item->save();
@@ -1326,50 +1350,49 @@ class Clientes extends Component
 
     private function destroy($cliente)
     {
-        try{
-            if(isset($cliente->compras)){
-                $this->desvincularRelacion($cliente->compras,1);
+        try {
+            if (isset($cliente->compras)) {
+                $this->desvincularRelacion($cliente->compras, 1);
             }
-            if(isset($cliente->citas)){
-                $this->desvincularRelacion($cliente->citas,1);
+            if (isset($cliente->citas)) {
+                $this->desvincularRelacion($cliente->citas, 1);
             }
-            if(isset($cliente->reviews)){
-                $this->desvincularRelacion($cliente->reviews);  
+            if (isset($cliente->reviews)) {
+                $this->desvincularRelacion($cliente->reviews);
             }
-            if(isset($cliente->materiales)){
-                $this->desvincularRelacion($cliente->materiales);  
+            if (isset($cliente->materiales)) {
+                $this->desvincularRelacion($cliente->materiales);
             }
-            if(isset($cliente->datosFacturacion)){
-                $this->desvincularRelacion($cliente->datosFacturacion);  
+            if (isset($cliente->datosFacturacion)) {
+                $this->desvincularRelacion($cliente->datosFacturacion);
             }
 
-            if(isset($cliente->calificaciones)){
+            if (isset($cliente->calificaciones)) {
                 $this->eliminarRelacion($cliente->calificaciones);
             }
-            if(isset($cliente->categorias)){
+            if (isset($cliente->categorias)) {
                 // Obtener los IDs de las categorias
-                $categoriesList = $cliente->categorias->pluck('id'); 
+                $categoriesList = $cliente->categorias->pluck('id');
 
                 // Eliminar las categorias del cliente original
                 $cliente->categorias()->detach($categoriesList);
             }
-            
-            if(isset($cliente->respuestas)){
+
+            if (isset($cliente->respuestas)) {
                 $this->eliminarRelacion($cliente->respuestas);
             }
-            if(isset($cliente->excepciones)){
+            if (isset($cliente->excepciones)) {
                 $this->eliminarRelacion($cliente->excepciones);
             }
 
-            if(isset($cliente->tarjetaPuntos)){
+            if (isset($cliente->tarjetaPuntos)) {
                 $cliente->tarjetaPuntos->delete();
             }
 
             //eliminar cliente
             $cliente->delete();
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 231187Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 231187Clientes"]);
         }
     }
 
@@ -1389,7 +1412,7 @@ class Clientes extends Component
     {
         $validatedData = $this->validate($this->onlyTaxRules());
 
-        try{
+        try {
             // extraer el subarray 'tax_data' del array validado
             $deliveryData = $validatedData['tax_data'];
 
@@ -1404,8 +1427,8 @@ class Clientes extends Component
             $this->customerSelected->load('datosFacturacion');
 
             $this->loadDefaultTax();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 268188Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 268188Clientes"]);
         }
     }
 
@@ -1419,7 +1442,7 @@ class Clientes extends Component
     public function removeDelivery(tax_data $tax_data)
     {
 
-        try{
+        try {
             // Eliminar la tax_data
             $tax_data->delete();
 
@@ -1428,8 +1451,8 @@ class Clientes extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => 'SOLICITUD PROCESADA CON ÉXITO']);
 
             $this->loadDefaultTax();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 319189Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 319189Clientes"]);
         }
     }
 
@@ -1444,7 +1467,7 @@ class Clientes extends Component
             'tax_data.phone' => 'nullable|max:15',
         ]);
 
-        try{
+        try {
             // xtraer el subarray 'delivery' del array validado
             $deliveryData = $validatedData['tax_data'];
 
@@ -1458,14 +1481,14 @@ class Clientes extends Component
             $this->editingTaxData = false;
 
             $this->loadDefaultTax();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 345190Clientes"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 345190Clientes"]);
         }
     }
 
-    public function orderBy($cat,$type)
-    {        
-        switch($cat){
+    public function orderBy($cat, $type)
+    {
+        switch ($cat) {
             case 'first_name':
                 $this->by = 'first_name';
                 break;
@@ -1486,16 +1509,17 @@ class Clientes extends Component
                 $this->by = 'visits';
                 break;
         }
-        if($type){
-            $this->sort='desc';
-        }else{
-            $this->sort='asc';
+        if ($type) {
+            $this->sort = 'desc';
+        } else {
+            $this->sort = 'asc';
         }
         $this->clientes = $this->loadCustomers();
     }
     #Filtros
     public function agregarFiltro($type)
     {
+        if ($type == 'visitas') $this->by = 'first_name'; // reset order by
         $this->addFilter($type);
         $this->clientes = $this->loadCustomers();
     }
@@ -1504,25 +1528,25 @@ class Clientes extends Component
     {
         try {
             $salon_id = Auth::user()->salon->id;
-    
+
             // Consulta específica para el ID del servicio
             if (isset($this->filtros) && $this->filtros->contains('uid', $uid)) {
                 $filtro = $this->filtros->where('uid', $uid)->first();
                 $query = $filtro['query'] ?? '';
-    
+
                 $this->servicios[$uid] = servicio::where('salon_id', Auth::user()->salon->id)
-                    ->where('visibility','visible')
+                    ->where('visibility', 'visible')
                     ->where('name', '!=', 'Servicio eliminado')
                     ->where(function ($q) use ($query) {
                         $q->where('name', 'like', "%{$query}%")
-                        ->orWhere('description', 'like', "%{$query}%");
+                            ->orWhere('description', 'like', "%{$query}%");
                     })
                     ->orderBy('name', 'asc')
-                    ->get();      
+                    ->get();
             }
         } catch (\Throwable $th) {
             // Registrar el error para mayor información
-    
+
             // Disparar el evento de error en el frontend
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Clientes"]);
         }
@@ -1531,23 +1555,23 @@ class Clientes extends Component
     {
         try {
             $salon_id = Auth::user()->salon->id;
-    
+
             // Consulta específica para el ID del servicio
             if (isset($this->filtros) && $this->filtros->contains('uid', $uid)) {
                 $filtro = $this->filtros->where('uid', $uid)->first();
                 $query = $filtro['query'] ?? '';
-    
+
                 $this->categoriaServicios[$uid] = categoria_servicio::where('salon_id', Auth::user()->salon->id)
                     ->where('name', '!=', 'Categoría eliminada')
                     ->where(function ($q) use ($query) {
                         $q->where('name', 'like', "%{$query}%");
                     })
                     ->orderBy('name', 'asc')
-                    ->get();      
+                    ->get();
             }
         } catch (\Throwable $th) {
             // Registrar el error para mayor información
-    
+
             // Disparar el evento de error en el frontend
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Clientes"]);
         }
@@ -1564,9 +1588,9 @@ class Clientes extends Component
                     ->where('name', '!=', 'Producto eliminado')
                     ->where(function ($qry) use ($query) {
                         $qry->where('name', 'like', "%{$query}%")
-                        ->orWhere('description', 'like', "%{$query}%")
-                        ->orWhere('sku', "{$query}")
-                        ->orWhere('intern_sku', "{$query}");
+                            ->orWhere('description', 'like', "%{$query}%")
+                            ->orWhere('sku', "{$query}")
+                            ->orWhere('intern_sku', "{$query}");
                     })
                     ->orderBy('name', 'asc')
                     ->get();
@@ -1582,14 +1606,14 @@ class Clientes extends Component
             if (isset($this->filtros) && $this->filtros->contains('uid', $uid)) {
                 $filtro = $this->filtros->where('uid', $uid)->first();
                 $query = $filtro['query'] ?? '';
-    
+
                 $this->categoriaProductos[$uid] = categoria_producto::where('salon_id', Auth::user()->salon->id)
-                        ->where('name', '!=', 'Categoría eliminada')
-                        ->where(function ($q) use($query) {
-                            $q->where('name', 'like', "%{$query}%");
-                        })
-                        ->orderBy('name', 'asc')
-                        ->get();      
+                    ->where('name', '!=', 'Categoría eliminada')
+                    ->where(function ($q) use ($query) {
+                        $q->where('name', 'like', "%{$query}%");
+                    })
+                    ->orderBy('name', 'asc')
+                    ->get();
             }
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Clientes"]);
@@ -1602,18 +1626,18 @@ class Clientes extends Component
             if (isset($this->filtros) && $this->filtros->contains('uid', $uid)) {
                 $filtro = $this->filtros->where('uid', $uid)->first();
                 $query = $filtro['query'] ?? '';
-    
+
                 $this->proveedores[$uid] = marca::where('salon_id', Auth::user()->salon->id)
-                        ->where('name', '!=', 'Marca eliminada')
-                        ->where(function ($q) use($query) {
-                            $q->where('name', 'like', "%{$query}%")
-                                ->orWhere('contact_name', 'like', "%{$query}%")
-                                ->orWhere('rfc', 'like', "%{$query}%")
-                                ->orWhere('email', 'like', "%{$query}%")
-                                ->orWhere('phone_number', 'like', "%{$query}%");
-                        })
-                        ->orderBy('name', 'asc')
-                        ->get();      
+                    ->where('name', '!=', 'Marca eliminada')
+                    ->where(function ($q) use ($query) {
+                        $q->where('name', 'like', "%{$query}%")
+                            ->orWhere('contact_name', 'like', "%{$query}%")
+                            ->orWhere('rfc', 'like', "%{$query}%")
+                            ->orWhere('email', 'like', "%{$query}%")
+                            ->orWhere('phone_number', 'like', "%{$query}%");
+                    })
+                    ->orderBy('name', 'asc')
+                    ->get();
             }
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Clientes"]);
@@ -1622,7 +1646,7 @@ class Clientes extends Component
     private function addFilter($type)
     {
         $uid = uniqid();
-        
+
         $coll = collect(
             [
                 'uid' => $uid,
@@ -1639,33 +1663,33 @@ class Clientes extends Component
     }
     public function updateToday($uid)
     {
-        $start=Carbon::now()->toDateString();
-        $this->updateRange($uid,[$start,$start]);
+        $start = Carbon::now()->toDateString();
+        $this->updateRange($uid, [$start, $start]);
     }
     public function updateYesterday($uid)
     {
-        $start=Carbon::now()->subDay()->toDateString();
-        $this->updateRange($uid,[$start,$start]);
+        $start = Carbon::now()->subDay()->toDateString();
+        $this->updateRange($uid, [$start, $start]);
     }
     public function updateWeek($uid)
     {
-        $start=Carbon::now()->startOfWeek()->toDateString();
-        $end=Carbon::now()->endOfWeek()->addDay();
-        $this->updateRange($uid,[$start,$end]);
+        $start = Carbon::now()->startOfWeek()->toDateString();
+        $end = Carbon::now()->endOfWeek()->addDay();
+        $this->updateRange($uid, [$start, $end]);
     }
     public function updateMonth($uid)
     {
-        $start=Carbon::now()->startOfMonth()->toDateString();
-        $end=Carbon::now()->endOfMonth()->addDay();
-        $this->updateRange($uid,[$start,$end]);
+        $start = Carbon::now()->startOfMonth()->toDateString();
+        $end = Carbon::now()->endOfMonth()->addDay();
+        $this->updateRange($uid, [$start, $end]);
     }
     public function updateYear($uid)
     {
-        $start=Carbon::now()->startOfYear()->toDateString();
-        $end=Carbon::now()->endOfYear()->addDay();
-        $this->updateRange($uid,[$start,$end]);
+        $start = Carbon::now()->startOfYear()->toDateString();
+        $end = Carbon::now()->endOfYear()->addDay();
+        $this->updateRange($uid, [$start, $end]);
     }
-    public function updateRange($uid,$selectedDates)
+    public function updateRange($uid, $selectedDates)
     {
         if (count($selectedDates) >= 2) {
             // Actualizar las fechas según la lógica que necesites
@@ -1683,7 +1707,7 @@ class Clientes extends Component
             $newItem['is_interval'] = true;
             $newItem['type_range'] = $start . '-' . $end;
 
-            $this->desvincularElementoAnterior($uid,$newItem);
+            $this->desvincularElementoAnterior($uid, $newItem);
             $this->clientes = $this->loadCustomers();
         }
     }
@@ -1698,10 +1722,10 @@ class Clientes extends Component
         $newItem['is_interval'] = false;
         $newItem['type_range'] = 'Sin fecha';
 
-        $this->desvincularElementoAnterior($uid,$newItem);
+        $this->desvincularElementoAnterior($uid, $newItem);
         $this->clientes = $this->loadCustomers();
     }
-    public function updateType($uid,$type)
+    public function updateType($uid, $type)
     {
         $oldItem  = $this->setOldItem($uid);
 
@@ -1711,30 +1735,30 @@ class Clientes extends Component
         }
         $newItem['type'] = $type;
 
-        $this->desvincularElementoAnterior($uid,$newItem);
-        if($type == 'birth_date'){
+        $this->desvincularElementoAnterior($uid, $newItem);
+        if ($type == 'birth_date') {
             $this->emit('cargarFlat');
         }
         $this->clientes = $this->loadCustomers();
     }
-    public function updateQueryMoney($uid,$min=null,$max=null)
+    public function updateQueryMoney($uid, $min = null, $max = null)
     {
-        if($min){
-            $min=$this->eliminarCaracteres($min);
+        if ($min) {
+            $min = $this->eliminarCaracteres($min);
         }
-        if($max){
-            $max=$this->eliminarCaracteres($max); 
+        if ($max) {
+            $max = $this->eliminarCaracteres($max);
         }
-        $this->updateQuery($uid,null,1,$min,$max);
+        $this->updateQuery($uid, null, 1, $min, $max);
     }
     private function eliminarCaracteres($data)
     {
         // Elimina todos los caracteres que no sean números, puntos o comas
         $valorSinCaracter = preg_replace('/[^0-9.]/', '', $data);
-        
+
         // Convierte el resultado a un float
         $valorNumerico = (float) $valorSinCaracter;
-        
+
         // Verifica si el resultado es numérico
         if (!is_numeric($valorNumerico)) {
             $this->dispatchBrowserEvent('noty-error', ['msg' => "Corrija el valor numérico"]);
@@ -1743,27 +1767,27 @@ class Clientes extends Component
             return $valorNumerico;
         }
     }
-    public function updateQuery($uid,$query,$is_range,$min=null,$max=null)
+    public function updateQuery($uid, $query, $is_range, $min = null, $max = null)
     {
-        $this-> hay_query = true;
+        $this->hay_query = true;
         $oldItem  = $this->setOldItem($uid);
 
         $newItem = $oldItem;
         if (!$oldItem) {
             return; // Manejar el caso en que el ítem no se encuentre en el carrito.
         }
-        if(!$is_range){
+        if (!$is_range) {
             $newItem['query'] = $query;
-        }else{
-            if($min!==null){
+        } else {
+            if ($min !== null) {
                 $newItem['min'] = $min;
             }
-            if($max!==null){
+            if ($max !== null) {
                 $newItem['max'] = $max;
             }
         }
 
-        $this->desvincularElementoAnterior($uid,$newItem);
+        $this->desvincularElementoAnterior($uid, $newItem);
         $this->save();
         $this->clientes = $this->loadCustomers();
     }
@@ -1775,31 +1799,31 @@ class Clientes extends Component
     }
     public function cleanFilters()
     {
-        foreach($this->filtros as $filtro){
+        foreach ($this->filtros as $filtro) {
             $this->deleteFilter($filtro['uid']);
         }
     }
     public function deleteFilter($uid)
     {
         $this->desvincularElementoAnterior($uid);
-        $this->dispatchBrowserEvent('openFilter',['uid' => $uid]);
-        if(count($this->filtros)>0){
+        $this->dispatchBrowserEvent('openFilter', ['uid' => $uid]);
+        if (count($this->filtros) > 0) {
             $this->hay_query = false;
         }
         $this->clientes = $this->loadCustomers();
     }
 
-    private function desvincularElementoAnterior($uid,$newItem=null)
+    private function desvincularElementoAnterior($uid, $newItem = null)
     {
-        try{
-            if(!$newItem){
+        try {
+            if (!$newItem) {
                 $this->filtros  = $this->filtros->reject(function ($filtro) use ($uid) {
                     return  $filtro['uid'] === $uid;
                 });
                 $this->save();
                 return;
             }
-            
+
             // Encuentra el índice o clave del elemento a reemplazar
             $key = $this->filtros->search(function ($filtro) use ($uid) {
                 return $filtro['uid'] === $uid;
@@ -1810,19 +1834,18 @@ class Clientes extends Component
                 $this->filtros[$key] = $newItem;
             }
             $this->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 811369Cliente"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 811369Cliente"]);
         }
     }
     private function setOldItem($uid)
     {
-        try{
+        try {
             $mycart = $this->filtros;
-            $oldItem = $mycart->where('uid',$uid)->first();
+            $oldItem = $mycart->where('uid', $uid)->first();
             return $oldItem;
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 787369Cliente"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 787369Cliente"]);
         }
     }
 
@@ -1832,168 +1855,168 @@ class Clientes extends Component
     }
     public function showInfo()
     {
-        try{
+        try {
             $this->emit('refresh');
             $this->infoSelected = 2;
             $this->cliente_id = $this->customerSelected->id;
             $this->setAllTimes();
             $this->dispatchBrowserEvent('load-flat');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2431Cliente"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2431Cliente"]);
         }
-    }    
+    }
     public function showHistory()
     {
-        try{
+        try {
             $this->emit('refresh');
             $this->infoSelected = 3;
             $this->setAllTimes();
             $this->dispatchBrowserEvent('load-flat');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2342431Cliente"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2342431Cliente"]);
         }
-    }    
+    }
     private function useDate()
     {
         $start = $this->start;
         $end = $this->end;
-        $this->recalculate($start,$end);
+        $this->recalculate($start, $end);
     }
     public function setAllTimes()
     {
-        try{
-            $this->is_interval=true;
-            $this->start=null;
+        try {
+            $this->is_interval = true;
+            $this->start = null;
             $this->end = null;
             $this->useDate();
             $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 204361Cliente"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 204361Cliente"]);
         }
     }
     private function loadDatesWithNewPeriod()
     {
-        try{
-            $this->emit('dateUpdated', $this->currentDate,$this->currentDateEnd);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 343365Cliente"] );
+        try {
+            $this->emit('dateUpdated', $this->currentDate, $this->currentDateEnd);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 343365Cliente"]);
         }
     }
-    
+
     private function loadFecha()
     {
-        try{
+        try {
             $this->setDatesFromPeriod([Carbon::now()]);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 365140Informe"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 365140Informe"]);
         }
     }
-    
+
     public function returnToday()
     {
-        $this->is_interval=false;
+        $this->is_interval = false;
         $this->loadFecha();
     }
     public function returnYesterday()
     {
         $this->prevDay();
     }
-    
+
     #Función que establece un día anterior 
     public function prevDay()
     {
-        try{
+        try {
             $this->setDatesFromPeriod([Carbon::now()->subDay()]);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 84130Informe"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 84130Informe"]);
         }
     }
     public function setWeek()
     {
-        try{
-            $this->setDatesFromPeriod([Carbon::now()->startOfWeek(),Carbon::now()->endOfWeek()]);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 379141Informe"] );
+        try {
+            $this->setDatesFromPeriod([Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 379141Informe"]);
         }
     }
     public function setMonth()
     {
-        try{
-            $this->setDatesFromPeriod([Carbon::now()->startOfMonth(),Carbon::now()->endOfMonth()]);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 395142Informe"] );
+        try {
+            $this->setDatesFromPeriod([Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 395142Informe"]);
         }
     }
     public function setYear()
     {
-        try{
-            $this->setDatesFromPeriod([Carbon::now()->startOfYear(),Carbon::now()->endOfYear()]);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 411143Informe"] );
+        try {
+            $this->setDatesFromPeriod([Carbon::now()->startOfYear(), Carbon::now()->endOfYear()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 411143Informe"]);
         }
     }
     public function setDate($selectedDate)
     {
-        try{
+        try {
             $this->setDatesFromPeriod([Carbon::parse($selectedDate[0])]);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 53128Informe"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 53128Informe"]);
         }
     }
 
 
     public function setDatesFromPeriod($selectedDates)
     {
-        try{
-            
+        try {
+
             session()->put('selectedDates', $selectedDates);
             session()->save();
-            $this->is_interval=true;
+            $this->is_interval = true;
             if (count($selectedDates) >= 2) {
                 $currentDateC = Carbon::parse($selectedDates[0]);
                 $currentDateCEnd = Carbon::parse($selectedDates[1]);
-            }elseif(count($selectedDates)==1){
+            } elseif (count($selectedDates) == 1) {
                 $currentDateC = Carbon::parse($selectedDates[0]);
                 $currentDateCEnd = $currentDateC->endOfDay();
-            }else{
-                $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Intente de nuevo"] );
+            } else {
+                $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Intente de nuevo"]);
             }
             $this->currentDateC = Carbon::parse($currentDateC);
             $this->currentDateCEnd = Carbon::parse($currentDateCEnd);
-            $this->currentDate=$this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=$this->currentDateC->toDateString();
-            $this->currentDateEnd=$this->currentDateCEnd->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->end=$this->currentDateCEnd->toDateString();
+            $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->start = $this->currentDateC->toDateString();
+            $this->currentDateEnd = $this->currentDateCEnd->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->end = $this->currentDateCEnd->toDateString();
             $this->useDate();
             $this->loadChartsWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 30127Informe"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 30127Informe"]);
         }
     }
     public function exportarFormulario()
     {
-        try{
-            $encuesta = encuesta::with('preguntas.respuestas.cliente.respuestas','preguntas.respuestas.cliente.reviews')->where('salon_id',5)->first();
+        try {
+            $encuesta = encuesta::with('preguntas.respuestas.cliente.respuestas', 'preguntas.respuestas.cliente.reviews')->where('salon_id', 5)->first();
             $date = Carbon::now()->format('Y_m_d_H_i_s');
             $fileName = 'formulario_' . $date . '.xlsx';
-            return Excel::download(new Formulario($encuesta),$fileName);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 497369Cliente"] );   
+            return Excel::download(new Formulario($encuesta), $fileName);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 497369Cliente"]);
         }
     }
     public function exportarClientes()
     {
-        try{
+        try {
             $clientes = $this->loadCustomers(0);
             $date = Carbon::now()->format('Y_m_d_H_i_s');
             $fileName = 'clientes_' . $date . '.xlsx';
-            return Excel::download(new reporteClientes($clientes,$this->filtros),$fileName);
-        }catch(\Throwable $th){
-            
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 497363Cliente"] );   
+            return Excel::download(new reporteClientes($clientes, $this->filtros), $fileName);
+        } catch (\Throwable $th) {
+
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 497363Cliente"]);
         }
     }
-    
+
     public function generateExcel()
     {
         // try{
@@ -2002,8 +2025,8 @@ class Clientes extends Component
         //     $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 497369Cliente"] );
         // }
     }
-    
-    
+
+
     public function regresarListado()
     {
         $this->selectedItems = [];
@@ -2017,88 +2040,87 @@ class Clientes extends Component
         $this->action = 1;
         $this->infoSelected = 1;
     }
-    private function loadAverage($total,$mov_qty)
+    private function loadAverage($total, $mov_qty)
     {
         $promedio = 0;
-        if($total>0){
-            $promedio = ($mov_qty/$total)*100;
+        if ($total > 0) {
+            $promedio = ($mov_qty / $total) * 100;
             $promedio = number_format($promedio, 2);
         }
         return $promedio;
     }
-    private function recalculate($start,$end)
+    private function recalculate($start, $end)
     {
-        try{
-            if($this->infoSelected==2){
-                $this->topProducts = $this->loadProductsData($start,$end);
-                $this->topServices = $this->loadServicesData($start,$end);
-                $totalCitas = $start && $end ? count($this->customerSelected->citas->whereBetween('start', [$start, $end])) : count($this->customerSelected->citas);        
-                $totalCompras = $start && $end ? count($this->customerSelected->compras->whereBetween('created_at', [$start, $end])) : count($this->customerSelected->compras);  
+        try {
+            if ($this->infoSelected == 2) {
+                $this->topProducts = $this->loadProductsData($start, $end);
+                $this->topServices = $this->loadServicesData($start, $end);
+                $totalCitas = $start && $end ? count($this->customerSelected->citas->whereBetween('start', [$start, $end])) : count($this->customerSelected->citas);
+                $totalCompras = $start && $end ? count($this->customerSelected->compras->whereBetween('created_at', [$start, $end])) : count($this->customerSelected->compras);
                 $total = $totalCitas + $totalCompras;
-                $this->productsAverage = $this->loadAverage($total,$totalCompras);
-                $this->servicesAverage = $this->loadAverage($total,$totalCitas);
-                $this->emit('iniciarChartist',[$this->productsAverage,$this->servicesAverage]);
-                $this->emit('refrescarChartist',[$this->productsAverage,$this->servicesAverage]);
-            }elseif($this->infoSelected== 3){
+                $this->productsAverage = $this->loadAverage($total, $totalCompras);
+                $this->servicesAverage = $this->loadAverage($total, $totalCitas);
+                $this->emit('iniciarChartist', [$this->productsAverage, $this->servicesAverage]);
+                $this->emit('refrescarChartist', [$this->productsAverage, $this->servicesAverage]);
+            } elseif ($this->infoSelected == 3) {
                 $this->changeWindow($this->pestaña);
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 235363Cliente"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 235363Cliente"]);
         }
-        
     }
-    private function loadCategories($cliente=null)
+    private function loadCategories($cliente = null)
     {
-        if($cliente!=null){
+        if ($cliente != null) {
             $categoriesList = $cliente->categorias;
-        }else{
+        } else {
             $categoriesList = $this->customerSelected->categorias;
         }
         return $categoriesList;
     }
     private function loadPromedio()
     {
-        $total=0;
-        $qty=0;
-        foreach($this->customerSelected->calificaciones as $calificacion){
+        $total = 0;
+        $qty = 0;
+        foreach ($this->customerSelected->calificaciones as $calificacion) {
             $total += $calificacion->puntaje;
             $qty += 1;
         }
-        
-        if($qty>0){
-            $promedio = $total/$qty;
-        }else{
+
+        if ($qty > 0) {
+            $promedio = $total / $qty;
+        } else {
             $promedio = 0;
         }
         return $promedio;
     }
-    private function loadProductsData($start,$end)
+    private function loadProductsData($start, $end)
     {
         $topProducts = DB::table('asignacion_ventas')
-        ->select(
-            'productos.id',
-            'productos.name',
-            DB::raw('SUM(asignacion_ventas.quantity) as total_qty'),
-            DB::raw('AVG(asignacion_ventas.current_price) as avg_price'),
-            DB::raw('SUM(asignacion_ventas.quantity * asignacion_ventas.current_price) as total_price')
-        )
-        ->join('productos', 'asignacion_ventas.selected_item', '=', 'productos.id')
-        ->join('ventas', 'asignacion_ventas.venta_id', '=', 'ventas.id')
-        ->where('ventas.customer_id', $this->cliente_id);
-        if($start && $end){
-            $topProducts = $topProducts->when($this->is_interval, function($query) use ($start, $end) {
+            ->select(
+                'productos.id',
+                'productos.name',
+                DB::raw('SUM(asignacion_ventas.quantity) as total_qty'),
+                DB::raw('AVG(asignacion_ventas.current_price) as avg_price'),
+                DB::raw('SUM(asignacion_ventas.quantity * asignacion_ventas.current_price) as total_price')
+            )
+            ->join('productos', 'asignacion_ventas.selected_item', '=', 'productos.id')
+            ->join('ventas', 'asignacion_ventas.venta_id', '=', 'ventas.id')
+            ->where('ventas.customer_id', $this->cliente_id);
+        if ($start && $end) {
+            $topProducts = $topProducts->when($this->is_interval, function ($query) use ($start, $end) {
                 return $query->whereBetween('asignacion_ventas.created_at', [$start, $end]);
-            }, function($query) use ($start) {
+            }, function ($query) use ($start) {
                 return $query->whereDate('asignacion_ventas.created_at', $start);
             });
         }
         $topProducts = $topProducts->groupBy('productos.id', 'productos.name')
-        ->orderByDesc('total_qty')
-        ->limit(10)
-        ->get();
+            ->orderByDesc('total_qty')
+            ->limit(10)
+            ->get();
         return $topProducts;
     }
-    private function loadServicesData($start,$end)
+    private function loadServicesData($start, $end)
     {
         $topServices = DB::table('asignacion_servicios')
             ->select(
@@ -2111,14 +2133,14 @@ class Clientes extends Component
             ->join('servicios', 'asignacion_servicios.selected_service', '=', 'servicios.id')
             ->join('citas', 'asignacion_servicios.cita_id', '=', 'citas.id')
             ->where('citas.customer_id', $this->cliente_id);
-            if($start && $end){
-                $topServices = $topServices->when($this->is_interval, function($query) use ($start, $end) {
-                    return $query->whereBetween('asignacion_servicios.start', [$start, $end]);
-                }, function($query) use ($start) {
-                    return $query->whereDate('asignacion_servicios.start', $start);
-                });
-            }
-            $topServices = $topServices->groupBy('servicios.id', 'servicios.name')
+        if ($start && $end) {
+            $topServices = $topServices->when($this->is_interval, function ($query) use ($start, $end) {
+                return $query->whereBetween('asignacion_servicios.start', [$start, $end]);
+            }, function ($query) use ($start) {
+                return $query->whereDate('asignacion_servicios.start', $start);
+            });
+        }
+        $topServices = $topServices->groupBy('servicios.id', 'servicios.name')
             ->orderByDesc('total_assignments')
             ->limit(10)
             ->get();
