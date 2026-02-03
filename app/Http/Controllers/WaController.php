@@ -174,8 +174,6 @@ class WaController extends Controller
             }
             if($date->salon->web_asociada){
                 return redirect()->to($date->salon->web_asociada);
-            }else{
-                return redirect()->to('cita-confirmada');
             }
         }
         return redirect()->to('cita-confirmada');
