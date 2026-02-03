@@ -33,5 +33,28 @@ class AuthController extends Controller
             Log::error($th->getMessage());
         }
     }
+    public static function updatePassword(Request $request)
+    {
+        try{
+            $request->validate([
+                'current_password' => 'required',
+                'new_password' => 'required|min:6',
+            ]);
+
+            $user = $request->user();
+
+            if(!Hash::check($request->current_password,$user->password)){
+                return response()->json(['error' => 'current_password is incorrect'], 200);
+            }
+
+            $user->password = Hash::make($request->new_password);
+            $user->save();
+
+            return response()->json(['message' => 'password updated']);
+        }catch(\Throwable $th){
+            Log::error($th->getMessage());
+            return response()->json(['error' => 'error updating password'], 200);
+        }
+    }
 }
 

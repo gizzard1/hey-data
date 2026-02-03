@@ -63,6 +63,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/data-salon', [DataSalon::class, 'loadSalon']);
     Route::put('/is-unique-email', [DataSalon::class, 'isUniqueSalonEmail']);
     Route::put('/update-salon-data', [DataSalon::class, 'updateSalonData']);
+
+    Route::put('/update-password', [AuthController::class, 'updatePassword']);
 });
 
 // Rutas públicas (sin autenticación)
