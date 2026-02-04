@@ -43,7 +43,6 @@
                         <p><strong>Duración:</strong> {{ ucfirst($serviceSelected->duration) }} minutos</p>
                         <p><strong>Precio bruto:</strong> ${{ $serviceSelected->gross_price }}</p>
                         <p><strong>Precio descuento:</strong> ${{ $serviceSelected->disccount_price }}</p>
-                        <p><strong>Genera:</strong> {{ $serviceSelected->reward_points ?? 0 }} pts.</p>
                         <p><strong>IVA:</strong> {{ floatval($serviceSelected->iva ?? 0)*100 }}% </p>
                         <p><strong>Categoría:</strong> {{implode(", ", $serviceSelected->categorias->pluck('name')->toArray())}}</p>
                         <p><strong>Marca:</strong> {{ $serviceSelected->marca ? $serviceSelected->marca->name : 'Sin marca' }}</p>
