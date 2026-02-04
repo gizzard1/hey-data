@@ -8,6 +8,7 @@ use App\Models\cita;
 use App\Http\Controllers\DataSales as DS;
 use App\Models\Asignacion_venta;
 use App\Models\bloqueo;
+use App\Models\cliente;
 use App\Models\coupon;
 use App\Models\Empleado;
 use App\Models\metodo_pago;
@@ -476,7 +477,7 @@ class DataResourceGrid extends Controller
                     $endTimeToMinutes = $endDetailToMinutes;
                 }
                 $comisionItem = self::defineComisionService(self::generateItemToCalculateComision($detail, $detail['empleadoId']), 'servicio');
-                $gen_points = self::calculateRewardPoints($detail['servicioId'], true, $priceOutOfDiscounts, $request);
+                $gen_points = self::calculateRewardPoints($detail['servicioId'], true, $priceOutOfDiscounts, $request, $date['clienteId']);
                 $total_rp += $gen_points;
                 $asignacion = Asignacion_servicio::updateOrCreate(
                     ['id' => $detail['id'] ?? null], // usa null si no hay id
@@ -504,7 +505,7 @@ class DataResourceGrid extends Controller
             // Actualizar los detalles de ventas en la cita
             if (isset($details['detailsVenta'])) {
                 // Procesar los detalles de la venta asociados a la cita
-                $data_details = DS::createSaleDetails($details, $date_id, false);
+                $data_details = DS::createSaleDetails($details, $date_id, $request, false, $date['clienteId']);
 
                 // Actualizar los totales acumulados
                 $total_rp += $data_details['total_rp'];
@@ -589,7 +590,7 @@ class DataResourceGrid extends Controller
             Log::error($th->getMessage());
         }
     }
-    public static function calculateRewardPoints($item_id, $is_service, $total, $request)
+    public static function calculateRewardPoints($item_id, $is_service, $total, $request, $customer_id = null)
     {
         try {
             $is_service = filter_var($is_service, FILTER_VALIDATE_BOOLEAN);
@@ -634,6 +635,17 @@ class DataResourceGrid extends Controller
                 }
             }
 
+            // Buscar excepciones del cliente si se proporciona un ID de cliente
+            if ($customer_id) {
+                $customer = cliente::with('excepciones', 'categorias.excepciones')->find($customer_id);
+                if ($customer) {
+                    $customer_points = self::calculateCustomerPoints($total, $customer);
+                    if ($customer_points !== 'no_exceptions') {
+                        return $customer_points;
+                    }
+                }
+            }
+
             // Default: regresar la excepcion global
             $recompensa_global = $request->user()->salon->recompensaGeneral()->first();
             if ($is_service) {
@@ -650,6 +662,39 @@ class DataResourceGrid extends Controller
 
             // Si no hay excepciones ni categorías, retornar 0
             return 0;
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+        }
+    }
+
+    private static function calculateCustomerPoints($total, $customer)
+    {
+
+        try {
+            // Buscar excepciones asociadas al cliente
+            $excepcion = $customer->excepciones()
+                ->latest()
+                ->first();
+
+            if ($excepcion) {
+                return self::getRewardPoints($excepcion, $total);
+            }
+
+            // Buscar categorías y excepciones asociadas a las categorías
+            $categoria = $customer->categorias()->latest()->first();
+            if ($categoria) {
+                $excepcion = $categoria->excepciones()
+                    ->whereNotNull('programa_recompensa_id')
+                    ->latest()
+                    ->first();
+
+                if ($excepcion) {
+                    return self::getRewardPoints($excepcion, $total);
+                }
+            }
+
+            // Si no hay excepciones ni categorías, retornar 0
+            return 'no_exceptions';
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }

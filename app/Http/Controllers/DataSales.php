@@ -15,7 +15,7 @@ class DataSales extends Controller
 {
     public static function updateOrCreateSale(Request $request, $SaleOnly = true)
     {
-        try{
+        try {
             // Obtener los datos de la venta desde la solicitud
             $details = $request->input('details') ?? $request->input('methods');
             $sale = $details['detailsVenta'][0]['sale'];
@@ -32,10 +32,10 @@ class DataSales extends Controller
             ])->id;
 
             // Obtener los métodos de pago asociados a la venta
-            $paymentMethods = metodo_pago_venta::where('venta_id',$sale_id)->orderBy('id','asc')->get();
+            $paymentMethods = metodo_pago_venta::where('venta_id', $sale_id)->orderBy('id', 'asc')->get();
 
             // Crear o actualizar los detalles de la venta
-            $data_details = self::createSaleDetails($details, $sale_id);
+            $data_details = self::createSaleDetails($details, $sale_id, $request, true, $sale['customer_id']);
 
             // Obtener los totales calculados
             $total_rp = $data_details['total_rp'];
@@ -52,32 +52,33 @@ class DataSales extends Controller
             self::updateStockAfterSale($asignacionesToDelete);
 
             // Recalcular el descuento total
-            $discount = DRG::getTotalDiscounts($paymentMethods,$total_date);
+            $discount = DRG::getTotalDiscounts($paymentMethods, $total_date);
 
             // Actualizar la venta
-            venta::where('id',[$sale_id])
-                ->update([
-                        'generated_points'=>$total_rp,
-                        'status'=>DRG::determineDateStatus($total_date-$discount,$details['payed']),
-                        'total'=>$total_date,
-                        'disccount'=>$discount,
-                        'items'=>$total_items,
+            venta::where('id', [$sale_id])
+                ->update(
+                    [
+                        'generated_points' => $total_rp,
+                        'status' => DRG::determineDateStatus($total_date - $discount, $details['payed']),
+                        'total' => $total_date,
+                        'disccount' => $discount,
+                        'items' => $total_items,
                     ]
                 );
-            
+
             // Retornar la respuesta según el contexto
-            if($SaleOnly){
+            if ($SaleOnly) {
                 return response()->json(['message' => 'Sale updated successfully']);
-            }else{
+            } else {
                 return $sale_id;
             }
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function updateStockAfterSale($asignacionesToDelete)
     {
-        try{
+        try {
             // Actualizar el stock de los productos antes de eliminar las asignaciones
             foreach ($asignacionesToDelete as $asignacion) {
                 $product = producto::find($asignacion->selected_item);
@@ -89,31 +90,31 @@ class DataSales extends Controller
 
             // Borrar asignaciones que ya no aparecen en la petición
             $asignacionesToDelete->each->delete();
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
-    public static function createSaleDetails($details, $mov_id, $belongsToSale = true)
+    public static function createSaleDetails($details, $mov_id, $request, $belongsToSale, $customer_id = null)
     {
-        try{
+        try {
             // Crear un array para rastrear los IDs que siguen vigentes
             $keptIds = [];
             $total_rp = 0;
             $total_date = 0;
             $total_items = 0;
-            foreach($details['detailsVenta'] as $detail){
-                if(!isset($detail['selected_item'])) continue;
+            foreach ($details['detailsVenta'] as $detail) {
+                if (!isset($detail['selected_item'])) continue;
                 $priceOutOfDiscounts = DRG::determinatePriceOutOfDiscounts($detail);
                 $total_date += $priceOutOfDiscounts;
-                $comisionItem = self::defineComisionProduct(self::generateItemToCalculateComision($detail,$detail['empleado_id']));
-                $gen_points = DRG::calculateRewardPoints($detail['selected_item'],false,$priceOutOfDiscounts);
+                $comisionItem = self::defineComisionProduct(self::generateItemToCalculateComision($detail, $detail['empleado_id']));
+                $gen_points = DRG::calculateRewardPoints($detail['selected_item'], false, $priceOutOfDiscounts, $request, $customer_id);
                 $total_rp += $gen_points * $detail['quantity'];
                 $total_items += $detail['quantity'];
 
                 $qty_before_update = 0;
-                if(isset($detail['id'])){
+                if (isset($detail['id'])) {
                     $existingAsignacion = Asignacion_venta::find($detail['id']);
-                    if($existingAsignacion){
+                    if ($existingAsignacion) {
                         $qty_before_update = $existingAsignacion->quantity;
                     }
                 }
@@ -150,11 +151,11 @@ class DataSales extends Controller
                 'total_items' => $total_items,
                 'keptIds' => $keptIds
             ];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
-    private static function generateItemToCalculateComision($sale,$empleado)
+    private static function generateItemToCalculateComision($sale, $empleado)
     {
         $item['pid'] = $sale->selected_item ?? $sale['selected_item'];
         $item['vendedor'] = $empleado;
@@ -164,12 +165,12 @@ class DataSales extends Controller
         $item['total'] = DRG::determinatePriceOutOfDiscounts($sale);
         return $item;
     }
-    
-    
+
+
     public static function defineComisionProduct($item)
     {
-        try{
-            $empleado = Empleado::with('comision.excepcion_producto','comision.excepcion_cat_producto')->find($item['vendedor']);
+        try {
+            $empleado = Empleado::with('comision.excepcion_producto', 'comision.excepcion_cat_producto')->find($item['vendedor']);
             $balance = 0;
             $type = 'percent';
 
@@ -218,9 +219,8 @@ class DataSales extends Controller
             }
 
             return ['balance' => $balance, 'type' => $type];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
 }
-
