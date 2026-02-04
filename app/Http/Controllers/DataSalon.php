@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Salon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use App\Http\Controllers\DataResourceGrid as DRG;
 
 class DataSalon extends Controller
 {
@@ -63,6 +64,18 @@ class DataSalon extends Controller
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
             return ['success' => false, 'message' => 'An error occurred while updating salon data.'];
+        }
+    }
+    public static function loadRewardPoints(Request $request)
+    {
+        try {
+            $item_id = $request->input('item_id');
+            $total = $request->input('total', 0);
+            $is_service = $request->input('is_service', true);
+
+            return DRG::calculateRewardPoints($item_id, $is_service, $total, $request);
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
         }
     }
 }

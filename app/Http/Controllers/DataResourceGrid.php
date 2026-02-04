@@ -476,7 +476,7 @@ class DataResourceGrid extends Controller
                     $endTimeToMinutes = $endDetailToMinutes;
                 }
                 $comisionItem = self::defineComisionService(self::generateItemToCalculateComision($detail, $detail['empleadoId']), 'servicio');
-                $gen_points = self::calculateRewardPoints($detail['servicioId'], true, $priceOutOfDiscounts);
+                $gen_points = self::calculateRewardPoints($detail['servicioId'], true, $priceOutOfDiscounts, $request);
                 $total_rp += $gen_points;
                 $asignacion = Asignacion_servicio::updateOrCreate(
                     ['id' => $detail['id'] ?? null], // usa null si no hay id
@@ -589,9 +589,10 @@ class DataResourceGrid extends Controller
             Log::error($th->getMessage());
         }
     }
-    public static function calculateRewardPoints($item_id, $is_service, $total)
+    public static function calculateRewardPoints($item_id, $is_service, $total, $request)
     {
         try {
+            $is_service = filter_var($is_service, FILTER_VALIDATE_BOOLEAN);
             // Obtener el item con eager loading de relaciones
             if ($is_service) {
                 $item = servicio::with('excepciones', 'categorias.excepciones')
@@ -602,32 +603,49 @@ class DataResourceGrid extends Controller
             }
 
             // Verificar si el item existe
-            if (!$item) {
-                return 0; // Retorna 0 si el item no se encuentra
-            }
-
-            // Buscar excepciones asociadas al item
-            $excepcion = $item->excepciones()
-                ->whereNotNull('programa_recompensa_id')
-                ->latest()
-                ->first();
-
-            if ($excepcion) {
-                return self::getRewardPoints($excepcion, $total);
+            if ($item) {
+                // Buscar excepciones asociadas al item
+                $excepcion = $item->excepciones()
+                    ->whereNotNull('programa_recompensa_id')
+                    ->latest()
+                    ->first();
+                if ($excepcion) {
+                    return self::getRewardPoints($excepcion, $total);
+                }
             }
 
             // Buscar categorías y excepciones asociadas a las categorías
-            $categoria = $item->categorias()->latest()->first();
+            $categorias = $item->categorias();
 
-            if ($categoria) {
-                $excepcion = $categoria->excepciones()
-                    ->whereNotNull('programa_recompensa_id')
-                    ->latest()
+            if ($categorias) {
+                $excepcion = $categorias->whereHas('excepciones', function ($query) {
+                    $query->whereNotNull('programa_recompensa_id');
+                })
+                    ->with(['excepciones' => function ($query) {
+                        $query->whereNotNull('programa_recompensa_id')->latest();
+                    }])
+                    ->get()
+                    ->pluck('excepciones')
+                    ->flatten()
                     ->first();
 
                 if ($excepcion) {
                     return self::getRewardPoints($excepcion, $total);
                 }
+            }
+
+            // Default: regresar la excepcion global
+            $recompensa_global = $request->user()->salon->recompensaGeneral()->first();
+            if ($is_service) {
+                $recompensa_global->type_comission = $recompensa_global->type_comission_s;
+                $recompensa_global->qty = $recompensa_global->qty_s;
+            } else {
+                $recompensa_global->type_comission = $recompensa_global->type_comission_p;
+                $recompensa_global->qty = $recompensa_global->qty_p;
+            }
+
+            if ($recompensa_global) {
+                return self::getRewardPoints($recompensa_global, $total);
             }
 
             // Si no hay excepciones ni categorías, retornar 0

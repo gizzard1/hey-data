@@ -7,6 +7,7 @@ use App\Http\Controllers\DataResourceGrid;
 use App\Http\Controllers\DataServices;
 use App\Http\Controllers\DataEmployees;
 use App\Http\Controllers\DataPayment;
+use App\Http\Controllers\DataTransactions;
 use App\Http\Controllers\DataSales;
 use App\Http\Controllers\DataSalon;
 use Illuminate\Http\Request;
@@ -60,7 +61,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::put('/update-details-sale', [DataSales::class, 'updateOrCreateSale']);
 
+    Route::get('/load-reward-points',[DataSalon::class,'loadRewardPoints']);
     Route::get('/data-salon', [DataSalon::class, 'loadSalon']);
+    
     Route::put('/is-unique-email', [DataSalon::class, 'isUniqueSalonEmail']);
     Route::put('/update-salon-data', [DataSalon::class, 'updateSalonData']);
 
@@ -68,6 +71,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::put('/update-password', [AuthController::class, 'updatePassword']);
     Route::put('/update-user-data', [AuthController::class, 'updateUserData']);
+
+    Route::get('/data-transactions', [DataTransactions::class, 'loadTransactions']);
 });
 
 // Rutas públicas (sin autenticación)
