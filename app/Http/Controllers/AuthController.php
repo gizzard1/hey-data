@@ -56,5 +56,36 @@ class AuthController extends Controller
             return response()->json(['error' => 'error updating password'], 200);
         }
     }
+    public static function updateUserData(Request $request)
+    {
+        try{
+            Log::info($request->all());
+            $request->validate([
+                'username' => 'required|string',
+                'email' => 'required',
+            ]);
+
+            $user = $request->user();
+
+            $user->name = $request->username;
+            $user->email = $request->email;
+            $user->save();
+
+            return response()->json(['message' => 'user data updated']);
+        }catch(\Throwable $th){
+            Log::error($th->getMessage());
+            return response()->json(['error' => 'error updating user data'], 200);
+        }
+    }
+    public static function loadUserData(Request $request)
+    {
+        try{
+            $user = $request->user();
+            return response()->json(['name' => $user->name, 'email' => $user->email]);
+        }catch(\Throwable $th){
+            Log::error($th->getMessage());
+            return response()->json(['error' => 'error loading user data'], 200);
+        }
+    }
 }
 
