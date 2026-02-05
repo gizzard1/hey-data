@@ -25,7 +25,6 @@ use App\Models\producto;
 use App\Models\Propina;
 use App\Models\Salon;
 use App\Models\servicio;
-use App\Models\venta;
 use App\Models\walog;
 use Carbon\Carbon;
 use DateTime;
@@ -36,55 +35,56 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use App\Http\Controllers\DataResourceGrid as DRG;
 
 class Agenda extends Component
 {
     use WithPagination;
     use WithFileUploads;
 
-    public $currentDate, $currentDateEnd,$is_interval=false;
-    public $start,$currentDateC,$end,$currentDateCEnd;
-    public $end_date,$end_date_DB,$start_date,$start_date_DB;
+    public $currentDate, $currentDateEnd, $is_interval = false;
+    public $start, $currentDateC, $end, $currentDateCEnd;
+    public $end_date, $end_date_DB, $start_date, $start_date_DB;
     protected $paginationTheme = 'bootstrap';
     private $citas;
     public $bloqueos;
     private $salon_id;
 
-    public $max,$min,$recorrido=false;
+    public $max, $min, $recorrido = false;
 
-    public $balance=0;
-    public $type, $itemSelected=null,$terminales=[],$terminales_propina=[],$total_real=0,$total_propinas_real=0,$total_propinas=0;
+    public $balance = 0;
+    public $type, $itemSelected = null, $terminales = [], $terminales_propina = [], $total_real = 0, $total_propinas_real = 0, $total_propinas = 0;
     public $empleados;
 
     public Collection $cartP, $cartS, $methods, $propinas, $terminales_real, $terminales_propina_real, $cartPendingMethods, $cartPendingPropinas;
-    public $disccount=0;
+    public $disccount = 0;
 
-    public $totalCart=0,$totalCartBase=0,$itemsCart=0,$taxCart=0,$subtotalCart=0,$generated_points=0,$total_disccount=0,$totalMethods=0,$global_disccount=0,$recibido=0,$propinasRecibidas=0;
-    public $search,$items,$itemType;
+    public $totalCart = 0, $totalCartBase = 0, $itemsCart = 0, $taxCart = 0, $subtotalCart = 0, $generated_points = 0, $total_disccount = 0, $totalMethods = 0, $global_disccount = 0, $recibido = 0, $propinasRecibidas = 0;
+    public $search, $items, $itemType;
     private caja_apertura $apertura;
 
-    public $description='';
-    public $mensajesRespaldados=[];
-    public $selectedEmpleadoId=null,$remember=0,$customerId,$listCategories,$isAdmin,$horas,$minutes_qty=0,$customer,$agregarEmpleados;
-    public $asignacion_id,$action=1,$pestaña=1,$queryServices,$servicios=[],$query,$categoriasTag=[];
-    public $show,$totales=true;
-    public $pp_cart=0;
+    public $description = '';
+    public $mensajesRespaldados = [];
+    public $selectedEmpleadoId = null, $remember = 0, $customerId, $listCategories, $isAdmin, $horas, $minutes_qty = 0, $customer, $agregarEmpleados;
+    public $asignacion_id, $action = 1, $pestaña = 1, $queryServices, $servicios = [], $query, $categoriasTag = [];
+    public $show, $totales = true;
+    public $pp_cart = 0;
 
-    
-    public $categoriesList,$categoriesListNew;
-    public $cliente,$listCategoriesIds;
-    public $calificacion=0;
-    public $cash,$infoDate=[],$reference, $paymentMethod, $tips,$rest,$indexTotal=0,$cita,$metodoProp,$qtyProp,$referenceProp;
+
+    public $categoriesList, $categoriesListNew;
+    public $cliente, $listCategoriesIds;
+    public $calificacion = 0;
+    public $cash, $infoDate = [], $reference, $paymentMethod, $tips, $rest, $indexTotal = 0, $cita, $metodoProp, $qtyProp, $referenceProp;
 
     public Collection $cartPS;
-    public $clientes=[],$disccount_form=false;
-    public $metodosSalon=[],$uploadFiles=0;
-    public $gallery=[],$pictures=[],$respaldoFiles;
-    public $ventaConstrained=0;
+    public $clientes = [], $disccount_form = false;
+    public $metodosSalon = [], $uploadFiles = 0;
+    public $gallery = [], $pictures = [], $respaldoFiles;
+    public $ventaConstrained = 0;
     public $queryTag;
-    public $type_disccount='%';
+    public $type_disccount = '%';
     public $cajaChica = 0;
-    public $listTags=null,$searchPassword=null;
+    public $listTags = null, $searchPassword = null;
     public $billRequired = 0, $usoCfdi = null, $billed = false;
     public $vista;
     public $usos = [
@@ -120,33 +120,33 @@ class Agenda extends Component
     {
         array_splice($this->gallery, $index, 1);
     }
-    public function removeFile($filename,$fromGallery)
+    public function removeFile($filename, $fromGallery)
     {
-        try{
-            if($fromGallery){
+        try {
+            if ($fromGallery) {
                 // Filtrar el arreglo para eliminar el archivo con el nombre coincidente
-                $this->gallery = array_filter($this->gallery, function($file) use ($filename) {
+                $this->gallery = array_filter($this->gallery, function ($file) use ($filename) {
                     return $file->getFilename() !== $filename;
                 });
-            }else{
+            } else {
                 // Filtrar la colección para eliminar el archivo con la ruta coincidente
                 $this->pictures = $this->pictures->filter(function ($picture) use ($filename) {
                     return $picture !== $filename;
                 });
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 115459Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 115459Agenda"]);
         }
     }
     public function filesDroped($files)
     {
         $this->gallery[] = $files;
     }
-    public function mount($action=null,$pestaña=null,$cita_id=null)
+    public function mount($action = null, $pestaña = null, $cita_id = null)
     {
         $this->action = $action ?? 1;
         $this->pestaña = $pestaña ?? 1;
-        if(session()->has('cartPV')){
+        if (session()->has('cartPV')) {
             $this->clearSession(['cartPV']);
         }
 
@@ -156,41 +156,41 @@ class Agenda extends Component
         $this->loadHoras();
         $this->loadFecha();
         $this->initializeCollections();
-        if(!session()->has('recorrido') && session()->has('recorrido')!='terminado'){
+        if (!session()->has('recorrido') && session()->has('recorrido') != 'terminado') {
             $this->empezarRecorrido(false);
         }
-        if(session()->has('recorrido')){
+        if (session()->has('recorrido')) {
             $this->clearSession(['recorrido']);
         }
 
         $this->emit('reloadFlat');
 
-        if($cita_id){
+        if ($cita_id) {
             $this->vista = 'livewire.calendar.edit'; // otra vista por defecto
 
-            $this->changeWindow($pestaña,$cita_id);
-        }else {
+            $this->changeWindow($pestaña, $cita_id);
+        } else {
             $this->vista = 'livewire.calendar.calendar'; // otra vista por defecto
         }
     }
     private function getMetodosSalon()
     {
-        foreach(Auth::user()->salon->metodosPago as $metodosSalon){
+        foreach (Auth::user()->salon->metodosPago as $metodosSalon) {
             $this->metodosSalon[] = $metodosSalon;
         }
     }
-    
+
     function save()
     {
-        try{
+        try {
             session()->put('cartS', $this->cartS);
             session()->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 38967Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 38967Agenda"]);
         }
     }
 
-    
+
     private function clearSession(array $keys)
     {
         $session = session();
@@ -207,80 +207,77 @@ class Agenda extends Component
     {
         session()->put('recorrido', $respuesta);
         session()->save();
-        if($respuesta){
+        if ($respuesta) {
             $this->dispatchBrowserEvent('comenzar_recorrido');
         }
     }
     public function filterEmployee($empleado_id)
     {
-        try{
-            $empleado = empleado::where('id',$empleado_id)->where('visible',1)->first();
+        try {
+            $empleado = empleado::where('id', $empleado_id)->where('visible', 1)->first();
             $empleado->is_active = !$empleado->is_active;
             $empleado->save();
-            if(!$empleado->is_active){
+            if (!$empleado->is_active) {
                 redirect('/');
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 13459Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 13459Agenda"]);
         }
-        
     }
-    
+
     public function updatedQueryServices()
     {
-        try{
-            
-            $this->servicios = servicio::where('salon_id', Auth::user()->salon->id)
-            ->where('visibility','visible')
-            ->where('name', '!=', 'Servicio eliminado')
-            ->where(function ($q) {
-                $q->where('name', 'like', "%{$this->queryServices}%")
-                  ->orWhere('description', 'like', "%{$this->queryServices}%");
-            })
-            ->orderBy('name', 'asc')
-            ->get();      
+        try {
 
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Agenda"] );
+            $this->servicios = servicio::where('salon_id', Auth::user()->salon->id)
+                ->where('visibility', 'visible')
+                ->where('name', '!=', 'Servicio eliminado')
+                ->where(function ($q) {
+                    $q->where('name', 'like', "%{$this->queryServices}%")
+                        ->orWhere('description', 'like', "%{$this->queryServices}%");
+                })
+                ->orderBy('name', 'asc')
+                ->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Agenda"]);
         }
     }
     public function updatedQueryTag()
     {
-        try{
-            
-            $this->categoriasTag = categoria_cliente::where('salon_id', Auth::user()->salon->id)
-            ->where(function ($q) {
-                $q->where('name', 'like', "%{$this->queryTag}%");
-            })
-            ->orderBy('name', 'asc')
-            ->get();      
+        try {
 
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Agenda"] );
+            $this->categoriasTag = categoria_cliente::where('salon_id', Auth::user()->salon->id)
+                ->where(function ($q) {
+                    $q->where('name', 'like', "%{$this->queryTag}%");
+                })
+                ->orderBy('name', 'asc')
+                ->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Agenda"]);
         }
     }
     public function updatedQuery()
     {
-        try{
-            $q =$this->query;
+        try {
+            $q = $this->query;
 
             $this->clientes = cliente::where(function ($query) {
                 $words = preg_split('/\s+/', trim($this->query));
-            
+
                 foreach ($words as $word) {
                     $query->where(function ($q) use ($word) {
                         $q->where('first_name', 'like', "%{$word}%")
-                          ->orWhere('last_name', 'like', "%{$word}%")
-                          ->orWhere(DB::raw("CONCAT_WS(' ', TRIM(first_name), TRIM(last_name))"), 'like', "%{$word}%")
-                          ->orWhere('email', 'like', "%{$word}%")
-                          ->orWhere('phone', 'like', "%{$word}%")
-                          ->orWhereRaw("SOUNDEX(first_name) = SOUNDEX(?)", [$word])
-                          ->orWhereRaw("SOUNDEX(last_name) = SOUNDEX(?)", [$word]);
+                            ->orWhere('last_name', 'like', "%{$word}%")
+                            ->orWhere(DB::raw("CONCAT_WS(' ', TRIM(first_name), TRIM(last_name))"), 'like', "%{$word}%")
+                            ->orWhere('email', 'like', "%{$word}%")
+                            ->orWhere('phone', 'like', "%{$word}%")
+                            ->orWhereRaw("SOUNDEX(first_name) = SOUNDEX(?)", [$word])
+                            ->orWhereRaw("SOUNDEX(last_name) = SOUNDEX(?)", [$word]);
                     });
                 }
             })
-            ->where('salon_id', Auth::user()->salon->id)
-            ->orderByRaw("
+                ->where('salon_id', Auth::user()->salon->id)
+                ->orderByRaw("
                 CASE
                     WHEN first_name LIKE '{$q}%' THEN 1
                     WHEN last_name LIKE '{$q}%' THEN 2
@@ -291,22 +288,21 @@ class Agenda extends Component
                     ELSE 7
                 END
             ")
-            ->get();
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Agenda"] );
+                ->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Agenda"]);
         }
     }
     public function clear()
     {
         $this->initializeCollections();
-        $this->clearSession(['cartS', 'cartMaterials','cartPV','rfcSelected']);
+        $this->clearSession(['cartS', 'cartMaterials', 'cartPV', 'rfcSelected']);
         $this->clearCliente();
-        $this->itemSelected=null;
-        $this->description='';
-        $this->pictures=null;
-        $this->gallery=null;
-        $this->asignacion_id=null;
+        $this->itemSelected = null;
+        $this->description = '';
+        $this->pictures = null;
+        $this->gallery = null;
+        $this->asignacion_id = null;
         $this->loadCartTotales();
         $this->emit('clear-cart-pv');
 
@@ -318,12 +314,12 @@ class Agenda extends Component
     {
         $this->clear();
         $this->minutes_qty = 0;
-        $this->action=1;
+        $this->action = 1;
         $this->asignacion_id = null;
-        $this->calificacion =null;
-        $this->pictures=null;
-        $this->gallery=null;
-        $this->listTags=null;
+        $this->calificacion = null;
+        $this->pictures = null;
+        $this->gallery = null;
+        $this->listTags = null;
         $this->initializeCollections();
         $this->clearCliente();
         $this->loadData();
@@ -331,7 +327,7 @@ class Agenda extends Component
     }
     private function loadHoras()
     {
-        try{
+        try {
             $horaDesconcatenada = explode(":", Auth::user()->salon->start);
             $horaFinDesconcatenada = explode(":", Auth::user()->salon->end);
 
@@ -341,22 +337,79 @@ class Agenda extends Component
             for ($hora = $inicio; $hora <= $fin; $hora++) {
                 $this->horas[] = sprintf('%02d:00', $hora);
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 35417Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 35417Agenda"]);
         }
     }
     protected $listeners = [
-        'refresh' => '$refresh','datesSelected' => 'setDatesFromPeriod','filesDroped',
-        'prevDay','dateSelected' => 'setDate','viewDetails','cancelacion','updateDuration',
-        'StoreReview','editar','updateQty','changeWindow','deleteMov','aperturaCaja','continueStoring',
-        'updateIva','deleteItem'=>'removeItem','updatePercentage','loadItems','addNewService','cambioData','cambioDataMethods','changeTerminalQty','changeQty','StoreCorte','changeStartDuration','changeEndDuration',
-        'changeEmpleado' => 'updateEmpleado','customerId' => 'setCustomerId','newCust','enviarCliente' => 'recibirClienteNuevo','reimpresion',
-        'cancelarCaptura','changeDate','setCitaDragged','clear-cart'=>'cancelarCaptura','enviarMethods'=>'recibirMethods','enviarGlobal',
-        'enviarPropinas'=>'recibirPropinas','changeTotalCP','actualizarCalificacion','storeDate','selectAssigment','crearCita','crearCitaCel','setAsignacion',
-        'removeItem','setCustomerId','Store','setMethod','setTip'=>'newPropina','newPropina','setReward','newMethod','filterEmployee','recorrido','productAdded','rfcSelected','updateBaseComision',
+        'refresh' => '$refresh',
+        'datesSelected' => 'setDatesFromPeriod',
+        'filesDroped',
+        'prevDay',
+        'dateSelected' => 'setDate',
+        'viewDetails',
+        'cancelacion',
+        'updateDuration',
+        'StoreReview',
+        'editar',
+        'updateQty',
+        'changeWindow',
+        'deleteMov',
+        'aperturaCaja',
+        'continueStoring',
+        'updateIva',
+        'deleteItem' => 'removeItem',
+        'updatePercentage',
+        'loadItems',
+        'addNewService',
+        'cambioData',
+        'cambioDataMethods',
+        'changeTerminalQty',
+        'changeQty',
+        'StoreCorte',
+        'changeStartDuration',
+        'changeEndDuration',
+        'changeEmpleado' => 'updateEmpleado',
+        'customerId' => 'setCustomerId',
+        'newCust',
+        'enviarCliente' => 'recibirClienteNuevo',
+        'reimpresion',
+        'cancelarCaptura',
+        'changeDate',
+        'setCitaDragged',
+        'clear-cart' => 'cancelarCaptura',
+        'enviarMethods' => 'recibirMethods',
+        'enviarGlobal',
+        'enviarPropinas' => 'recibirPropinas',
+        'changeTotalCP',
+        'actualizarCalificacion',
+        'storeDate',
+        'selectAssigment',
+        'crearCita',
+        'crearCitaCel',
+        'setAsignacion',
+        'removeItem',
+        'setCustomerId',
+        'Store',
+        'setMethod',
+        'setTip' => 'newPropina',
+        'newPropina',
+        'setReward',
+        'newMethod',
+        'filterEmployee',
+        'recorrido',
+        'productAdded',
+        'rfcSelected',
+        'updateBaseComision',
         // Acciones con teclas
-        'teclaC','teclaLeft','teclaRight','teclaUp','teclaDown','teclaT','teclaESC'
-    ];    
+        'teclaC',
+        'teclaLeft',
+        'teclaRight',
+        'teclaUp',
+        'teclaDown',
+        'teclaT',
+        'teclaESC'
+    ];
     public function productAdded()
     {
         $this->loadCartTotales();
@@ -364,7 +417,7 @@ class Agenda extends Component
     public function teclaC()
     {
         $start = substr(Auth::user()->salon->start, 0, 5);  // Resultado: '08:00'
-        $this->crearCita($start,null);
+        $this->crearCita($start, null);
     }
     public function teclaLeft()
     {
@@ -391,13 +444,13 @@ class Agenda extends Component
         $this->cancelarCaptura();
     }
 
-    public function updateDuration($newDuration,$cita,$tipo = 'cita',$agrupadas)
+    public function updateDuration($newDuration, $cita, $tipo = 'cita', $agrupadas)
     {
-        try{
-            if($tipo == 'cita'){
+        try {
+            if ($tipo == 'cita') {
                 $detail = asignacion_servicio::with('date.details')->find($cita);
-                if($detail==null){
-                    preg_match("/'([^']+)'/",$cita,$matches);
+                if ($detail == null) {
+                    preg_match("/'([^']+)'/", $cita, $matches);
                     // El contenido extraído estará en $matches[1]
                     $cita = $matches[1];
                     // El contenido extraído estará en $matches[1]
@@ -405,11 +458,10 @@ class Agenda extends Component
 
                     $detail = asignacion_servicio::with('date.details')->find($cita);
                 }
-                $citas_continuas = $this->identificarCitasContinuas($detail,$agrupadas);
-                $duration_per_service = round( $newDuration/($citas_continuas->count()>0?$citas_continuas->count(): 1),0,PHP_ROUND_HALF_DOWN);
+                $citas_continuas = $this->identificarCitasContinuas($detail, $agrupadas);
+                $duration_per_service = round($newDuration / ($citas_continuas->count() > 0 ? $citas_continuas->count() : 1), 0, PHP_ROUND_HALF_DOWN);
                 $new_start = Carbon::parse($detail->start);
-                foreach($citas_continuas as $cita)
-                {
+                foreach ($citas_continuas as $cita) {
                     $cita->duration = $duration_per_service;
                     $cita->start = $new_start;
                     $cita->save();
@@ -422,25 +474,24 @@ class Agenda extends Component
                 $date->start = $data['start'];
                 $date->end = $data['end'];
                 $date->save();
-            }elseif($tipo == 'bloqueo'){
+            } elseif ($tipo == 'bloqueo') {
                 $detail = bloqueo::find($cita);
                 $newEnd = Carbon::parse($detail->start)->addMinutes($newDuration);
                 $detail->end = $newEnd;
                 $detail->save();
             }
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 525Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 525Agenda"]);
         }
     }
-    private function identificarCitasContinuas($detail,$agrupadas)
+    private function identificarCitasContinuas($detail, $agrupadas)
     {
         // Ordenamos los detalles por hora de inicio
         $details_sorted = $detail->date->details
-            ->sortBy(fn ($d) => [$d->empleado_id,$d->start])
+            ->sortBy(fn($d) => [$d->empleado_id, $d->start])
             ->values();
         // Obtenemos el índice del detalle actual
-        $index = $details_sorted->search(fn ($d) => $d->id === $detail->id);
+        $index = $details_sorted->search(fn($d) => $d->id === $detail->id);
 
         if ($index === false) {
             return collect(); // Por seguridad, si no se encuentra
@@ -458,11 +509,11 @@ class Agenda extends Component
     }
     public function enviarGlobal($total)
     {
-        $this->total_disccount+=$total;
+        $this->total_disccount += $total;
     }
     public function eliminarCategoria($categoriaName)
     {
-        try{
+        try {
             $categories = $this->listCategories;
             // Buscar el índice del ID de la categoría en la lista
             $index = array_search($categoriaName, $this->listCategories);
@@ -472,32 +523,32 @@ class Agenda extends Component
                 unset($categories[$index]);
                 $this->categoriesList = array_values($categories);
             }
-            
+
             // Recargar la lista de categorías completas desde la base de datos
             $this->listCategories = categoria_cliente::whereIn('name', $this->categoriesList)->pluck('name')->toArray();
             $this->listCategoriesIds = categoria_cliente::whereIn('name', $this->categoriesList)->pluck('id')->toArray();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1701352Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1701352Agenda"]);
         }
     }
     public function actualizarCalificacion($puntaje)
     {
-        $this->calificacion=$puntaje;
+        $this->calificacion = $puntaje;
     }
     public function reseñaClienteDate($customer_id)
     {
-        try{
+        try {
             $this->customer = cliente::with('categorias')->find($customer_id);
             $categoriesList = $this->customer->categorias->pluck('name')->toArray();
             $this->listCategories = $categoriesList;
             $this->listCategoriesIds = $this->customer->categorias->pluck('id')->toArray();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1651350Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1651350Agenda"]);
         }
-    }    
+    }
     public function createTag()
     {
-        if($this->queryTag!=null){
+        if ($this->queryTag != null) {
             //guardar categoría
             $newCat =  new categoria_cliente;
             $newCat->name = $this->queryTag;
@@ -508,21 +559,21 @@ class Agenda extends Component
             $this->emit('refresh');
         }
     }
-    public function addTag($tagId,$name)
+    public function addTag($tagId, $name)
     {
-        try{
+        try {
             // Verificamos si el tagId ya está en listCategoriesIds
             if (!in_array($tagId, $this->listCategoriesIds)) {
                 $this->listCategories[] = $name;
                 $this->listCategoriesIds[] = $tagId;
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1651350Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1651350Agenda"]);
         }
     }
     public function StoreReview()
     {
-        try{
+        try {
             if (session()->has('customDate')) {
                 Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
             }
@@ -536,8 +587,8 @@ class Agenda extends Component
             calificacion_empleado_cliente::create([
                 'puntaje' => $this->calificacion,
                 'calificado' => 'cliente',
-                'cliente_id' => $this->customer->id,
-                'user_id' => Auth::user()->id 
+                'cliente_id' => $this->customer?->id,
+                'user_id' => Auth::user()->id
             ]);
             $this->cancelarCaptura();
             $this->dispatchBrowserEvent('cerrarReview');
@@ -545,13 +596,13 @@ class Agenda extends Component
             if (session()->has('customDate')) {
                 Carbon::setTestNow();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1662351Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1662351Agenda"]);
         }
     }
     public function reimpresion()
     {
-        $cita = Cita::where('status','Pagada')->where('salon_id',Auth::user()->salon_id)->latest('id')->first();
+        $cita = Cita::where('status', 'Pagada')->where('salon_id', Auth::user()->salon_id)->latest('id')->first();
         $this->imprimirTicket($cita);
     }
     public function reimpresionTicket()
@@ -560,45 +611,45 @@ class Agenda extends Component
     }
     private function imprimirTicket($date)
     {
-        try{
-            if($date){
-                $this->emit('print_on',['ticket_servicio',$date->id]);
+        try {
+            if ($date) {
+                $this->emit('print_on', ['ticket_servicio', $date->id]);
                 $this->emit('refresh');
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 18959citas"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 18959citas"]);
         }
     }
     public function showAdvanced()
     {
-        try{
+        try {
             $this->methods = new Collection;
             $this->propinas = new Collection;
             $this->colectMethods();
             $this->enviarFechas();
             $this->dispatchBrowserEvent('close-form');
             $this->emit('reloadFlat');
-            $this->action=2;
+            $this->action = 2;
             $this->loadCartTotales();
             $this->totalPropinas();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 18959citas"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 18959citas"]);
         }
     }
-    
+
     public function colectMethods()
     {
         $this->loadCart(0);
-    }   
+    }
     public function returnModal()
     {
         $this->emit('abrirForm');
-        $this->action=1;
+        $this->action = 1;
     }
     public function changeDate($date)
     {
-        try{
-            $horario = explode(":",$this->start_date);
+        try {
+            $horario = explode(":", $this->start_date);
             $date = Carbon::parse($date[0]);
 
             // Extract the time components from currentDateC
@@ -609,13 +660,13 @@ class Agenda extends Component
             $new_date = $date->locale('es')->setTime($hour, $minute, '00');
 
 
-            $this->start_date_DB=$new_date->format('Y-m-d H:i:s');
-            $this->start_date=$this->start_date_DB;
-            $this->currentDate= $new_date->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->start_date_DB = $new_date->format('Y-m-d H:i:s');
+            $this->start_date = $this->start_date_DB;
+            $this->currentDate = $new_date->locale('es')->isoFormat('dddd, D MMMM YYYY');
 
             $this->loadData();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2034Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2034Agenda"]);
         }
     }
 
@@ -631,24 +682,22 @@ class Agenda extends Component
 
     public function render()
     {
-        try{
+        try {
             $this->loadEmpleados();
             $salonTimes = $this->loadSalonTimes();
             $times = $this->loadTimes();
             $agregarEmpleados = $this->contarEmpleados();
             $isAdmin = Auth::user()->role == 'admin' || Auth::user()->role == 'recepcionista';
-            if($isAdmin){
-                return view($this->vista,['agregarEmpleados' => $agregarEmpleados,'citas'=>$this->useDate(),'propinas'=>$this->propinas,'type' => $this->type,'itemSelected'=>$this->itemSelected,'methods' => $this->methods,'totalCart' => $this->totalCart, 'taxCart' => $this->taxCart, 'subtotalCart' => $this->subtotalCart, 'generated_points' => $this->generated_points, 'items'=>$this->items,'times'=>$times,'salonTimes'=>$salonTimes,'pp_cart'=>$this->pp_cart,'categoriasCliente' => $this->listCategories,'total_disccount' => $this->total_disccount,'restante' => $this->rest,'isAdmin' => $isAdmin]);
-            }else{
-                return view('livewire.calendar.resource-hour-grid-employees',['citas'=>$this->useDate(),'propinas'=>$this->propinas,'times'=>$times]);
-
+            if ($isAdmin) {
+                return view($this->vista, ['agregarEmpleados' => $agregarEmpleados, 'citas' => $this->useDate(), 'propinas' => $this->propinas, 'type' => $this->type, 'itemSelected' => $this->itemSelected, 'methods' => $this->methods, 'totalCart' => $this->totalCart, 'taxCart' => $this->taxCart, 'subtotalCart' => $this->subtotalCart, 'generated_points' => $this->generated_points, 'items' => $this->items, 'times' => $times, 'salonTimes' => $salonTimes, 'pp_cart' => $this->pp_cart, 'categoriasCliente' => $this->listCategories, 'total_disccount' => $this->total_disccount, 'restante' => $this->rest, 'isAdmin' => $isAdmin]);
+            } else {
+                return view('livewire.calendar.resource-hour-grid-employees', ['citas' => $this->useDate(), 'propinas' => $this->propinas, 'times' => $times]);
             }
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 88354Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 88354Agenda"]);
         }
     }
-    
+
     public function aperturaCaja()
     {
         $this->aperturarCaja();
@@ -656,183 +705,180 @@ class Agenda extends Component
     }
     private function aperturarCaja()
     {
-        try{
+        try {
             $apertura = new caja_apertura;
             $apertura->caja_chica = $this->cajaChica;
             $apertura->user_id = Auth()->user()->id;
             $apertura->save();
             $this->dispatchBrowserEvent('aperturarOk');
             $this->storeDate(1);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 11456Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 11456Agenda"]);
         }
     }
 
     private function verificarApertura()
     {
-        try{
+        try {
             $salon_id = Auth::user()->salon_id;
             $apertura = caja_apertura::whereHas('user', function ($query) use ($salon_id) {
                 $query->where('salon_id', $salon_id);
             })
-            ->latest('id')
-            ->first();
-            if ($apertura!=null && $apertura->caja_corte_id==null) {
+                ->latest('id')
+                ->first();
+            if ($apertura != null && $apertura->caja_corte_id == null) {
                 return true;
             } else {
                 $corte = $apertura->corteCaja;
-                $totalCashReal = $corte->total_cash_real; 
+                $totalCashReal = $corte->total_cash_real;
                 $efectivoCorte = $corte->total_cash;
                 $propinasEfectivo = $corte->propinas_efectivo;
                 $gastos = $corte->gastos;
-                $this->cajaChica = $totalCashReal-$efectivoCorte-$propinasEfectivo+$gastos;
+                $this->cajaChica = $totalCashReal - $efectivoCorte - $propinasEfectivo + $gastos;
                 return false;
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 9655Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 9655Agenda"]);
         }
     }
-    
+
     private function contarEmpleados()
     {
-        try{
+        try {
             $empleados = Empleado::where('is_active', true)
-                ->where('visible',1)
-                ->where('salon_id',Auth::user()->salon->id)
+                ->where('visible', 1)
+                ->where('salon_id', Auth::user()->salon->id)
                 ->get();
-            return count($empleados)==0 ? true : false;
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1240255Agenda"] );
+            return count($empleados) == 0 ? true : false;
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1240255Agenda"]);
         }
     }
     public function cancelacion($motivo)
     {
-        try{
-            if($this->asignacion_id===null && $this->itemSelected===null){
-                $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Refresque la pantalla e intente nuevamente."] );
+        try {
+            if ($this->asignacion_id === null && $this->itemSelected === null) {
+                $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Refresque la pantalla e intente nuevamente."]);
                 return;
             }
 
             $asignacion = Asignacion_servicio::with('date.details')->find($this->asignacion_id);
             $this->itemSelected = $asignacion->date;
-            $this->itemSelected->status='Cancelada';
-            $this->itemSelected->motivoCancelacion=$motivo;
+            $this->itemSelected->status = 'Cancelada';
+            $this->itemSelected->motivoCancelacion = $motivo;
             $this->itemSelected->save();
             $this->cancelarStock();
             $this->dispatchBrowserEvent('noty', ['msg' => "SOLICITUD PROCESADA CON ÉXITO"]);
             $this->clear();
-            
-            if($this->vista === 'livewire.calendar.edit'){
+
+            if ($this->vista === 'livewire.calendar.edit') {
                 $this->dispatchBrowserEvent('returnCustomersView');
             }
             $this->cancelarCaptura();
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 49728Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 49728Agenda"]);
         }
-    } 
+    }
     private function clearCliente()
     {
-        $this->ventaConstrained=0;
+        $this->ventaConstrained = 0;
         $this->customer = null;
         $this->customerId = null;
         $this->removeRewardMethods();
     }
     private function inMethods($key = null)
     {
-        try{
+        try {
             $mymethods = $this->methods;
 
             $cont = $mymethods->where($key ?? 'paymentMethod', $this->paymentMethod)->count();
 
             return  $cont > 0 ? true : false;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 281214Payment"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 281214Payment"]);
         }
     }
     public function removeRewardMethods()
     {
-        $this->paymentMethod='5';
-        if($this->inMethods()){
+        $this->paymentMethod = '5';
+        if ($this->inMethods()) {
             $puntos = $this->methods->where('paymentMethod', $this->paymentMethod)->first();
-            $this->removeItem($puntos['uid'],'method');
+            $this->removeItem($puntos['uid'], 'method');
         }
     }
     private function subReward()
     {
-        try{
-            $this->paymentMethod='5';
-            if($this->inMethods()){
+        try {
+            $this->paymentMethod = '5';
+            if ($this->inMethods()) {
                 $puntos = $this->methods->where('paymentMethod', $this->paymentMethod)->first();
-                if(count($this->methods)<1&&$this->rest<0){
-                    $this->cambioDataMethods($puntos['uid'],$this->totalCart,1,'metodos');
+                if (count($this->methods) < 1 && $this->rest < 0) {
+                    $this->cambioDataMethods($puntos['uid'], $this->totalCart, 1, 'metodos');
                 }
-            }else{
+            } else {
                 return;
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 22314Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 22314Agenda"]);
         }
     }
     private function validateCustFields($cust)
     {
-        try{
-            $response = $cust->first_name!==null && $cust->last_name!==null && $cust->email!==null &&
-                $cust->postcode!==null && $cust->birth_date!==null && $cust->phone!==null &&
-                $cust->sexo!==null && $cust->procedencia_id!==null;
+        try {
+            $response = $cust->first_name !== null && $cust->last_name !== null && $cust->email !== null &&
+                $cust->postcode !== null && $cust->birth_date !== null && $cust->phone !== null &&
+                $cust->sexo !== null && $cust->procedencia_id !== null;
             return $response;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 22314Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 22314Agenda"]);
         }
     }
     public function setReward()
     {
-        try{
+        try {
             $cust = cliente::find($this->customerId);
 
-            if(!$cust) {
+            if (!$cust) {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => 'CLIENTE NO ENCONTRADO']);
                 return;
             }
-            
-            if(!$cust) {
+
+            if (!$cust) {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => 'SELECCIONE UN CLIENTE']);
                 return;
             }
 
-            if(!$this->validateCustFields($cust)) {
+            if (!$this->validateCustFields($cust)) {
                 $this->emit('activateModalForm', $cust->id);
                 $this->dispatchBrowserEvent('noty-error', ['msg' => 'FAVOR DE COMPLETAR INFORMACIÓN DEL CLIENTE']);
                 return;
             }
 
-            if(!isset($cust->tarjetaPuntos)){
+            if (!isset($cust->tarjetaPuntos)) {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => 'EL CLIENTE NO TIENE UNA TARJETA DE PUNTOS ACTIVADA']);
                 return;
 
-            if($cust->tarjetaPuntos->balance<0)
-                $this->dispatchBrowserEvent('noty-error', ['msg' => 'SIN SALDO EN TARJETA']);
+                if ($cust->tarjetaPuntos->balance < 0)
+                    $this->dispatchBrowserEvent('noty-error', ['msg' => 'SIN SALDO EN TARJETA']);
                 return;
             }
-            
-            if($this->inMethods()) 
-            {
+
+            if ($this->inMethods()) {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => 'YA NO SE PUEDEN AGREGAR PUNTOS O PUNTOS INSUFICIENTES']);
                 return;
             }
 
-            $puntos=$cust->tarjetaPuntos->balance;
+            $puntos = $cust->tarjetaPuntos->balance;
 
-            if($puntos>$this->rest){
-                $excedente=$cust->tarjetaPuntos->balance-$this->rest;
-                $puntos=$cust->tarjetaPuntos->balance-$excedente;
+            if ($puntos > $this->rest) {
+                $excedente = $cust->tarjetaPuntos->balance - $this->rest;
+                $puntos = $cust->tarjetaPuntos->balance - $excedente;
             }
 
             $this->recibido = $puntos;
-            $this->addMethod($puntos,'','5',$this->methods);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 101207Agenda"] );
+            $this->addMethod($puntos, '', '5', $this->methods);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 101207Agenda"]);
         }
     }
     public function unsetCustomer()
@@ -845,19 +891,19 @@ class Agenda extends Component
     }
     private function loadDateByAgenda()
     {
-        try{
-            $this->currentDateC= Carbon::parse($this->currentDateC);
-            $this->currentDate= $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+        try {
+            $this->currentDateC = Carbon::parse($this->currentDateC);
+            $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
             $this->citas = $this->useDate();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1240255Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1240255Agenda"]);
         }
     }
 
     public static function loadSalonTimes($salon_id = null)
     {
-        try{
-            $salon = $salon_id ? Salon::select('start','end')->where('id',$salon_id)->first() : Auth::user()->salon;
+        try {
+            $salon = $salon_id ? Salon::select('start', 'end')->where('id', $salon_id)->first() : Auth::user()->salon;
             $horas = [];
             $horaDesconcatenada = explode(":", $salon->start);
             $horaFinDesconcatenada = explode(":", $salon->end);
@@ -878,177 +924,176 @@ class Agenda extends Component
                 $currentTime->modify('+15 minutes');
             }
             return $horas;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
-            self::dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 223234Agenda"] );
+            self::dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 223234Agenda"]);
         }
     }
     private function loadTimes()
     {
-        try{
+        try {
             $horas = [];
             $horaDesconcatenada = explode(":", Auth::user()->salon->start);
             $horaFinDesconcatenada = explode(":", Auth::user()->salon->end);
-            
+
             $inicioHoras = intval($horaDesconcatenada[0]);
             $inicioMinutos = intval($horaDesconcatenada[1]);
             $finHoras = intval($horaFinDesconcatenada[0]);
             $finMinutos = intval($horaFinDesconcatenada[1]);
-            
+
             // Ajustar inicio 4 horas antes
             $currentTime = new DateTime();
             $currentTime->setTime($inicioHoras, $inicioMinutos);
             $currentTime->modify('-4 hours');
-            
+
             // Ajustar fin 4 horas después
             $endTime = new DateTime();
             $endTime->setTime($finHoras, $finMinutos);
             $endTime->modify('+4 hours');
-            
+
             // Generar el rango de horas
             while ($currentTime <= $endTime) {
                 $horas[] = $currentTime->format('H:i');
                 $currentTime->modify('+15 minutes');
             }
-            
+
             return $horas;
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 223234Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 223234Agenda"]);
         }
     }
     private function loadEmpleados()
     {
-        try{
-            $this->empleados = Empleado::where('salon_id',Auth::user()->salon_id)->where('visible',1)->get();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 95355Agenda"] );
+        try {
+            $this->empleados = Empleado::where('salon_id', Auth::user()->salon_id)->where('visible', 1)->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 95355Agenda"]);
         }
     }
     public function loadFecha()
     {
-        try{
-            $this->currentDate=Carbon::now()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->toDateString();
-            $this->currentDateC=Carbon::now();
-            $this->currentDateEnd='';
-            $this->end='';
-            $this->currentDateCEnd='';
+        try {
+            $this->currentDate = Carbon::now()->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->start = Carbon::now()->toDateString();
+            $this->currentDateC = Carbon::now();
+            $this->currentDateEnd = '';
+            $this->end = '';
+            $this->currentDateCEnd = '';
             $this->citas = $this->useDate();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 103356Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 103356Agenda"]);
         }
     }
 
     public function setDatesFromPeriod($selectedDates)
     {
-        try{
+        try {
             if (count($selectedDates) >= 2) {
                 // Actualizar las fechas según la lógica que necesites
                 $currentDateC = Carbon::parse($selectedDates[0]);
                 $currentDateCEnd = Carbon::parse($selectedDates[1]);
-            
-            
+
+
                 $this->currentDateC = Carbon::parse($currentDateC);
                 $this->currentDateCEnd = Carbon::parse($currentDateCEnd);
-                $this->is_interval=true;
-                $this->currentDate=$this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-                $this->start=$this->currentDateC->toDateString();
-                $this->currentDateEnd=$this->currentDateCEnd->locale('es')->isoFormat('dddd, D MMMM YYYY');
-                $this->end=$this->currentDateCEnd->toDateString();
+                $this->is_interval = true;
+                $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+                $this->start = $this->currentDateC->toDateString();
+                $this->currentDateEnd = $this->currentDateCEnd->locale('es')->isoFormat('dddd, D MMMM YYYY');
+                $this->end = $this->currentDateCEnd->toDateString();
                 $this->loadDatesWithNewPeriod();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 118357Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 118357Agenda"]);
         }
     }
     public function setDate($selectedDate)
     {
-        try{
+        try {
             // Actualizar las fechas según la lógica que necesites
             $currentDateC = Carbon::parse($selectedDate[0]);
             $this->currentDateC = Carbon::parse($currentDateC);
-            $this->is_interval=false;
-            $this->currentDate=$this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=$this->currentDateC->toDateString();
-            $this->currentDateEnd='';
-            $this->end='';
-            $this->currentDateCEnd='';
+            $this->is_interval = false;
+            $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->start = $this->currentDateC->toDateString();
+            $this->currentDateEnd = '';
+            $this->end = '';
+            $this->currentDateCEnd = '';
             $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 141358Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 141358Agenda"]);
         }
     }
-    
+
     #Función que establece un día anterior 
     public function prevDay()
     {
-        try{
-            $this->is_interval=false;
-            $this->currentDateC= $this->currentDateC->subDay();
-            $this->start= $this->currentDateC->toDateString();
-            $this->currentDate= $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+        try {
+            $this->is_interval = false;
+            $this->currentDateC = $this->currentDateC->subDay();
+            $this->start = $this->currentDateC->toDateString();
+            $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
             $this->citas = $this->useDate();
             $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 161359Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 161359Agenda"]);
         }
     }
     public function prevMonth()
     {
-        try{
-            $this->is_interval=false;
-            $this->currentDateC= $this->currentDateC->subMonth();
-            $this->start= $this->currentDateC->toDateString();
-            $this->currentDate= $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+        try {
+            $this->is_interval = false;
+            $this->currentDateC = $this->currentDateC->subMonth();
+            $this->start = $this->currentDateC->toDateString();
+            $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
             $this->citas = $this->useDate();
             $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 161359Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 161359Agenda"]);
         }
     }
     public function nextDay()
     {
-        try{
+        try {
             $this->addDay();
             $this->citas = $this->useDate();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 37719Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 37719Agenda"]);
         }
     }
     public function nextMonth()
     {
-        try{
+        try {
             $this->addMonth();
             $this->citas = $this->useDate();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 37719Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 37719Agenda"]);
         }
     }
     private function addMonth()
     {
-        try{
-            $this->currentDate= Carbon::parse($this->currentDateC);
-            $this->currentDateC= $this->currentDateC->addMonth();
-            $this->currentDate= $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 39521Agenda"] );
+        try {
+            $this->currentDate = Carbon::parse($this->currentDateC);
+            $this->currentDateC = $this->currentDateC->addMonth();
+            $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 39521Agenda"]);
         }
     }
     private function addDay()
     {
-        try{
-            $this->currentDate= Carbon::parse($this->currentDateC);
-            $this->currentDateC= $this->currentDateC->addDay();
-            $this->currentDate= $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 39521Agenda"] );
+        try {
+            $this->currentDate = Carbon::parse($this->currentDateC);
+            $this->currentDateC = $this->currentDateC->addDay();
+            $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 39521Agenda"]);
         }
     }
     #Función que retorna la fecha actual
     public function returnToday()
     {
-        $this->is_interval=false;
+        $this->is_interval = false;
         $this->citas = $this->useDate();
         $this->loadDatesWithNewPeriod();
     }
@@ -1058,51 +1103,51 @@ class Agenda extends Component
         $this->citas = $this->useDate();
         $this->prevDay();
     }
-    
+
     public function setWeek()
     {
-        try{
-            $this->is_interval=true;
-            $this->currentDate=Carbon::now()->startOfWeek()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->startOfWeek()->toDateString();
-            $this->currentDateC=Carbon::now()->startOfWeek();
-            $this->currentDateEnd=Carbon::now()->endOfWeek()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->end=Carbon::now()->endOfWeek()->toDateString();
-            $this->currentDateCEnd=Carbon::now()->endOfWeek();
+        try {
+            $this->is_interval = true;
+            $this->currentDate = Carbon::now()->startOfWeek()->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->start = Carbon::now()->startOfWeek()->toDateString();
+            $this->currentDateC = Carbon::now()->startOfWeek();
+            $this->currentDateEnd = Carbon::now()->endOfWeek()->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->end = Carbon::now()->endOfWeek()->toDateString();
+            $this->currentDateCEnd = Carbon::now()->endOfWeek();
             $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 188360Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 188360Agenda"]);
         }
     }
     public function setMonth()
     {
-        try{
-            $this->is_interval=true;
-            $this->currentDate=Carbon::now()->startOfMonth()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->startOfMonth()->toDateString();
-            $this->currentDateC=Carbon::now()->startOfMonth();
-            $this->currentDateEnd=Carbon::now()->endOfMonth()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $end=Carbon::now()->endOfMonth()->addDay();
+        try {
+            $this->is_interval = true;
+            $this->currentDate = Carbon::now()->startOfMonth()->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->start = Carbon::now()->startOfMonth()->toDateString();
+            $this->currentDateC = Carbon::now()->startOfMonth();
+            $this->currentDateEnd = Carbon::now()->endOfMonth()->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $end = Carbon::now()->endOfMonth()->addDay();
             $this->end = $end->toDateString();
-            $this->currentDateCEnd=Carbon::now()->endOfMonth();
+            $this->currentDateCEnd = Carbon::now()->endOfMonth();
             $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 204361Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 204361Agenda"]);
         }
     }
     public function setYear()
     {
-        try{
-            $this->is_interval=true;
-            $this->currentDate=Carbon::now()->startOfYear()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->startOfYear()->toDateString();
-            $this->currentDateC=Carbon::now()->startOfYear();
-            $this->currentDateEnd=Carbon::now()->endOfYear()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->end=Carbon::now()->endOfYear()->toDateString();
-            $this->currentDateCEnd=Carbon::now()->endOfYear();
+        try {
+            $this->is_interval = true;
+            $this->currentDate = Carbon::now()->startOfYear()->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->start = Carbon::now()->startOfYear()->toDateString();
+            $this->currentDateC = Carbon::now()->startOfYear();
+            $this->currentDateEnd = Carbon::now()->endOfYear()->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->end = Carbon::now()->endOfYear()->toDateString();
+            $this->currentDateCEnd = Carbon::now()->endOfYear();
             $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 221362Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 221362Agenda"]);
         }
     }
     private function useDate()
@@ -1116,7 +1161,7 @@ class Agenda extends Component
                 if ($empleado->is_active) {
                     $salon_id = Auth::user()->salon_id;
 
-                    $citaPorEmpleado = Asignacion_servicio::with('date.customer.categorias','date.etiquetas')
+                    $citaPorEmpleado = Asignacion_servicio::with('date.customer.categorias', 'date.etiquetas')
                         ->whereHas('empleado', function ($query) use ($salon_id) {
                             $query->where('salon_id', $salon_id);
                         })
@@ -1151,7 +1196,7 @@ class Agenda extends Component
                             $temp->end = $cita->end;
                             $temp->duration += $cita->duration;
                             $temp->type_date += 1;
-                            $temp->title .= "<br>" . '· ' . ($servicio!=null ? $servicio->name : 'Servicio desconocido');
+                            $temp->title .= "<br>" . '· ' . ($servicio != null ? $servicio->name : 'Servicio desconocido');
                         } else {
                             // Si hay una interrupción, guardamos el evento agrupado y comenzamos uno nuevo
                             $agrupadas[] = $temp;
@@ -1169,7 +1214,7 @@ class Agenda extends Component
                     $citas[$empleado->id] = $agrupadas;
 
                     $bloqueosAgrupados = [];
-                    
+
                     $bloqueosPorEmpleado = bloqueo::whereHas('empleado', function ($query) use ($salon_id) {
                         $query->where('salon_id', $salon_id);
                     })
@@ -1178,7 +1223,7 @@ class Agenda extends Component
                         ->orderBy('start')
                         ->get();
 
-                        
+
                     foreach ($bloqueosPorEmpleado as $bloqueo) {
                         $bloqueo->start = Carbon::parse($bloqueo->start); // Asegura que $bloqueo->start sea un objeto Carbon
                         $bloqueo->end = Carbon::parse($bloqueo->end);
@@ -1200,33 +1245,33 @@ class Agenda extends Component
         }
     }
 
-    
+
     #función que actualiza las gráficas con la nueva fecha
     private function loadDatesWithNewPeriod()
     {
-        try{
-            $this->emit('dateUpdated-movimientos', $this->currentDate,$this->currentDateEnd);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 343365Agenda"] );
+        try {
+            $this->emit('dateUpdated-movimientos', $this->currentDate, $this->currentDateEnd);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 343365Agenda"]);
         }
     }
     public function setBlockId($id)
     {
-        try{
+        try {
             $this->asignacion_id = $id;
             $item = bloqueo::find($id);
             $minutes_qty = carbon::parse($item->end)->diffInMinutes(carbon::parse($item->start));
             $service = servicio::find(100100);
             $service->duration = $minutes_qty;
             $this->loadStartEndDateCarbon(carbon::parse($item->start)->format('H:i'));
-            $this->AddItem('servicio',null,$service,1   ,0,0,$item->empleado_id);
-            $this->changeColorEvent($this->cartS[0]['id'],$item->color);
+            $this->AddItem('servicio', null, $service, 1, 0, 0, $item->empleado_id);
+            $this->changeColorEvent($this->cartS[0]['id'], $item->color);
             $this->description = $item->description;
             $this->itemSelected = $item;
             $this->itemSelected->status = 'Bloqueada';
             $this->dispatchBrowserEvent('abrirBlockMenuForm');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 412343Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 412343Agenda"]);
         }
     }
     public function setAsignacion($id)
@@ -1235,39 +1280,39 @@ class Agenda extends Component
         $this->emit('loadFlatForm');
         $this->abrirFormulario();
     }
-    public function crearCita($start_date,$empleadoId)
+    public function crearCita($start_date, $empleadoId)
     {
-        try{
-            $this->ventaConstrained=0;
+        try {
+            $this->ventaConstrained = 0;
             $this->selectedEmpleadoId = $empleadoId;
             $this->loadStartEndDateCarbon($start_date);
             $this->abrirFormulario();
             $this->dispatchBrowserEvent('close-popover');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 4233Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 4233Agenda"]);
         }
     }
-    public function crearBloqueo($start_date,$empleadoId)
+    public function crearBloqueo($start_date, $empleadoId)
     {
-        try{
+        try {
             $this->dispatchBrowserEvent('abrirBlockMenuForm');
             $this->selectedEmpleadoId = $empleadoId;
             $this->loadStartEndDateCarbon($start_date);
             $this->dispatchBrowserEvent('close-popover');
             $this->addNewService(100100);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41523Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41523Agenda"]);
         }
     }
-    public function crearCitaCel($start_date,$empleadoId)
+    public function crearCitaCel($start_date, $empleadoId)
     {
-        try{
+        try {
             $this->selectedEmpleadoId = $empleadoId;
             $this->loadStartEndDateCarbon($start_date);
-            $this->dispatchBrowserEvent('close-popover' );
+            $this->dispatchBrowserEvent('close-popover');
             $this->showAdvanced();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 4343Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 4343Agenda"]);
         }
     }
     private function abrirFormulario()
@@ -1275,15 +1320,15 @@ class Agenda extends Component
         $this->emit('abrirForm');
         if (isset($this->asignacion_id) || isset($this->itemSelected)) {
             $this->loadCitaByStartEmpleado();
-        } 
+        }
         $this->loadData();
         $this->emit('loadFlatForm');
     }
     private function loadStartEndDateCarbon($start_date)
     {
-        try{
-            $this->start_date=$start_date;
-            $this->end_date=$start_date;
+        try {
+            $this->start_date = $start_date;
+            $this->end_date = $start_date;
             // Extraer año, mes y día de $currentDateC
             $year = $this->currentDateC->year;
             $month = $this->currentDateC->month;
@@ -1291,42 +1336,42 @@ class Agenda extends Component
 
             // Combina fecha y hora
             $combinedDateTime = Carbon::createFromFormat('Y-m-d H:i:s', "$year-$month-$day $start_date:00")->format('Y-m-d H:i:s');
-            $this->start_date_DB=$combinedDateTime;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2232134Agenda"] );
+            $this->start_date_DB = $combinedDateTime;
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2232134Agenda"]);
         }
     }
     private function loadCitaByStartEmpleado()
     {
-        try{
-            $asignacion = Asignacion_servicio::with('date.details.materiales.producto','date.etiquetas','date.metodosPago','date.propinas','date.abonos')->find($this->asignacion_id);
+        try {
+            $asignacion = Asignacion_servicio::with('date.details.materiales.producto', 'date.etiquetas', 'date.metodosPago', 'date.propinas', 'date.abonos')->find($this->asignacion_id);
             $this->loadCita($asignacion);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 48627Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 48627Agenda"]);
         }
     }
     private function updateDates()
     {
         $this->end_date = Carbon::parse($this->start_date);
         $this->end_date->addMinutes(intval($this->minutes_qty));
-        $this->end_date_DB= Carbon::parse($this->end_date)->format('Y-m-d H:i:s');
-        $this->end_date= Carbon::parse($this->end_date)->format('H:i');
+        $this->end_date_DB = Carbon::parse($this->end_date)->format('Y-m-d H:i:s');
+        $this->end_date = Carbon::parse($this->end_date)->format('H:i');
     }
     private function loadCita($asignacion)
     {
-        try{
-            if(session()->has('cartS')){
+        try {
+            if (session()->has('cartS')) {
                 $this->cartS = new Collection;
             }
-            if(isset($asignacion->date)){
+            if (isset($asignacion->date)) {
                 $this->itemSelected = $asignacion->date;
                 $this->pictures = $this->itemSelected->photos;
                 $this->description = $this->itemSelected->description;
                 $this->listTags = implode(", ", $this->itemSelected->etiquetas->pluck('id')->toArray());
                 $this->loadStartEndDateCarbon(Carbon::parse($this->itemSelected->start)->format('H:i'));
-                $this->end_date=Carbon::parse($this->itemSelected->end)->format('H:i');
-                $this->setCustomerId($asignacion->date->customer_id,false);
-                $this->remember=$asignacion->date->remember;
+                $this->end_date = Carbon::parse($this->itemSelected->end)->format('H:i');
+                $this->setCustomerId($asignacion->date->customer_id, false);
+                $this->remember = $asignacion->date->remember;
 
                 $this->billRequired = $asignacion->date->billing;
                 $this->billed = $this->billRequired === 2 ? true : false;
@@ -1335,104 +1380,104 @@ class Agenda extends Component
 
                 $this->loadCart();
                 $this->loadCartTotales();
-                if($this->itemSelected->status=='Pagada' || $this->itemSelected->status=='Cancelada'){
+                if ($this->itemSelected->status == 'Pagada' || $this->itemSelected->status == 'Cancelada') {
                     $this->totalMethods();
                     $this->totalPropinas();
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 222134Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 222134Agenda"]);
         }
     }
-    public function setCustomerId($customer,$recorrido=true)
+    public function setCustomerId($customer, $recorrido = true)
     {
-        try{
-            if($customer!=null){
-                $this->customer = cliente::with('tarjetaPuntos','datosFacturacion')->find($customer);
-                $this->customerId = $customer; 
-                if(session('recorrido') && $recorrido){
+        try {
+            if ($customer != null) {
+                $this->customer = cliente::with('tarjetaPuntos', 'datosFacturacion')->find($customer);
+                $this->customerId = $customer;
+                if (session('recorrido') && $recorrido) {
                     $this->dispatchBrowserEvent('play_1');
                 }
             }
             $this->emit('refresh');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 22334Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 22334Agenda"]);
         }
     }
     public function loadData()
     {
-        try{
+        try {
             $this->updateDates();
             $this->citas = $this->useDate();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 59031Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 59031Agenda"]);
         }
     }
-    private function loadCart($withPnS=1)
+    private function loadCart($withPnS = 1)
     {
-        try{
-            if(isset($this->itemSelected)){
-                $materiales=[];
-                $details_service=[];
+        try {
+            if (isset($this->itemSelected)) {
+                $materiales = [];
+                $details_service = [];
                 $formas_pago = $this->itemSelected->metodosPago;
                 $propinas = $this->itemSelected->propinas;
                 $details_service = $this->itemSelected->details->sortBy('start');
                 $details_sales = $this->itemSelected->details_product;
-                if($withPnS){
-                    foreach($details_service as $detail){
-                        $uid = $this->AddItem('servicio',$detail,$detail->servicio ?? servicio::find(99999),1   ,$detail->discount_qty,$detail->iva,$detail->empleado_id,null,null,$detail->discount_type,$detail->current_price,$detail->disccount_price,$detail->generated_points,$detail->base_comision);
-                        
+                if ($withPnS) {
+                    foreach ($details_service as $detail) {
+                        $uid = $this->AddItem('servicio', $detail, $detail->servicio ?? servicio::find(99999), 1, $detail->discount_qty, $detail->iva, $detail->empleado_id, null, null, $detail->discount_type, $detail->current_price, $detail->disccount_price, $detail->generated_points, $detail->base_comision);
+
                         $materiales = $detail->materiales;
                         //Iterar la lista de productos en una colección para guardar en el carrito (Si es que hay)
-                        foreach($materiales as $material){
-                            $this->AddItem('producto',$material,$material->producto,$material->qty,0,0.16,$material->empleado_id,$material->qty,$uid);
+                        foreach ($materiales as $material) {
+                            $this->AddItem('producto', $material, $material->producto, $material->qty, 0, 0.16, $material->empleado_id, $material->qty, $uid);
                         }
                     }
-                    if(count($details_sales)>0){
-                        $this->ventaConstrained=1;
+                    if (count($details_sales) > 0) {
+                        $this->ventaConstrained = 1;
                         $cartP = new Collection();
-                        session()->put('cartPV',$cartP);
+                        session()->put('cartPV', $cartP);
                         session()->save();
-                        foreach($details_sales as $detail){
+                        foreach ($details_sales as $detail) {
                             $product = $detail->product;
-                            $this->AddProduct($product, $detail->quantity,$detail->discount_qty, $detail->iva,$detail->empleado_id,$detail->current_price,$detail->disccount_price,$detail->quantity,$detail->discount_type,$detail->base_comision);
+                            $this->AddProduct($product, $detail->quantity, $detail->discount_qty, $detail->iva, $detail->empleado_id, $detail->current_price, $detail->disccount_price, $detail->quantity, $detail->discount_type, $detail->base_comision);
                         }
                     }
-                    if(count($materiales)>0){
+                    if (count($materiales) > 0) {
                         session()->put('cartMaterials', $this->cartP);
                         session()->save();
                     }
                 }
-                foreach($formas_pago as $forma_pago){
-                    $this->addMethod($forma_pago->amount,$forma_pago->reference,$forma_pago->payment_method_id,$this->methods,null,$forma_pago->tipo);
+                foreach ($formas_pago as $forma_pago) {
+                    $this->addMethod($forma_pago->amount, $forma_pago->reference, $forma_pago->payment_method_id, $this->methods, null, $forma_pago->tipo);
                 }
-                foreach($propinas as $propina){
-                    $this->addMethod($propina->amount,$propina->reference,$propina->payment_method_id,$this->propinas,$propina->empleado_id);
+                foreach ($propinas as $propina) {
+                    $this->addMethod($propina->amount, $propina->reference, $propina->payment_method_id, $this->propinas, $propina->empleado_id);
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 522369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 522369Agenda"]);
         }
-    }    
-    
-    private function AddProduct($product, $qty = 1,$disccount_percent=0, $ind_iva=0.16,$empleado=NULL,$gross_price=null,$disccount_price=0,$qty_inicial=0,$discount_type="Porcentaje", $base_comision=0)
+    }
+
+    private function AddProduct($product, $qty = 1, $disccount_percent = 0, $ind_iva = 0.16, $empleado = NULL, $gross_price = null, $disccount_price = 0, $qty_inicial = 0, $discount_type = "Porcentaje", $base_comision = 0)
     {
-        try{
+        try {
             // iva méxico 16%
             $iva = $ind_iva;
             // determinar precio venta con iva
-            
+
             $salePrice = ($product->disccount_price > 0 && $product->disccount_price < $product->gross_price ?  $product->disccount_price : $product->gross_price);
-            
-            if($gross_price){
+
+            if ($gross_price) {
                 $salePrice = $disccount_price > 0 && $disccount_price < $gross_price ?  floatval($disccount_price) : floatval($gross_price);
             }
-            
-            if($disccount_percent){
-                if($discount_type=='Porcentaje'){
-                    $salePrice = $salePrice-($salePrice*$disccount_percent/100);
-                }elseif($discount_type=='Cantidad'){
-                    $salePrice = $salePrice-$disccount_percent;
+
+            if ($disccount_percent) {
+                if ($discount_type == 'Porcentaje') {
+                    $salePrice = $salePrice - ($salePrice * $disccount_percent / 100);
+                } elseif ($discount_type == 'Cantidad') {
+                    $salePrice = $salePrice - $disccount_percent;
                 }
             }
 
@@ -1479,45 +1524,43 @@ class Agenda extends Component
             $cartP->push($itemCart);
             session()->put('cartPV', $cartP);
             session()->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 32966Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 32966Agenda"]);
         }
     }
     public function setMethod()
     {
-        $this->addMethod(0,'','1',$this->methods);
+        $this->addMethod(0, '', '1', $this->methods);
     }
     private function applyDisccount($global_disccount)
     {
-        try{
-                // Establecer un valor predeterminado si el descuento está vacío
+        try {
+            // Establecer un valor predeterminado si el descuento está vacío
             $global_disccount = is_numeric($global_disccount) ? $global_disccount : 0;
-    
+
             $global_disccount = min($global_disccount, 100); // Asegurar que el descuento no sea mayor al 100%
 
-            $disccount=$this->rest-($this->rest*($global_disccount/100));
-            $global =$this->rest-$disccount;
-            $this->total_disccount+=$global;
+            $disccount = $this->rest - ($this->rest * ($global_disccount / 100));
+            $global = $this->rest - $disccount;
+            $this->total_disccount += $global;
 
-            $this->rest=$disccount;
-
-    
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 165210Agenda"] );
-        } 
-    }    
-    private function addMethod($qty,$reference,$paymentMethod,$array,$empleado=null,$type=null,$isAcumulable=null)
+            $this->rest = $disccount;
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 165210Agenda"]);
+        }
+    }
+    private function addMethod($qty, $reference, $paymentMethod, $array, $empleado = null, $type = null, $isAcumulable = null)
     {
-        try{
+        try {
             // validar si ya existe entre los métodos
-            if($paymentMethod=='4'){
-                $globalD=0;
-                if((($this->type_disccount=='%'||$this->type_disccount=='percent')&&$type==null)||$type=='Porcentaje'){
+            if ($paymentMethod == '4') {
+                $globalD = 0;
+                if ((($this->type_disccount == '%' || $this->type_disccount == 'percent') && $type == null) || $type == 'Porcentaje') {
                     $globalD = $qty;
-                    $type='Porcentaje';
-                }elseif((($this->type_disccount=='$'||$this->type_disccount=='currency')&&$type==null)||$type=='Cantidad'){
-                    if($this->rest)$globalD = ($qty / $this->rest)*100 ;
-                    $type='Cantidad';
+                    $type = 'Porcentaje';
+                } elseif ((($this->type_disccount == '$' || $this->type_disccount == 'currency') && $type == null) || $type == 'Cantidad') {
+                    if ($this->rest) $globalD = ($qty / $this->rest) * 100;
+                    $type = 'Cantidad';
                 }
                 $this->applyDisccount($globalD);
             }
@@ -1536,14 +1579,14 @@ class Agenda extends Component
             );
             $method = Arr::add($coll, null, null);
             $array->push($method);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1031Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1031Agenda"]);
         }
     }
-    
-    private function AddItem($type,$asignacion,$item, $qty = 1,$disccount_qty=0, $ind_iva=0.16,$empleado=null,$qty_inicial=0,$uid_s=null,$discount_type="Porcentaje",$gross_price=null,$disccount_price=0,$reward_points=null,$base_comision = 0)
+
+    private function AddItem($type, $asignacion, $item, $qty = 1, $disccount_qty = 0, $ind_iva = 0.16, $empleado = null, $qty_inicial = 0, $uid_s = null, $discount_type = "Porcentaje", $gross_price = null, $disccount_price = 0, $reward_points = null, $base_comision = 0)
     {
-        try{
+        try {
             // validar si ya existe en el carrito
             // if ($this->inCart($item->id,$type,$type=='producto' ? $asignacion->asignacion->selected_service : null)) {
             //     if($type=='servicio'){
@@ -1555,7 +1598,7 @@ class Agenda extends Component
 
             $uid = uniqid() . $item->id;
 
-            if($type == 'producto'){
+            if ($type == 'producto') {
                 $coll = collect(
                     [
                         'uid' => $uid_s,
@@ -1571,21 +1614,21 @@ class Agenda extends Component
                         'asignacion_id' => $asignacion->asignacion->selected_service
                     ]
                 );
-            }elseif($type=='servicio'){
+            } elseif ($type == 'servicio') {
                 // iva 
                 $iva = $ind_iva;
                 // determinar precio venta con iva
                 $salePrice = ($item->disccount_price > 0 && $item->disccount_price < $item->gross_price ?  $item->disccount_price : $item->gross_price);
 
-                if($gross_price){
+                if ($gross_price) {
                     $salePrice = $disccount_price > 0 && $disccount_price < $gross_price ?  floatval($disccount_price) : floatval($gross_price);
                 }
-                
-                if($disccount_qty){
-                    if($discount_type=='Porcentaje'){
-                        $salePrice = $salePrice-($salePrice*$disccount_qty/100);
-                    }elseif($discount_type=='Cantidad'){
-                        $salePrice = $salePrice-$disccount_qty;
+
+                if ($disccount_qty) {
+                    if ($discount_type == 'Porcentaje') {
+                        $salePrice = $salePrice - ($salePrice * $disccount_qty / 100);
+                    } elseif ($discount_type == 'Cantidad') {
+                        $salePrice = $salePrice - $disccount_qty;
                     }
                 }
 
@@ -1600,9 +1643,9 @@ class Agenda extends Component
 
                 $tax  = $montoIva;
                 $total = $totalConIva;
-                $data=$this->calcularHorarioCita($asignacion ? $asignacion->duration : $item->duration);
-                $this->minutes_qty+= $asignacion ? $asignacion->duration : $item->duration;
-                if($asignacion){
+                $data = $this->calcularHorarioCita($asignacion ? $asignacion->duration : $item->duration);
+                $this->minutes_qty += $asignacion ? $asignacion->duration : $item->duration;
+                if ($asignacion) {
                     $end = Carbon::parse($asignacion->start)->addMinutes($asignacion->duration)->format('H:i');
                 }
                 $coll = collect(
@@ -1612,7 +1655,7 @@ class Agenda extends Component
                         'sid' => $item->id,
                         'name' => $item->name,
                         'color' => $asignacion ? $asignacion->color : (empleado::select('color_preset')->find($this->selectedEmpleadoId)->color_preset ?? '#E2BBB4'),
-                        'reward_points' => $reward_points ? floatval($reward_points) : floatval($this->calculateRewardPoints($item->id,1,$total)),
+                        'reward_points' => $reward_points ? floatval($reward_points) : floatval(DRG::calculateRewardPoints($item->id, true, $total, null, $this->customerId, Auth::user()->salon->recompensaGeneral()->first())),
                         'gross_price' => $gross_price ? floatval($gross_price) : floatval($item->gross_price),
                         'disccount_price' => $disccount_price > 0 ? floatval($disccount_price) : floatval($item->disccount_price),
                         'disccount_percent' => floatval($disccount_qty),
@@ -1631,87 +1674,41 @@ class Agenda extends Component
                 );
             }
             $itemCart = Arr::add($coll, null, null);
-            if($type=='producto'){
+            if ($type == 'producto') {
                 $this->cartP->push($itemCart);
-            }elseif($type=='servicio'){
+            } elseif ($type == 'servicio') {
                 $this->cartS->push($itemCart);
             }
             $this->save();
             $this->loadCartTotales();
             $this->initializeQuery();
             return $uid;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 578369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 578369Agenda"]);
         }
     }
-    private function getRewardPoints($excepcion,$total){
-        switch($excepcion->type_comission){
+    private function getRewardPoints($excepcion, $total)
+    {
+        switch ($excepcion->type_comission) {
             case 'percent':
-                $points = ($total*$excepcion->qty)/100;
+                $points = ($total * $excepcion->qty) / 100;
                 break;
             case 'qty':
                 $points = $excepcion->qty;
                 break;
             default:
-                $points=0;
+                $points = 0;
                 break;
         }
         return $points;
     }
-    private function calculateRewardPoints($item_id, $is_service, $total)
+    private function calcularHorarioCita($duration)
     {
-        try{
-            // Obtener el item con eager loading de relaciones
-            if ($is_service) {
-                $item = servicio::with('excepciones', 'categorias.excepciones')
-                                ->find($item_id);
-            } else {
-                $item = producto::with('excepciones', 'categorias.excepciones')
-                                ->find($item_id);
-            }
-        
-            // Verificar si el item existe
-            if (!$item) {
-                return 0; // Retorna 0 si el item no se encuentra
-            }
-        
-            // Buscar excepciones asociadas al item
-            $excepcion = $item->excepciones()
-                              ->whereNotNull('programa_recompensa_id')
-                              ->latest()
-                              ->first();
-        
-            if ($excepcion) {
-                return $this->getRewardPoints($excepcion, $total);
-            }
-        
-            // Buscar categorías y excepciones asociadas a las categorías
-            $categoria = $item->categorias()->latest()->first();
-        
-            if ($categoria) {
-                $excepcion = $categoria->excepciones()
-                                       ->whereNotNull('programa_recompensa_id')
-                                       ->latest()
-                                       ->first();
-        
-                if ($excepcion) {
-                    return $this->getRewardPoints($excepcion, $total);
-                }
-            }
-        
-            // Si no hay excepciones ni categorías, retornar 0
-            return 0;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 93634Agenda"] );
-        }
-    }
-    
-    private function calcularHorarioCita($duration){
-        try{
-            $start_date_DB= Carbon::parse($this->start_date_DB);
+        try {
+            $start_date_DB = Carbon::parse($this->start_date_DB);
             $minutes = $this->calculateTotalMinutes();
             $start = $start_date_DB->addMinutes(intval($minutes));
-            $end_DB= Carbon::parse($start);
+            $end_DB = Carbon::parse($start);
             $start = Carbon::parse($start)->format('H:i');
             $end = $end_DB->addMinutes(intval($duration));
             $end = Carbon::parse($end)->format('H:i');
@@ -1720,13 +1717,13 @@ class Agenda extends Component
                 'end' => $end
             ];
             return $data;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 80239Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 80239Agenda"]);
         }
     }
     protected function calculateTotalMinutes()
     {
-        try{
+        try {
             $totalMinutes = 0;
             foreach ($this->cartS as $item) {
                 if (isset($item['duration'])) {
@@ -1734,66 +1731,64 @@ class Agenda extends Component
                 }
             }
             return $totalMinutes;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 47226Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 47226Agenda"]);
         }
     }
-    private function inCart($item_id,$type,$sid=null)
+    private function inCart($item_id, $type, $sid = null)
     {
-        try{
-            if($type=='producto'){
+        try {
+            if ($type == 'producto') {
                 $mycart = $this->cartP;
-                if($sid!==null){
-                    $material = $mycart->where('mid', $item_id)->where('asignacion_id',$sid)->count();
+                if ($sid !== null) {
+                    $material = $mycart->where('mid', $item_id)->where('asignacion_id', $sid)->count();
                     return  $material > 0 ? true : false;
-                }else{
+                } else {
                     $cont = $mycart->where('mid', $item_id)->count();
                     return  $cont > 0 ? true : false;
                 }
-            }elseif($type=='servicio'){
-                $mycart = $this->cartS; 
+            } elseif ($type == 'servicio') {
+                $mycart = $this->cartS;
                 $cont = $mycart->where('sid', $item_id)->count();
             }
             return  $cont > 0 ? true : false;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 667369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 667369Agenda"]);
         }
     }
-    public function updateQty($type,$uid, $cant = 1, $item_id = null)
+    public function updateQty($type, $uid, $cant = 1, $item_id = null)
     {
-        try{
+        try {
             if (!is_numeric($cant)) {
-                    $this->dispatchBrowserEvent('noty-error', ['msg' => $cant . ' NO ES UNA CANTIDAD VÁLIDA']);
-                    return;
-                }
+                $this->dispatchBrowserEvent('noty-error', ['msg' => $cant . ' NO ES UNA CANTIDAD VÁLIDA']);
+                return;
+            }
 
-                $newItem  = $this->setOldItem($type,$item_id,$uid);
+            $newItem  = $this->setOldItem($type, $item_id, $uid);
 
-                $newItem['qty'] = $uid != null ? intval($cant) : intval($newItem['qty'] + $cant);
+            $newItem['qty'] = $uid != null ? intval($cant) : intval($newItem['qty'] + $cant);
 
-                $values = $this->Calculator($newItem['disccount_price']>0 && $newItem['sale_price'] > $newItem['disccount_price'] ? $newItem['disccount_price'] : $newItem['sale_price'], $newItem['qty'], $newItem['ind_iva'],$newItem['discount_type'],$newItem['disccount_percent']);
+            $values = $this->Calculator($newItem['disccount_price'] > 0 && $newItem['sale_price'] > $newItem['disccount_price'] ? $newItem['disccount_price'] : $newItem['sale_price'], $newItem['qty'], $newItem['ind_iva'], $newItem['discount_type'], $newItem['disccount_percent']);
 
-                $newItem['tax'] =  $values['iva'];
+            $newItem['tax'] =  $values['iva'];
 
-                $reward_points = $newItem['reward_points'];
+            $newItem['reward_points'] = DRG::calculateRewardPoints($newItem['sid'], true, $values['total'], null, $this->customer?->id, Auth::user()->salon->recompensaGeneral()->first());
 
-                $newItem['reward_points'] = ($newItem['total'] > 0 ? $values['total'] / $newItem['total'] : 0) * $reward_points;
+            $newItem['total'] = $values['total'];
 
-                $newItem['total'] = $values['total'];
-
-                $this->desvincularElementoAnterior($type,$item_id,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 683369Agenda"] );
+            $this->desvincularElementoAnterior($type, $item_id, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 683369Agenda"]);
         }
     }
-    public function selectAssigment($type,$uid,$selected,$item_id=null)
+    public function selectAssigment($type, $uid, $selected, $item_id = null)
     {
-        try{
-            $newItem  = $this->setOldItem($type,$item_id,$uid);
+        try {
+            $newItem  = $this->setOldItem($type, $item_id, $uid);
 
             $newItem['selected'] = $selected;
 
-            $values = $this->Calculator($newItem['sale_price'], $newItem['qty'], $newItem['ind_iva'],$newItem['discount_type'],$newItem['disccount_percent']);
+            $values = $this->Calculator($newItem['sale_price'], $newItem['qty'], $newItem['ind_iva'], $newItem['discount_type'], $newItem['disccount_percent']);
 
             $newItem['tax'] =  $values['iva'];
 
@@ -1801,173 +1796,162 @@ class Agenda extends Component
 
             $newItem['subtotal'] = $values['neto'];
 
-            $reward_points = $newItem['reward_points'];
-
-            $newItem['reward_points'] = ($newItem['total'] > 0 ? $values['total'] / $newItem['total'] : 0) * $reward_points;
+            $newItem['reward_points'] = DRG::calculateRewardPoints($newItem['sid'], true, $values['total'], null, $this->customer?->id, Auth::user()->salon->recompensaGeneral()->first());
 
             $newItem['total'] = $values['total'];
 
-            $this->desvincularElementoAnterior($type,$item_id,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5131Agenda"] );
+            $this->desvincularElementoAnterior($type, $item_id, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5131Agenda"]);
         }
     }
-    public function updatePercentage($type,$uid,$disccount_percent=0, $item_id = null)
+    public function updatePercentage($type, $uid, $disccount_percent = 0, $item_id = null)
     {
-        try{
+        try {
             $valorConPorcentaje = $disccount_percent;
             $valorSinPorcentaje = trim($valorConPorcentaje, "%");
-            $valorNumerico = (int) $valorSinPorcentaje; 
-            if(!is_numeric($valorNumerico)){
-                $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Corrija el porcentaje"] );
+            $valorNumerico = (int) $valorSinPorcentaje;
+            if (!is_numeric($valorNumerico)) {
+                $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Corrija el porcentaje"]);
                 return;
-            }else{
+            } else {
                 $disccount_percent = $valorNumerico;
             }
-            $newItem  = $this->setOldItem($type,$item_id,$uid);
-            if(($disccount_percent>=0 && $disccount_percent<=100 && $newItem['discount_type']=='Porcentaje') || ($newItem['discount_type']=='Cantidad' && $disccount_percent>=0 && $disccount_percent<=$this->totalCart)){
+            $newItem  = $this->setOldItem($type, $item_id, $uid);
+            if (($disccount_percent >= 0 && $disccount_percent <= 100 && $newItem['discount_type'] == 'Porcentaje') || ($newItem['discount_type'] == 'Cantidad' && $disccount_percent >= 0 && $disccount_percent <= $this->totalCart)) {
 
                 $newItem['disccount_percent'] = $item_id == null ? floatval($disccount_percent) : floatval($newItem['disccount_percent'] + $disccount_percent);
 
-                $this->disccount=$newItem['disccount_percent'];
+                $this->disccount = $newItem['disccount_percent'];
 
-                $values = $this->Calculator($newItem['disccount_price']>0 && $newItem['sale_price'] > $newItem['disccount_price'] ? $newItem['disccount_price'] : $newItem['sale_price'], $newItem['qty'], $newItem['ind_iva'],$newItem['discount_type'],$newItem['disccount_percent']);
-                $this->disccount=0;
+                $values = $this->Calculator($newItem['disccount_price'] > 0 && $newItem['sale_price'] > $newItem['disccount_price'] ? $newItem['disccount_price'] : $newItem['sale_price'], $newItem['qty'], $newItem['ind_iva'], $newItem['discount_type'], $newItem['disccount_percent']);
+                $this->disccount = 0;
 
-                $newItem['total'] = $values['total'];
+                // actualizar los valores
+                $newItem['reward_points'] = DRG::calculateRewardPoints($newItem['sid'], true, $values['total'], null, $this->customer?->id, Auth::user()->salon->recompensaGeneral()->first());
 
                 $newItem['tax'] =  $values['iva'];
 
                 $newItem['subtotal'] = $values['neto'];
 
-                $reward_points = $newItem['reward_points'];
+                $newItem['total'] = $values['total'];
 
-                $newItem['reward_points'] = ($newItem['total'] > 0 ? $values['total'] / $newItem['total'] : 0) * $reward_points;
-
-                $this->desvincularElementoAnterior($type,$item_id,$uid,$newItem);
+                $this->desvincularElementoAnterior($type, $item_id, $uid, $newItem);
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 710369Agenda"] );
+        } catch (\Throwable $th) {
+            dd($th);
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 710369Agenda"]);
         }
     }
-    public function updateBaseComision($type,$uid,$base_comision)
+    public function updateBaseComision($type, $uid, $base_comision)
     {
-        try{
-            $newItem  = $this->setOldItem($type,null,$uid);
+        try {
+            $newItem  = $this->setOldItem($type, null, $uid);
 
             $newItem['base_comision'] = $base_comision;
 
-            $this->desvincularElementoAnterior($type,null,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 723469Agenda"] );
+            $this->desvincularElementoAnterior($type, null, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 723469Agenda"]);
         }
     }
-    public function updatePercentageType($type,$uid,$discount_type,$item_id=null)
+    public function updatePercentageType($type, $uid, $discount_type, $item_id = null)
     {
-        try{
-            $newItem  = $this->setOldItem($type,$item_id,$uid);
+        try {
+            $newItem  = $this->setOldItem($type, $item_id, $uid);
 
             //se agrega 0 por default cuando se agrega por primera vez el producto
             //si ya está agregado el producto, toma lo que esté en el input
             $newItem['discount_type'] = $discount_type;
 
-            $this->disccount=$newItem['disccount_percent'];
+            $this->disccount = $newItem['disccount_percent'];
 
-            $values = $this->Calculator($newItem['disccount_price']>0 && $newItem['sale_price'] > $newItem['disccount_price'] ? $newItem['disccount_price'] : $newItem['sale_price'], $newItem['qty'], $newItem['ind_iva'],$newItem['discount_type'],$newItem['disccount_percent']);
+            $values = $this->Calculator($newItem['disccount_price'] > 0 && $newItem['sale_price'] > $newItem['disccount_price'] ? $newItem['disccount_price'] : $newItem['sale_price'], $newItem['qty'], $newItem['ind_iva'], $newItem['discount_type'], $newItem['disccount_percent']);
 
-            $this->disccount=0;
+            $this->disccount = 0;
 
             $newItem['tax'] =  $values['iva'];
 
             $newItem['subtotal'] = $values['neto'];
 
-            $reward_points = $newItem['reward_points'];
-
-            $newItem['reward_points'] = ($newItem['total'] > 0 ? $values['total'] / $newItem['total'] : 0) * $reward_points;
+            $newItem['reward_points'] = DRG::calculateRewardPoints($newItem['sid'], true, $values['total'], null, $this->customer?->id, Auth::user()->salon->recompensaGeneral()->first());
 
             $newItem['total'] = $values['total'];
 
-            $this->desvincularElementoAnterior($type,$item_id,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 45870Agenda"] );
+            $this->desvincularElementoAnterior($type, $item_id, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 45870Agenda"]);
         }
     }
-    public function changeTotalCP($type,$uid,$disccount_price=0, $item_id = null)
+    public function changeTotalCP($type, $uid, $disccount_price = 0, $item_id = null)
     {
-        try{
-            $disccount_price=$this->eliminarCaracteres($disccount_price);
+        try {
+            $disccount_price = $this->eliminarCaracteres($disccount_price);
 
-            $newItem  = $this->setOldItem($type,$item_id,$uid);
+            $newItem  = $this->setOldItem($type, $item_id, $uid);
 
-            if($disccount_price<$newItem['sale_price']){
+            if ($disccount_price < $newItem['sale_price']) {
                 $newItem['disccount_price'] = floatval($disccount_price);
-            }else{
+            } else {
                 $newItem['sale_price'] = floatval($disccount_price);
                 $newItem['gross_price'] = floatval($disccount_price);
             }
-            
-            $values = $this->Calculator($disccount_price, $newItem['qty'], $newItem['ind_iva'],$newItem['discount_type'],$newItem['disccount_percent']);
-            
-            if(!$disccount_price){
-                $newItem['$disccount_price']=0;
+
+            $values = $this->Calculator($disccount_price, $newItem['qty'], $newItem['ind_iva'], $newItem['discount_type'], $newItem['disccount_percent']);
+
+            if (!$disccount_price) {
+                $newItem['$disccount_price'] = 0;
             }
 
             $newItem['tax'] =  $values['iva'];
 
             $newItem['subtotal'] = $values['neto'];
 
-            $reward_points = $newItem['reward_points'];
-
-            $newItem['reward_points'] = ($newItem['total'] > 0 ? $values['total'] / $newItem['total'] : 0) * $reward_points;
+            $newItem['reward_points'] = DRG::calculateRewardPoints($newItem['sid'], true, $values['total'], null, $this->customer?->id, Auth::user()->salon->recompensaGeneral()->first());
 
             $newItem['total'] = $values['total'];
 
 
-            $this->desvincularElementoAnterior($type,$item_id,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5911Agenda"] );
+            $this->desvincularElementoAnterior($type, $item_id, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5911Agenda"]);
         }
     }
-    public function updateIva($type,$uid, $selectedIva, $item_id = null)
+    public function updateIva($type, $uid, $selectedIva, $item_id = null)
     {
-        try{
-            $newItem  = $this->setOldItem($type,$item_id,$uid);
+        try {
+            $newItem  = $this->setOldItem($type, $item_id, $uid);
 
-            $newItem['ind_iva']= $selectedIva;
-            
-            $values = $this->Calculator($newItem['disccount_price']>0 && $newItem['sale_price'] > $newItem['disccount_price'] ? $newItem['disccount_price'] : $newItem['sale_price'], $newItem['qty'], $newItem['ind_iva'],$newItem['discount_type'],$newItem['disccount_percent']);
+            $newItem['ind_iva'] = $selectedIva;
+
+            $values = $this->Calculator($newItem['disccount_price'] > 0 && $newItem['sale_price'] > $newItem['disccount_price'] ? $newItem['disccount_price'] : $newItem['sale_price'], $newItem['qty'], $newItem['ind_iva'], $newItem['discount_type'], $newItem['disccount_percent']);
 
             $newItem['tax'] =  $values['iva'];
 
-            $reward_points = $newItem['reward_points'];
-
-            $newItem['reward_points'] = ($newItem['total'] > 0 ? $values['total'] / $newItem['total'] : 0) * $reward_points;
+            $newItem['reward_points'] = DRG::calculateRewardPoints($newItem['sid'], true, $values['total'], null, $this->customer?->id, Auth::user()->salon->recompensaGeneral()->first());
 
             $newItem['total'] = $values['total'];
 
-
-            $this->desvincularElementoAnterior($type,$item_id,$uid,$newItem);
-
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 742369Agenda"] );
+            $this->desvincularElementoAnterior($type, $item_id, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 742369Agenda"]);
         }
     }
-    public function updateColor($uid,$newColor,$type)
+    public function updateColor($uid, $newColor, $type)
     {
-        if($type=='cita'){
+        if ($type == 'cita') {
             $asig = Asignacion_servicio::find($uid);
             $asig->color = $newColor;
             $asig->save();
-        }elseif($type=='bloqueo'){
+        } elseif ($type == 'bloqueo') {
             bloqueo::find($uid)->update(['color' => $newColor]);
         }
     }
-    public function changeColorEvent($uid,$newColor)
+    public function changeColorEvent($uid, $newColor)
     {
 
-        try{
-            $oldItem = $this->setOldItem('servicio',null,$uid);
+        try {
+            $oldItem = $this->setOldItem('servicio', null, $uid);
 
             $newItem = $oldItem;
             if (!$oldItem) {
@@ -1975,15 +1959,15 @@ class Agenda extends Component
             }
             $newItem['color'] = $newColor;
 
-            $this->desvincularElementoAnterior('servicio',null,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 766369Agenda"] );
+            $this->desvincularElementoAnterior('servicio', null, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 766369Agenda"]);
         }
     }
-    public function updateEmpleado($type,$uid, $selectedEmpleado, $item_id = null)
+    public function updateEmpleado($type, $uid, $selectedEmpleado, $item_id = null)
     {
-        try{
-            $oldItem = $this->setOldItem($type,$item_id,$uid);
+        try {
+            $oldItem = $this->setOldItem($type, $item_id, $uid);
 
             $newItem = $oldItem;
             if (!$oldItem) {
@@ -1992,47 +1976,43 @@ class Agenda extends Component
             $newItem['vendedor'] = $selectedEmpleado;
             $newItem['color'] = empleado::select('color_preset')->find($selectedEmpleado)->color_preset;
 
-            $this->desvincularElementoAnterior($type,$item_id,$uid,$newItem);
-
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 766369Agenda"] );
+            $this->desvincularElementoAnterior($type, $item_id, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 766369Agenda"]);
         }
-
     }
-    private function setOldItem($type,$item_id,$uid)
+    private function setOldItem($type, $item_id, $uid)
     {
-        try{
+        try {
             if ($item_id == null) {
-                if($type=='producto'){
-                    $oldItem = $this->cartP->where('id',$uid)->first();
-                }elseif($type=='servicio'){
+                if ($type == 'producto') {
+                    $oldItem = $this->cartP->where('id', $uid)->first();
+                } elseif ($type == 'servicio') {
                     $oldItem = $this->cartS->where('id', $uid)->first();
                 }
             } else {
-                if($type=='producto'){
-                    $oldItem = $this->cartP->where('pid',$item_id)->first();
-                }elseif($type=='servicio'){
+                if ($type == 'producto') {
+                    $oldItem = $this->cartP->where('pid', $item_id)->first();
+                } elseif ($type == 'servicio') {
                     $oldItem = $this->cartS->where('sid', $item_id)->first();
                 }
             }
             return $oldItem;
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 787369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 787369Agenda"]);
         }
     }
 
-    private function desvincularElementoAnterior($type,$item_id,$uid,$newItem)
+    private function desvincularElementoAnterior($type, $item_id, $uid, $newItem)
     {
-        try{
-            if($type=='producto'){
+        try {
+            if ($type == 'producto') {
 
                 // Encuentra el índice o clave del elemento a reemplazar
                 $key = $this->cartP->search(function ($product) use ($uid, $item_id) {
                     return $product['id'] === $uid || $product['pid'] === $item_id;
                 });
-    
+
                 // Reemplaza el método directamente por la clave encontrada
                 if ($key !== false) {
                     $this->cartP[$key] = $newItem;
@@ -2040,13 +2020,13 @@ class Agenda extends Component
 
                 $this->loadCartTotales();
                 $this->save();
-            }elseif($type=='servicio'){
+            } elseif ($type == 'servicio') {
 
                 // Encuentra el índice o clave del elemento a reemplazar
                 $key = $this->cartS->search(function ($service) use ($uid, $item_id) {
                     return $service['id'] === $uid || $service['sid'] === $item_id;
                 });
-    
+
                 // Reemplaza el método directamente por la clave encontrada
                 if ($key !== false) {
                     $this->cartS[$key] = $newItem;
@@ -2054,52 +2034,52 @@ class Agenda extends Component
 
                 $this->loadCartTotales();
                 $this->save();
-            }elseif($type=='metodos'){
+            } elseif ($type == 'metodos') {
 
                 // Encuentra el índice o clave del elemento a reemplazar
                 $key = $this->methods->search(function ($method) use ($uid) {
                     return $method['uid'] === $uid;
                 });
-    
+
                 // Reemplaza el método directamente por la clave encontrada
                 if ($key !== false) {
                     $this->methods[$key] = $newItem;
                 }
                 $this->totalMethods();
                 $this->loadCartTotales();
-            }elseif($type=='propinas'){
+            } elseif ($type == 'propinas') {
                 // Encuentra el índice o clave del elemento a reemplazar
                 $key = $this->propinas->search(function ($propina) use ($uid) {
                     return $propina['uid'] === $uid;
                 });
-    
+
                 // Reemplaza el método directamente por la clave encontrada
                 if ($key !== false) {
                     $this->propinas[$key] = $newItem;
                 }
                 $this->totalPropinas();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 811369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 811369Agenda"]);
         }
     }
     public function setDisccount($qty)
     {
         $qty = $this->eliminarCaracteres($qty);
-        $this->addMethod($qty,'','4',$this->methods);
+        $this->addMethod($qty, '', '4', $this->methods);
     }
     private function Calculator($price, $qty, $ind_iva, $type, $discount_qty)
     {
-        try{
-            if($discount_qty){
-                if($type=='Porcentaje'){
+        try {
+            if ($discount_qty) {
+                if ($type == 'Porcentaje') {
                     //determinamos el precio de venta(con iva)
-                    $calculatedPrice = $price-(($price*$discount_qty)/100);
-                }elseif($type=='Cantidad'){
+                    $calculatedPrice = $price - (($price * $discount_qty) / 100);
+                } elseif ($type == 'Cantidad') {
                     //determinamos el precio de venta(con iva)
-                    $calculatedPrice = $price-$discount_qty/$qty;
-                } 
-            }else{
+                    $calculatedPrice = $price - $discount_qty / $qty;
+                }
+            } else {
                 //determinamos el precio de venta(con iva)
                 $calculatedPrice = $price;
             }
@@ -2119,121 +2099,88 @@ class Agenda extends Component
                 'iva' => $montoIva,
                 'total' => $totalConIva
             ];
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 845369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 845369Agenda"]);
         }
     }
 
     private function totalIVA($carts)
     {
-        try{
+        try {
             $iva = 0;
-            foreach($carts as $cart){
+            foreach ($carts as $cart) {
                 $iva += $cart->sum(function ($item) {
                     return $item['tax'];
                 });
             }
             return $iva;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 878369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 878369Agenda"]);
         }
     }
 
     private function totalCart($carts)
     {
-        try{
+        try {
             $this->pp_cart = 0;
             $amount = 0;
-            foreach($carts as $cart){
+            foreach ($carts as $cart) {
                 $amount += $cart->sum(function ($item) {
                     return $item['total'];
                 });
             }
             return $amount;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 895369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 895369Agenda"]);
         }
     }
 
 
     private function subtotalCart($carts)
     {
-        try{
+        try {
             $subt = 0;
-            foreach($carts as $cart){
+            foreach ($carts as $cart) {
                 $subt += $cart->sum(function ($item) {
-                    if(isset($item['subtotal'])){
-                        $subT=$item['subtotal'];
+                    if (isset($item['subtotal'])) {
+                        $subT = $item['subtotal'];
                         return $subT;
-                    }else{
-                        $subT=$item['total']/($item['ind_iva']+1);
+                    } else {
+                        $subT = $item['total'] / ($item['ind_iva'] + 1);
                         return $subT;
                     }
-                });                
+                });
             }
             return $subt;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 915369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 915369Agenda"]);
         }
     }
 
 
     private function generatedPoints($carts)
     {
-        try{
+        try {
             $reward_points = 0;
-            foreach($carts as $cart){
+            foreach ($carts as $cart) {
                 $reward_points += $cart->sum(function ($item) {
-                    if(isset($item['reward_points'])){
-                        $rewP=($item['qty']*$item['reward_points']);
+                    if (isset($item['reward_points'])) {
+                        $rewP = ($item['qty'] * $item['reward_points']);
                         return $rewP;
-                    }else{
+                    } else {
                         return 0;
                     }
-                });                
+                });
             }
             return $reward_points;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 936369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 936369Agenda"]);
         }
     }
-    private function calculateCustomerPoints($total)
+    public function removeItem($id, $type, $item_id = null)
     {
-        
-        try{
-            $excepcion = $this->customer->excepciones()
-                            ->latest()
-                            ->first();
-        
-            if ($excepcion) {
-                return $this->getRewardPoints($excepcion, $total);
-            }
-        
-            // Buscar categorías y excepciones asociadas a las categorías
-            $categoria = $this->customer->categorias()->latest()->first();
-        
-            if ($categoria) {
-                $excepcion = $categoria->excepciones()
-                                    ->whereNotNull('programa_recompensa_id')
-                                    ->latest()
-                                    ->first();
-        
-                if ($excepcion) {
-                    return $this->getRewardPoints($excepcion, $total);
-                }
-            }
-        
-            // Si no hay excepciones ni categorías, retornar 0
-            return 0;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 3469Agenda"] );
-        }
-    }
-    public function removeItem($id,$type,$item_id=null)
-    {
-        try{
-            if($type=='servicio'){
+        try {
+            if ($type == 'servicio') {
                 //eliminar el item de la coleccion / sesion
                 $this->cartS  = $this->cartS->reject(function ($service) use ($id) {
                     return  $service['id'] === $id;
@@ -2242,54 +2189,54 @@ class Agenda extends Component
                     return  $material['id'] === $id;
                 });
                 $this->save();
-                $this->minutes_qty=$this->calculateTotalMinutes();
+                $this->minutes_qty = $this->calculateTotalMinutes();
                 $this->loadCartTotales();
-            }elseif($type=='method'){
+            } elseif ($type == 'method') {
                 $this->methods = $this->methods->reject(function ($item) use ($id) {
                     return $item['uid'] === $id;
                 });
                 $this->totalMethods();
-            }elseif($type=='propina'){
+            } elseif ($type == 'propina') {
                 $this->propinas = $this->propinas->reject(function ($item) use ($id) {
                     return $item['uid'] === $id;
                 });
                 $this->totalPropinas();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 955369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 955369Agenda"]);
         }
     }
     private function updateStarts()
     {
-        try{
+        try {
             $firstCartItem = $this->cartS->first();
-            
+
             if ($firstCartItem) {
                 $start_date = Carbon::parse($this->start_date_DB);
                 $first_start_date = Carbon::parse($firstCartItem['start']);
                 $dif_minutes = $start_date->diffInMinutes($first_start_date, false); // el tercer parámetro false devuelve negativo si es antes
-                
+
                 $updatedCart = collect($this->cartS)->map(function ($cartItem) use ($dif_minutes) {
                     return $this->updateStart($cartItem, $dif_minutes);
                 });
                 $this->cartS = collect($updatedCart);
                 $this->save();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 119850Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 119850Agenda"]);
         }
     }
     private function updateStart($oldItem, $dif_minutes)
     {
-        try{
+        try {
             $newItem = $oldItem;
             $newDate = Carbon::parse($newItem['start']);
             $newDate->addMinutes($dif_minutes);
             $newItem['start'] = $newDate->locale('local')->format('H:i');
-            
+
             return $newItem;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 122251Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 122251Agenda"]);
         }
     }
 
@@ -2305,16 +2252,16 @@ class Agenda extends Component
 
     private function initializeTotales()
     {
-        $this->totalCart=0;
-        $this->pp_cart=0;
-        $this->taxCart=0;
-        $this->subtotalCart=0;
-        $this->generated_points=0;
+        $this->totalCart = 0;
+        $this->pp_cart = 0;
+        $this->taxCart = 0;
+        $this->subtotalCart = 0;
+        $this->generated_points = 0;
     }
     public function initializeQuery()
     {
-        $this->search=null;
-        $this->items=null;
+        $this->search = null;
+        $this->items = null;
     }
     public function disableEditing()
     {
@@ -2323,62 +2270,62 @@ class Agenda extends Component
     }
     private function loadCartTotales()
     {
-        $this->totalCart = $this->totalCart([$this->cartS,session()->has('cartPV') ? session('cartPV') : new Collection]);
-        $this->taxCart = $this->totalIVA([$this->cartS,session()->has('cartPV') ? session('cartPV') : new Collection]);
-        $this->subtotalCart = $this->subtotalCart([$this->cartS,session()->has('cartPV') ? session('cartPV') : new Collection]);
-        $this->generated_points = $this->generatedPoints([$this->cartS,session()->has('cartPV') ? session('cartPV') : new Collection]);
+        $this->totalCart = $this->totalCart([$this->cartS, session()->has('cartPV') ? session('cartPV') : new Collection]);
+        $this->taxCart = $this->totalIVA([$this->cartS, session()->has('cartPV') ? session('cartPV') : new Collection]);
+        $this->subtotalCart = $this->subtotalCart([$this->cartS, session()->has('cartPV') ? session('cartPV') : new Collection]);
+        $this->generated_points = $this->generatedPoints([$this->cartS, session()->has('cartPV') ? session('cartPV') : new Collection]);
         $this->itemsCart = count($this->cartS);
-        if(session()->has('cartPV')){
+        if (session()->has('cartPV')) {
             $this->itemsCart += $this->totalItems();
         }
-        $this->total_disccount = $this->calculateTotalDisccount([$this->cartS,session()->has('cartPV') ? session('cartPV') : new Collection]);
-        $this->totalCartBase = $this->totalCartBase([$this->cartS,session()->has('cartPV') ? session('cartPV') : new Collection]);
+        $this->total_disccount = $this->calculateTotalDisccount([$this->cartS, session()->has('cartPV') ? session('cartPV') : new Collection]);
+        $this->totalCartBase = $this->totalCartBase([$this->cartS, session()->has('cartPV') ? session('cartPV') : new Collection]);
         $this->totalMethods();
         $this->enviarFechas();
     }
-    
+
     private function totalItems()
     {
-        try{
+        try {
             $items = session('cartPV')->sum(function ($product) {
                 return $product['qty'];
             });
             return $items;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 63576Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 63576Agenda"]);
         }
     }
     private function totalCartBase($carts)
     {
-        try{
+        try {
             $amount = 0;
-            foreach($carts as $cart){
-            $amount += $cart->sum(function ($item) {
+            foreach ($carts as $cart) {
+                $amount += $cart->sum(function ($item) {
                     return $item['gross_price'];
                 });
             }
             return $amount;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 895369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 895369Agenda"]);
         }
     }
     private function calculateTotalDisccount($carts)
     {
-        try{
+        try {
             $total_disccount = 0;
-            foreach($carts as $cart){
+            foreach ($carts as $cart) {
                 $total_disccount += $cart->sum(function ($item) {
-                    return ($item['qty']*$item['gross_price'])-$item['total'];
-                });                
+                    return ($item['qty'] * $item['gross_price']) - $item['total'];
+                });
             }
             return $total_disccount;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 936370Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 936370Agenda"]);
         }
     }
     private function loadProductos()
     {
-        try{
+        try {
             if (!empty($this->search)) {
                 $q = $this->search;
                 $query = producto::where('salon_id', Auth::user()->salon->id)
@@ -2386,93 +2333,92 @@ class Agenda extends Component
                     ->where('name', '!=', 'Producto eliminado')
                     ->where(function ($qry) use ($q) {
                         $qry->where('name', 'like', "%{$q}%")
-                        ->orWhere('description', 'like', "%{$q}%")
-                        ->orWhere('sku', "{$q}")
-                        ->orWhere('intern_sku', "{$q}");
+                            ->orWhere('description', 'like', "%{$q}%")
+                            ->orWhere('sku', "{$q}")
+                            ->orWhere('intern_sku', "{$q}");
                     })
                     ->orderBy('name', 'asc')
                     ->get();
             } else {
 
-                $query =  producto::where('salon_id',Auth::user()->salon->id)->orderBy('stock_qty', 'asc')->get();
+                $query =  producto::where('salon_id', Auth::user()->salon->id)->orderBy('stock_qty', 'asc')->get();
             }
             return $query;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1020369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1020369Agenda"]);
         }
     }
     private function loadServicios()
     {
-        try{
+        try {
             if (!empty($this->search)) {
                 $query = servicio::where('salon_id', Auth::user()->salon->id)
-                    ->where('visibility','visible')
+                    ->where('visibility', 'visible')
                     ->where('name', '!=', 'Servicio eliminado')
                     ->where(function ($q) {
                         $q->where('name', 'like', "%{$this->search}%")
-                          ->orWhere('description', 'like', "%{$this->search}%");
+                            ->orWhere('description', 'like', "%{$this->search}%");
                     })
                     ->orderBy('name', 'asc')
                     ->get();
             } else {
                 $query = servicio::where('salon_id', Auth::user()->salon->id)
-                    ->where('visibility','visible')
+                    ->where('visibility', 'visible')
                     ->where('name', '!=', 'Servicio eliminado')
                     ->where(function ($q) {
                         $q->where('name', 'like', "%{$this->search}%")
-                          ->orWhere('description', 'like', "%{$this->search}%");
+                            ->orWhere('description', 'like', "%{$this->search}%");
                     })
                     ->orderBy('name', 'asc')
-                    ->get();        
+                    ->get();
             }
             return $query;
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1040369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1040369Agenda"]);
         }
     }
     public function loadItems($type)
     {
-        $this->itemType=$type;
-        if($type=='productos'){
-            $this->items=$this->loadProductos();
-        }elseif($type=='servicios'){
-            $this->items=$this->loadServicios();
+        $this->itemType = $type;
+        if ($type == 'productos') {
+            $this->items = $this->loadProductos();
+        } elseif ($type == 'servicios') {
+            $this->items = $this->loadServicios();
         }
     }
     public function addNewService($item_id)
     {
-        try{
-            if(session('recorrido')|| $this->recorrido){
+        try {
+            if (session('recorrido') || $this->recorrido) {
                 $this->dispatchBrowserEvent('play');
             }
             $item = servicio::find($item_id);
             $type = 'servicio';
-            $this->AddItem($type,null,$item);
+            $this->AddItem($type, null, $item);
             $this->loadData();
-            if($this->customerId!==null){
+            if ($this->customerId !== null) {
                 $this->dispatchBrowserEvent('reloadForm');
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1068369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1068369Agenda"]);
         }
     }
     private function totalMethods()
     {
-        try{
+        try {
             $recibido = 0;
             $disccount = 0;
             $restante = $this->totalCart;
-            foreach($this->methods as $method){
-                if($method['paymentMethod']=='4'){
-                    if($method['tipo']=='Porcentaje'){
-                        $disccount += ($method['amount']/100)*$restante;
-                        $restante -= ($method['amount']/100)*$restante;
-                    }elseif($method['tipo']=='Cantidad'){
+            foreach ($this->methods as $method) {
+                if ($method['paymentMethod'] == '4') {
+                    if ($method['tipo'] == 'Porcentaje') {
+                        $disccount += ($method['amount'] / 100) * $restante;
+                        $restante -= ($method['amount'] / 100) * $restante;
+                    } elseif ($method['tipo'] == 'Cantidad') {
                         $disccount += $method['amount'];
                         $restante -= $method['amount'];
                     }
-                }else{
+                } else {
                     $recibido += $method['amount'];
                     $restante -= $method['amount'];
                     // if($restante<0 && $method['paymentMethod']!='1'){
@@ -2483,17 +2429,17 @@ class Agenda extends Component
                 }
             }
             $total_disccount = $this->calculateTotalDisccount([$this->cartS]);
-            $this->total_disccount=$disccount+$total_disccount;
-            $this->rest=$restante;
-            $this->global_disccount=$disccount;
-            $this->recibido=$recibido;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1082369Agenda"] );
+            $this->total_disccount = $disccount + $total_disccount;
+            $this->rest = $restante;
+            $this->global_disccount = $disccount;
+            $this->recibido = $recibido;
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1082369Agenda"]);
         }
-    }    
+    }
     public function newMethod()
     {
-        $this->addMethod(0,'','1',$this->methods,1);
+        $this->addMethod(0, '', '1', $this->methods, 1);
     }
     public function setTip()
     {
@@ -2501,13 +2447,13 @@ class Agenda extends Component
     }
     public function newPropina()
     {
-        $empleado = Empleado::where('salon_id',Auth::user()->salon->id)->where('visible',1)->first();
-        $this->addMethod(0,'','1',$this->propinas,$empleado->id);
+        $empleado = Empleado::where('salon_id', Auth::user()->salon->id)->where('visible', 1)->first();
+        $this->addMethod(0, '', '1', $this->propinas, $empleado->id);
     }
-    
+
     public function setGiftCard()
     {
-        try{
+        try {
             $inCartMethods = $this->inMethods('reference');
 
             if (!$inCartMethods) {
@@ -2531,7 +2477,7 @@ class Agenda extends Component
                     }
 
                     if (!$cupon->redeemed) {
-                        $this->addMethod($cupon->value_amount,$cupon->password,'99999',$this->methods,null,null,$cupon->acumulable);
+                        $this->addMethod($cupon->value_amount, $cupon->password, '99999', $this->methods, null, null, $cupon->acumulable);
                         $this->totalMethods();
                         $this->loadCartTotales();
                     } else {
@@ -2543,60 +2489,58 @@ class Agenda extends Component
             } else {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => "Código secreto ya está en proceso de canje."]);
             }
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41233260Payment"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41233260Payment"]);
         }
     }
 
-    public function activateCardCust($custId=null, $balance=0)
+    public function activateCardCust($custId = null, $balance = 0)
     {
-        $this->emit('activateCardWithBalance',['id' => $custId ?? $this->customerId, 'puntaje' => $balance]);
+        $this->emit('activateCardWithBalance', ['id' => $custId ?? $this->customerId, 'puntaje' => $balance]);
     }
     private function totalPropinas()
     {
-        try{
+        try {
             $recibido = 0;
-            foreach($this->propinas as $propina){
+            foreach ($this->propinas as $propina) {
                 $recibido += $propina['amount'];
             }
-            $this->propinasRecibidas=$recibido;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1108369Agenda"] );
+            $this->propinasRecibidas = $recibido;
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1108369Agenda"]);
         }
     }
-    public function cambioDataMethods($uid,$data,$type,$array)
+    public function cambioDataMethods($uid, $data, $type, $array)
     {
-        try{
-            if($type==1){
+        try {
+            if ($type == 1) {
                 $valorNumerico = $this->eliminarCaracteres($data);
-                if(!is_numeric($valorNumerico)){
-                    $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Corrija el porcentaje"] );
+                if (!is_numeric($valorNumerico)) {
+                    $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Corrija el porcentaje"]);
                     return;
-                }else{
+                } else {
                     $data = $valorNumerico;
                 }
             }
-            if($array=='propinas'){
+            if ($array == 'propinas') {
                 $coll = $this->propinas;
-            } elseif($array == 'metodos'){
+            } elseif ($array == 'metodos') {
                 $coll = $this->methods;
             }
-            $this->cambioFinal($uid,$data,$type,$coll,$array);
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1120369Agenda"] );
+            $this->cambioFinal($uid, $data, $type, $coll, $array);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1120369Agenda"]);
         }
     }
     private function eliminarCaracteres($data)
     {
-        try{
+        try {
             // Elimina todos los caracteres que no sean números, puntos o comas
             $valorSinCaracter = preg_replace('/[^0-9.]/', '', $data);
-            
+
             // Convierte el resultado a un float
             $valorNumerico = (float) $valorSinCaracter;
-            
+
             // Verifica si el resultado es numérico
             if (!is_numeric($valorNumerico)) {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => "Corrija el valor numérico"]);
@@ -2604,22 +2548,22 @@ class Agenda extends Component
             } else {
                 return $valorNumerico;
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 51312Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 51312Agenda"]);
         }
     }
 
-    public function cambioData($uid,$data,$type)
+    public function cambioData($uid, $data, $type)
     {
-        try{
+        try {
             $data = $this->eliminarCaracteres($data);
-            
+
             $myTips = $this->propinas;
             $oldItem = $myTips->where('uid', $uid)->first();
 
             $newItem  = $oldItem;
 
-            switch($type){
+            switch ($type) {
                 case 1:
                     $newItem['qty'] = $data;
                     break;
@@ -2632,44 +2576,44 @@ class Agenda extends Component
                 case 4:
                     $newItem['empleado'] = $data;
                     break;
-                }
+            }
 
             $this->propinas = $this->propinas->reject(function ($method) use ($uid) {
                 return $method['uid'] === $uid;
             });
 
             $this->propinas->push(Arr::add($newItem, null, null));
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 483266AgendaServices"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 483266AgendaServices"]);
         }
     }
     public function removeTip($uid)
     {
-        try{
+        try {
             $this->propinas = $this->propinas->reject(function ($method) use ($uid) {
                 return $method['uid'] === $uid;
             });
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 503267AgendaServices"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 503267AgendaServices"]);
         }
     }
     private function loadEmployees()
     {
-        try{
-            $empleados = Empleado::where('salon_id',Auth::user()->salon->id)->where('visible',1)->get();
+        try {
+            $empleados = Empleado::where('salon_id', Auth::user()->salon->id)->where('visible', 1)->get();
             return $empleados;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 523268AgendaServices"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 523268AgendaServices"]);
         }
     }
-    private function cambioFinal($uid,$data,$type,$myMethods,$array)
+    private function cambioFinal($uid, $data, $type, $myMethods, $array)
     {
-        try{
+        try {
             $oldItem = $myMethods->where('uid', $uid)->first();
-            
+
             $newItem  = $oldItem;
 
-            switch($type){
+            switch ($type) {
                 case 1:
                     $newItem['amount'] = $data;
                     break;
@@ -2690,9 +2634,9 @@ class Agenda extends Component
                     break;
             }
 
-            $this->desvincularElementoAnterior($array,null,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369Agenda"] );
+            $this->desvincularElementoAnterior($array, null, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369Agenda"]);
         }
     }
     public function Agendar()
@@ -2701,16 +2645,17 @@ class Agenda extends Component
     }
     private function compararMetodos()
     {
-        foreach($this->methods as $method){
-            $methodFound = $this->itemSelected->metodosPago->where("payment_method_id",$method['paymentMethod'])->first();
-            if($methodFound != null){
-                $this->cambioDataMethods($method['uid'],$methodFound->created_at,5,'metodos');
+        foreach ($this->methods as $method) {
+            $methodFound = $this->itemSelected->metodosPago->where("payment_method_id", $method['paymentMethod'])->first();
+            if ($methodFound != null) {
+                $this->cambioDataMethods($method['uid'], $methodFound->created_at, 5, 'metodos');
             }
         }
     }
-    public function storeBlock($editing=false) {
-        try{
-            
+    public function storeBlock($editing = false)
+    {
+        try {
+
             if (session()->has('customDate')) {
                 Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
             }
@@ -2724,7 +2669,7 @@ class Agenda extends Component
                     'color' => $cart[0]['color'] ?? '#E2BBB4',
                     'empleado_id' => $cart[0]['vendedor'],
                 ]);
-            }else{
+            } else {
                 bloqueo::create([
                     'start' => $this->start_date_DB,
                     'end' => $this->end_date_DB,
@@ -2734,29 +2679,29 @@ class Agenda extends Component
                     'empleado_id' => $cart[0]['vendedor'],
                 ]);
             }
-            
+
             $this->clear();
             $this->cancelarCaptura();
-            
+
             $this->dispatchBrowserEvent('noty', ['msg' => "SOLICITUD PROCESADA CON ÉXITO"]);
             $this->dispatchBrowserEvent('cerrarBlockMenuForm');
 
             if (session()->has('customDate')) {
                 Carbon::setTestNow();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1144369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1144369Agenda"]);
         }
     }
 
-    public function storeDate($agendar=0)
+    public function storeDate($agendar = 0)
     {
-        if($this->billRequired && !$this->billed){
+        if ($this->billRequired && !$this->billed) {
             $this->validate([
                 'usoCfdi' => 'required',
             ]);
         }
-        try{
+        try {
             if (session()->has('customDate')) {
                 Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
             }
@@ -2764,17 +2709,17 @@ class Agenda extends Component
             session()->put('cust', $this->customer);
             session()->save();
 
-            if(count($this->methods)>0){
+            if (count($this->methods) > 0) {
                 $agendar = 0;
             }
-            
-            if (count($this->cartS)<=0) {
+
+            if (count($this->cartS) <= 0) {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => 'NO HAY SERVICIOS AGREGADOS']);
                 return;
             }
             if (session()->has('cust')) {
                 $this->customer = session('cust');
-                $this->customerId = $this->customer->id;
+                $this->customerId = $this->customer?->id;
             }
 
             if ($this->customerId == null) {
@@ -2782,7 +2727,7 @@ class Agenda extends Component
                 return;
             }
 
-            if(!$this->verificarApertura() && !$agendar){
+            if (!$this->verificarApertura() && !$agendar) {
                 $this->dispatchBrowserEvent('aperturar');
                 session()->put('cust', $this->customer);
                 session()->save();
@@ -2790,18 +2735,18 @@ class Agenda extends Component
             }
 
             $respaldoData = null;
-            if($this->asignacion_id!==null){
-                $asignacion = Asignacion_servicio::with('date.details','date.details_product','date.propinas','date.metodosPago')->find($this->asignacion_id);
-                $this->itemSelected =$asignacion->date;
+            if ($this->asignacion_id !== null) {
+                $asignacion = Asignacion_servicio::with('date.details', 'date.details_product', 'date.propinas', 'date.metodosPago')->find($this->asignacion_id);
+                $this->itemSelected = $asignacion->date;
             }
-            if($this->itemSelected !== null){
+            if ($this->itemSelected !== null) {
                 $respaldoData = $this->respaldarInfo();
                 $this->compararMetodos();
                 $this->vincularAbonos($respaldoData['abonos']);
                 $this->vincularAbonos($respaldoData['abonoPropinas']);
                 $this->cancelarStock();
-                if($this->itemSelected->details_product){
-                    foreach($this->itemSelected->details_product as $item){
+                if ($this->itemSelected->details_product) {
+                    foreach ($this->itemSelected->details_product as $item) {
                         $this->ajustarStockProd($item);
                     }
                 }
@@ -2814,49 +2759,49 @@ class Agenda extends Component
             $movimiento->description = $this->description;
             $movimiento->start = $this->start_date_DB;
             $movimiento->end = $this->end_date_DB;
-            $movimiento->remember = $respaldoData!==null ? 0 : $this->remember;
-            $cita_id = $this->setMovimiento($movimiento, $respaldoData,$agendar);
-            if($respaldoData){
-                $this->vincularAbonos($respaldoData['abonos'],$cita_id);
-                $this->vincularAbonos($respaldoData['abonoPropinas'],$cita_id);
+            $movimiento->remember = $respaldoData !== null ? 0 : $this->remember;
+            $cita_id = $this->setMovimiento($movimiento, $respaldoData, $agendar);
+            if ($respaldoData) {
+                $this->vincularAbonos($respaldoData['abonos'], $cita_id);
+                $this->vincularAbonos($respaldoData['abonoPropinas'], $cita_id);
             }
-            if($this->respaldoFiles){
+            if ($this->respaldoFiles) {
                 $this->vincularFiles($cita_id);
             }
 
-            if(session()->has('cartPV') && count(session('cartPV'))>0){
-                foreach(session('cartPV') as $item){
+            if (session()->has('cartPV') && count(session('cartPV')) > 0) {
+                foreach (session('cartPV') as $item) {
                     $asignacion = new Asignacion_venta;
                     $asignacion->cita_id = $cita_id;
                     $asignacion->selected_item = $item['pid'];
                     $asignacion->quantity = $item['qty'];
-                    $comission = $this->calcularComision($item,'producto');
+                    $comission = $this->calcularComision($item, 'producto');
                     $asignacion->comission = $comission['balance'];
                     $asignacion->type_comision_calculated = $comission['type'] ?? 'percent';
                     $this->ajustarStock($item);
-                    $this->setDetail($asignacion,$item);
+                    $this->setDetail($asignacion, $item, false);
                 }
             }
-            if(count($this->cartS)>0){
-            $cartM = $this->recuperarCart('cartMaterials');
-                foreach($this->cartS as $item){
+            if (count($this->cartS) > 0) {
+                $cartM = $this->recuperarCart('cartMaterials');
+                foreach ($this->cartS as $item) {
                     $fecha = $this->calculateStart($item);
-                    $asignacion = new Asignacion_servicio; 
+                    $asignacion = new Asignacion_servicio;
                     $asignacion->start = $fecha;
                     $asignacion->selected = $item['selected'];
                     $asignacion->selected_service = $item['sid'];
                     $asignacion->cita_id = $cita_id;
-                    $comission = $this->calcularComision($item,'servicio');
+                    $comission = $this->calcularComision($item, 'servicio');
                     $asignacion->comission = $comission['balance'] ?? 0;
                     $asignacion->type_comision_calculated = $comission['type'] ?? 'percent';
                     $asignacion->duration = $item['duration'];
                     $asignacion->color = $item['color'] ?? '#E2BBB4';
-                    $asignacion_id = $this->setDetail($asignacion,$item);
+                    $asignacion_id = $this->setDetail($asignacion, $item);
 
-                    $materials = $cartM->where('uid',$item['id']);
+                    $materials = $cartM->where('uid', $item['id']);
 
-                    foreach($materials as $material) {
-                        
+                    foreach ($materials as $material) {
+
                         $newMaterial = new Material;
                         $newMaterial->producto_id = $material['mid'];
                         $newMaterial->sale_price = $material['sale_price'];
@@ -2881,29 +2826,29 @@ class Agenda extends Component
             $sendActivateCardCust = false;
 
             //metodos de pago
-            foreach($this->methods as $method) {
-                if($method['paymentMethod']=='5' && !isset($method['created_at'])){
+            foreach ($this->methods as $method) {
+                if ($method['paymentMethod'] == '5' && !isset($method['created_at'])) {
                     $this->customer->tarjetaPuntos->balance -= $method['amount'];
                     $this->customer->tarjetaPuntos->save();
                 }
                 $payment = new metodo_pago_servicio;
-                if(($method['paymentMethod']=='1' || $method['paymentMethod']=='99999') && $this->rest<0){
+                if (($method['paymentMethod'] == '1' || $method['paymentMethod'] == '99999') && $this->rest < 0) {
                     $payment->change = abs($this->rest);
                 }
                 $payment->cita_id = $cita_id;
-                $payment = $this->setMethods($payment,$method,1);
-                
-                if($method['paymentMethod']=='99999'){
-                    $gc = coupon::firstWhere('password',$payment->reference);
+                $payment = $this->setMethods($payment, $method, 1);
+
+                if ($method['paymentMethod'] == '99999') {
+                    $gc = coupon::firstWhere('password', $payment->reference);
                     $gc->redeemed = 1;
                     $gc->save();
 
-                    if($this->customer->tarjetaPuntos && !isset($method['created_at'])){
+                    if ($this->customer->tarjetaPuntos && !isset($method['created_at'])) {
                         $this->customer->tarjetaPuntos->balance += abs($this->rest);
                         $this->customer->tarjetaPuntos->save();
                     }
-                    
-                    if (abs($this->rest)>0 && $this->customer->tarjetaPuntos===null) {
+
+                    if (abs($this->rest) > 0 && $this->customer->tarjetaPuntos === null) {
                         $sendActivateCardCust = true;
                     }
                 }
@@ -2911,9 +2856,9 @@ class Agenda extends Component
             }
 
             //propinas
-            foreach($this->propinas as $propina){
+            foreach ($this->propinas as $propina) {
                 $payment = new Propina;
-                $newPropina = $this->setMethods($payment,$propina);
+                $newPropina = $this->setMethods($payment, $propina);
                 $newPropina->empleado_id = $propina['empleado'];
                 $newPropina->cita_id = $cita_id;
                 $newPropina->save();
@@ -2942,13 +2887,13 @@ class Agenda extends Component
 
             // $this->recuperarMensajes($movimiento);
 
-            if($this->isBirthDate($this->customer->birth_date,$this->start_date_DB)){
-                $this->listTags = $this->addTagToArray($this->listTags,'2');
+            if ($this->isBirthDate($this->customer->birth_date, $this->start_date_DB)) {
+                $this->listTags = $this->addTagToArray($this->listTags, '2');
             }
-            if($this->customer->citas()->count()==1){
-                $this->listTags = $this->addTagToArray($this->listTags,'1');
+            if ($this->customer->citas()->count() == 1) {
+                $this->listTags = $this->addTagToArray($this->listTags, '1');
             }
-          
+
             $listTags = null;
             if ($this->listTags != null && !is_array($this->listTags)) {
                 $listTags = explode(",", $this->listTags);
@@ -2976,12 +2921,12 @@ class Agenda extends Component
                 }, $listTags);
 
                 // Sincronizar etiquetas
-                $listTags !== null 
-                    ? $movimiento->etiquetas()->sync($listTags) 
+                $listTags !== null
+                    ? $movimiento->etiquetas()->sync($listTags)
                     : $movimiento->etiquetas()->detach();
             }
 
-            if(intval($this->billRequired) !== 0){
+            if (intval($this->billRequired) !== 0) {
                 $stat = $this->billed ? 2 : 1;
                 $movimiento->billing = intval($stat);
                 $movimiento->billing_description = $this->usoCfdi;
@@ -2989,76 +2934,74 @@ class Agenda extends Component
                 $movimiento->save();
             }
 
-            if($agendar==0){
+            if ($agendar == 0) {
                 $this->dispatchBrowserEvent('noty', ['msg' => "CITA CERRADA - PAGO REGISTRADO"]);
-                if($movimiento->status=='Pagada'){
+                if ($movimiento->status == 'Pagada') {
                     $customer = cliente::with('tarjetaPuntos')->find($movimiento->customer_id);
-                    if((!isset($respaldoData) || $respaldoData['status']!='Pagada')){
-                        if($customer->tarjetaPuntos){
+                    if ((!isset($respaldoData) || $respaldoData['status'] != 'Pagada')) {
+                        if ($customer->tarjetaPuntos) {
                             $tarjetaPuntos = $customer->tarjetaPuntos;
                             $tarjetaPuntos->balance += $movimiento->generated_points;
                             $tarjetaPuntos->save();
                         }
                     }
-                    if(!$sendActivateCardCust){
+                    if (!$sendActivateCardCust) {
                         $this->dispatchBrowserEvent('abrirReview');
                         $this->imprimirTicket($movimiento);
                         $this->reseñaClienteDate($movimiento->customer_id);
-                    } elseif(!isset($this->methods[0]['created_at']) && $sendActivateCardCust) {
-                        $this->activateCardCust($this->customer->id,abs($this->rest));
+                    } elseif (!isset($this->methods[0]['created_at']) && $sendActivateCardCust) {
+                        $this->activateCardCust($this->customer?->id, abs($this->rest));
                         return;
                     }
                 }
-            }else{
+            } else {
                 $this->dispatchBrowserEvent('noty', ['msg' => "SOLICITUD PROCESADA CON ÉXITO"]);
                 $this->dispatchBrowserEvent('close-form');
             }
-            
+
             $this->clear();
             $this->cancelarCaptura();
 
             if (session()->has('customDate')) {
                 Carbon::setTestNow();
             }
-            
-            if($this->vista === 'livewire.calendar.edit'){
+
+            if ($this->vista === 'livewire.calendar.edit') {
                 $this->dispatchBrowserEvent('returnCustomersView');
             }
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1169Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1169Agenda"]);
         }
-        
     }
     public function continueStoring()
     {
-        try{
+        try {
             $this->clear();
             $this->cancelarCaptura();
 
             if (session()->has('customDate')) {
                 Carbon::setTestNow();
             }
-            
-            if($this->vista === 'livewire.calendar.edit'){
+
+            if ($this->vista === 'livewire.calendar.edit') {
                 $this->dispatchBrowserEvent('returnCustomersView');
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 123429Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 123429Agenda"]);
         }
     }
-    private function addTagToArray($listTags,$tagId)
+    private function addTagToArray($listTags, $tagId)
     {
-        if($listTags != ""){
+        if ($listTags != "") {
             $listTags .= ',' . $tagId;
-        }else{
+        } else {
             $listTags .= $tagId;
         }
         return $listTags;
     }
-    private function isBirthDate($birth_date,$date)
+    private function isBirthDate($birth_date, $date)
     {
-        $bd = $birth_date ?? '0000-00-00' ;
+        $bd = $birth_date ?? '0000-00-00';
         return $bd == Carbon::parse($date)->format('Y-m-d');
     }
     private function recuperarCart($key)
@@ -3068,162 +3011,11 @@ class Agenda extends Component
         } else {
             return new Collection;
         }
-
     }
-    
-    public function Store()
+    private function obtenerStart($item, $fecha)
     {
-        try{
-            $cartM = $this->recuperarCart('cartMaterials');
-            $cart = $this->recuperarCart('cartS');
-            dd($cartM,$cart);
-            $date = new cita;
+        $horario = explode(":", $item['start']);
 
-            if (count($this->cartS)<=0) {
-                $this->dispatchBrowserEvent('noty-error', ['msg' => 'NO HAY SERVICIOS AGREGADOS']);
-                return;
-            }
-
-            if ($this->customerId == null) {
-                $this->dispatchBrowserEvent('noty-error', ['msg' => 'SELECCIONA UN CLIENTE']);
-                return;
-            }
-
-            //recuperamos carrito
-            $end_real = null;
-
-            $respaldoData = null;
-            if($this->asignacion_id!==null){
-                $asignacion = Asignacion_servicio::with('date.details','date.details_product','date.propinas','date.metodosPago')->find($this->asignacion_id);
-                $this->itemSelected =$asignacion->date;
-                $oldReward = $this->itemSelected->generated_points;
-                
-                if($this->itemSelected->end_real==null){
-                    $end_real = Carbon::now();
-                }
-            }
-            if($this->itemSelected !== null){
-                $respaldoData = $this->respaldarInfo();
-                $this->deleteRelations();
-            }
-            
-            $date->total = $this->totalCart;
-            $date->disccount = $this->global_disccount;
-            $date->user_id = Auth()->user()->id;
-            $date->status= 'Pagada';
-            $date->description = $this->description;
-            $date->end_real = $end_real;
-            
-            if($this->rest>0){
-                $date->status='Pendiente';
-            }
-            
-            $date->salon_id = Auth()->user()->salon->id;
-            if($date->customer_id==null){
-                if($this->customerId == null){
-                    $this->dispatchBrowserEvent('noty-error', ['msg' => 'NO SE HA SELECCIONADO UN CLIENTE']);
-                    return;
-                }
-                $date->customer_id = $this->customerId;
-                $date->remember = false;
-                $date->start = $this->infoDate['start'];
-                $date->end = $this->infoDate['end'];
-            }
-            $date->save();
-
-            $fecha = Carbon::parse($this->currentDateC);
-
-            foreach($cart as $item) {
-
-                $start = $this->obtenerStart($item,$fecha);
-                $comission = $this->calcularComision($item,'servicio');
-                // Verifica si ya existe una asignación de servicio para este servicio en la cita
-                $existingAssignment = $date->details->where('selected_service', $item['sid'])->first();
-
-                    // Si la asignación no existe, crea una nueva
-                    $existingAssignment = Asignacion_servicio::create([
-                        'selected_service' => $item['sid'],
-                        'cita_id' => $date->id,
-                        'disccount_percent' => $item['disccount_percent'],
-                        'disccount_price' => $item['disccount_price'],
-                        'iva' => $item['ind_iva'],
-                        'empleado_id' => $item['vendedor'],
-                        'current_price' => $item['gross_price'],
-                        'generated_points' => $item['reward_points'],
-                        'comission' => $comission,
-                        'start'=>$start,
-                        'selected'=>$item['selected'],
-                        'duration' => $item['duration']
-                    ]);
-                
-                
-
-                $materials = $cartM->where('uid',$item['id']);
-
-                foreach($materials as $material) {
-                    
-                    $newMaterial = new Material;
-                    $newMaterial->producto_id = $material['mid'];
-                    $newMaterial->sale_price = $material['sale_price'];
-                    $newMaterial->qty = $material['qty'];
-                    $newMaterial->salon_id = Auth()->user()->salon_id;
-                    $newMaterial->user_id = Auth()->user()->id;
-                    $newMaterial->empleado_id = $item['vendedor'];
-                    $newMaterial->cliente_id = $date->customer_id;
-                    $newMaterial->asignacion_id = $existingAssignment->id;
-                    $newMaterial->save();
-                    $this->ajustarStockMaterial($material);
-                }
-
-            }
-
-            $this->generated_points=$this->generatedPoints([$cart]);
-            // if(isset($cartP)){
-            //     $this->generated_points+=$this->generatedPoints($cartP);
-            // }
-            $date->generated_points=$this->generated_points;
-            $date->save();
-
-            //metodos de pago
-            foreach($this->methods as $method) {
-                $payment = new metodo_pago_servicio( [
-                    'payment_method_id' => $method['paymentMethod'],
-                    'cita_id' => $date->id,
-                    'reference' => $method['reference'],
-                    'amount' => $method['amount']
-                ]);
-                $payment->save();
-            };
-            //propinas
-            foreach($this->propinas as $propina){
-                $propina = new Propina([
-                    'payment_method_id' => $propina['paymentMethod'],
-                    'cita_id' => $date->id,
-                    'reference' => $propina['reference'],
-                    'amount' => $propina['amount'],
-                    'empleado_id' => $propina['empleado']
-                ]);
-                $propina->save();
-            }
-
-            $customer = cliente::with('tarjetaPuntos')->find($date->customer_id);
-            if($customer->tarjetaPuntos){
-                $customer->tarjetaPuntos->balance += $date->generated_points-$oldReward;
-                $customer->tarjetaPuntos->save();
-            }
-            $this->imprimirTicket($date);
-            $this->dispatchBrowserEvent('noty', ['msg' => "CITA CERRADA - PAGO REGISTRADO"]);
-            $this->dispatchBrowserEvent('abrirReview');
-            $this->emit('reseñaClienteDate',$date->customer_id);
-            $this->clear();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 511131Agenda"] );
-        }
-    }
-    private function obtenerStart($item,$fecha)
-    {
-        $horario = explode(":",$item['start']);
-                    
         // Extract the time components from currentDateC
         $hour = $horario[0];
         $minute = $horario[1];
@@ -3231,129 +3023,129 @@ class Agenda extends Component
         // Combine the date and time
         $new_date = $fecha->locale('es')->setTime($hour, $minute, '00');
 
-        $start=$new_date->format('Y-m-d H:i:s');
+        $start = $new_date->format('Y-m-d H:i:s');
         return $start;
     }
-    private function recuperarMensajes($movimiento=null)
+    private function recuperarMensajes($movimiento = null)
     {
-        try{
+        try {
             //mensajes
-            if($movimiento!==null){
-                foreach($this->mensajesRespaldados as $mensaje){
+            if ($movimiento !== null) {
+                foreach ($this->mensajesRespaldados as $mensaje) {
                     walog::create([
-                        'uid'=>$mensaje->uid,
-                        'sent'=>$mensaje->sent,
-                        'cita_id'=>$this->type == 'cita' ? $movimiento->id : null,
-                        'venta_id'=>$this->type == 'venta' ? $movimiento->id : null,
-                        'type'=>$mensaje->type
+                        'uid' => $mensaje->uid,
+                        'sent' => $mensaje->sent,
+                        'cita_id' => $this->type == 'cita' ? $movimiento->id : null,
+                        'venta_id' => $this->type == 'venta' ? $movimiento->id : null,
+                        'type' => $mensaje->type
                     ])->save();
                 }
-            }else{
-                foreach($this->mensajesRespaldados as $mensaje){
+            } else {
+                foreach ($this->mensajesRespaldados as $mensaje) {
                     walog::create([
-                        'uid'=>$mensaje->uid,
-                        'sent'=>$mensaje->sent,
-                        'cita_id'=> null,
-                        'venta_id'=> null,
-                        'type'=>$mensaje->type
+                        'uid' => $mensaje->uid,
+                        'sent' => $mensaje->sent,
+                        'cita_id' => null,
+                        'venta_id' => null,
+                        'type' => $mensaje->type
                     ])->save();
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2131Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2131Agenda"]);
         }
     }
     private function ajustarStock($item)
     {
-        try{
+        try {
             $dif = $item['qty'];
             $product = producto::find($item['pid']);
             $product->stock_qty -= $dif;
             $product->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369Agenda"]);
         }
     }
     private function ajustarStockProd($item)
     {
-        try{
+        try {
             $dif = $item->quantity;
             $product = producto::find($item->selected_item);
             $product->stock_qty += $dif;
             $product->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 11334369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 11334369Agenda"]);
         }
     }
     private function ajustarStockMaterial($item)
     {
-        try{
+        try {
             $product = producto::find($item['mid']);
             $product->stock_qty -= $item['qty'];
             $product->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369Agenda"]);
         }
     }
-    private function setMethods($payment,$method,$isMethod=false)
+    private function setMethods($payment, $method, $isMethod = false)
     {
-        try{
+        try {
             $payment->payment_method_id = $method['paymentMethod'];
             $payment->reference = $method['reference'];
             $payment->amount = $method['amount'];
-            if(isset($method['tipo']) && $isMethod){
+            if (isset($method['tipo']) && $isMethod) {
                 $payment->tipo = $method['tipo'] ?? 'Cantidad';
             }
-            if(isset($method['created_at'])){
+            if (isset($method['created_at'])) {
                 $payment->created_at = $method['created_at'];
             }
             return $payment;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1244369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1244369Agenda"]);
         }
     }
     private function calculateStart($item)
     {
-        try{
+        try {
             // Obtener la hora y los minutos de la variable $hora
-            $horario = explode(":",$item['start']);
+            $horario = explode(":", $item['start']);
 
             // Establecer la nueva hora y los nuevos minutos
             $hour = $horario[0];
             $minute = $horario[1];
-            
+
             $start = Carbon::parse($this->currentDateC);
             $fecha = $start->setTime($hour, $minute, '00');
             return $fecha;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1256369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1256369Agenda"]);
         }
     }
-    private function setDetail($asignacion,$item)
+    private function setDetail($asignacion, $item, $is_service = true)
     {
-        try{
-            if($item['vendedor'] == null){
-                $asignacion->empleado_id = Empleado::where('salon_id',Auth::user()->salon->id)->where('visible',1)->first()->id;
-            }else{
+        try {
+            if ($item['vendedor'] == null) {
+                $asignacion->empleado_id = Empleado::where('salon_id', Auth::user()->salon->id)->where('visible', 1)->first()->id;
+            } else {
                 $asignacion->empleado_id = $item['vendedor'];
             }
             $asignacion->discount_qty = floatval($item['disccount_percent']);
             $asignacion->discount_type = $item['discount_type'];
-            $rewardPoints = $this->calculateCustomerPoints($item['disccount_price']>0 && $item['sale_price'] > $item['disccount_price'] ? $item['disccount_price'] : $item['sale_price']);
-            $asignacion->generated_points = $rewardPoints ? floatval($rewardPoints) : floatval($item['reward_points']);
+            $totalPrice = $item['disccount_price'] > 0 && $item['sale_price'] > $item['disccount_price'] ? $item['disccount_price'] : $item['sale_price'];
+            $asignacion->generated_points = DRG::calculateRewardPoints($item[$is_service ? 'sid' : 'pid'], $is_service, $totalPrice, null, $this->customer?->id, Auth::user()->salon->recompensaGeneral());
             $asignacion->current_price = floatval($item['gross_price'] > $item['sale_price'] ? $item['gross_price'] : $item['sale_price']);
             $asignacion->disccount_price = floatval($item['disccount_price']);
             $asignacion->iva = floatval($item['ind_iva']);
             $asignacion->base_comision = $item['base_comision'];
             $asignacion->save();
             return $asignacion->id;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1268369Agenda"] );
-        }   
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1268369Agenda"]);
+        }
     }
-    private function setMovimiento($movimiento, $respaldoData,$agendar)
+    private function setMovimiento($movimiento, $respaldoData, $agendar)
     {
-        try{
+        try {
             $movimiento->user_id = Auth::user()->id;
             $movimiento->customer_id = $this->customerId;
             $movimiento->disccount = $this->global_disccount;
@@ -3361,53 +3153,52 @@ class Agenda extends Component
             $movimiento->tax_data_id = isset($respaldoData) ? $respaldoData['tax_data_id'] : null;
             $movimiento->billing = isset($respaldoData) ? $respaldoData['billing'] : 0;
             $movimiento->billing_description = isset($respaldoData) ? $respaldoData['billing_description'] : null;
-            if($this->rest>1){
-                $movimiento->status='Pendiente';
-            }else{
-                $movimiento->status='Pagada';
-                if(isset($respaldoData)){
-                    if($respaldoData['end_real']==null){
-                        $movimiento->end_real=Carbon::now();
+            if ($this->rest > 1) {
+                $movimiento->status = 'Pendiente';
+            } else {
+                $movimiento->status = 'Pagada';
+                if (isset($respaldoData)) {
+                    if ($respaldoData['end_real'] == null) {
+                        $movimiento->end_real = Carbon::now();
                     }
-                }else{
-                    $movimiento->end_real=Carbon::now();
+                } else {
+                    $movimiento->end_real = Carbon::now();
                 }
             }
-            if($agendar){
+            if ($agendar) {
                 $movimiento->status = 'Agendada';
             }
-            $rewardPoints = $this->calculateCustomerPoints($movimiento->total);
-            $movimiento->generated_points = $rewardPoints ? $rewardPoints : $this->generated_points;
+            $movimiento->generated_points = $this->generated_points;
             $movimiento->salon_id = Auth::user()->salon->id;
             $movimiento->created_at = isset($respaldoData) ? $respaldoData['created_at'] : Carbon::now()->toDateString();
             $movimiento->save();
             return $movimiento->id;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1288369Agenda"] );
-        }   
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1288369Agenda"]);
+        }
     }
     private function validarVendedores($item)
     {
-        if($item['vendedor']==null){
+        if ($item['vendedor'] == null) {
             $this->dispatchBrowserEvent('noty-error', ['msg' => "Favor de agregar vendedor"]);
             return;
         }
     }
     private function calculateItems()
     {
-        try{
+        try {
             $qty = 0;
-            foreach($this->cartP as $item){
+            foreach ($this->cartP as $item) {
                 $qty += $item['qty'];
             }
             return $qty;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1310369Agenda"] );
-        }   
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1310369Agenda"]);
+        }
     }
     private function respaldarInfo()
     {
-        try{
+        try {
             // $this->mensajesRespaldados = $this->itemSelected->mensajesEnviados;
             $cid = $this->itemSelected->id;
             $generated_points = $this->itemSelected->generated_points;
@@ -3423,7 +3214,7 @@ class Agenda extends Component
             $billing = $this->itemSelected->billing;
             $billing_description = $this->itemSelected->billing_description;
             $tax_data_id = $this->itemSelected->tax_data_id;
-            $info =[
+            $info = [
                 'cid' => $cid,
                 'generated_points' => $generated_points,
                 'created_at' => $created_at,
@@ -3440,23 +3231,23 @@ class Agenda extends Component
                 'tax_data_id' => $tax_data_id,
             ];
             return $info;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1322369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1322369Agenda"]);
         }
     }
-    private function deleteRelations($delete=0)
+    private function deleteRelations($delete = 0)
     {
-        if($delete){
-            $this->pictures=[];
+        if ($delete) {
+            $this->pictures = [];
         }
-        if(isset($this->itemSelected->files)){
+        if (isset($this->itemSelected->files)) {
             $this->deleteFiles($this->itemSelected->files);
         }
         $this->deleteItems($this->itemSelected->metodosPago);
         $this->deleteItems($this->itemSelected->propinas);
         // $this->deleteItems($this->itemSelected->mensajesEnviados);
-        foreach($this->itemSelected->details as $detail){
-            if(isset($detail->materiales)){
+        foreach ($this->itemSelected->details as $detail) {
+            if (isset($detail->materiales)) {
                 $this->deleteItems($detail->materiales);
             }
         }
@@ -3467,156 +3258,154 @@ class Agenda extends Component
         $this->deleteItems($this->itemSelected->abonoPropinas);
         $this->itemSelected->delete();
     }
-    private function vincularAbonos($abonos,$id=null)
+    private function vincularAbonos($abonos, $id = null)
     {
-        try{
-            foreach($abonos as $abono){
+        try {
+            foreach ($abonos as $abono) {
                 $abono->cita_id = $id;
                 $abono->save();
             }
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 121Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 121Agenda"]);
         }
     }
     private function vincularFiles($id)
     {
-        try{
-            foreach($this->respaldoFiles as $file_id){
+        try {
+            foreach ($this->respaldoFiles as $file_id) {
                 $file = File::find($file_id);
-                if($file!=null){
+                if ($file != null) {
                     $file->model_id = $id;
                     $file->save();
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 14031Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 14031Agenda"]);
         }
     }
     private function deleteFiles($files)
     {
-        try{
-            foreach($files as $file) {
-                $found=false;
-                $filename = 'storage/citas/' . $file->file; 
-                foreach($this->pictures as $picture){
-                    if($filename == $picture){
+        try {
+            foreach ($files as $file) {
+                $found = false;
+                $filename = 'storage/citas/' . $file->file;
+                foreach ($this->pictures as $picture) {
+                    if ($filename == $picture) {
                         $found = true;
                     }
                 }
-                if(!$found){
+                if (!$found) {
                     unlink($filename);
                     $file->delete();
-                }else{
+                } else {
                     $this->respaldoFiles[] = $file->id;
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 545Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 545Agenda"]);
         }
     }
-    private function deleteItems($relation,$metodo=false)
+    private function deleteItems($relation, $metodo = false)
     {
-        try{
-            foreach($relation as $item){
-                if($metodo){
-                    if($item->is_real){
+        try {
+            foreach ($relation as $item) {
+                if ($metodo) {
+                    if ($item->is_real) {
                         $item->delete();
                     }
-                }else{
+                } else {
                     $item->delete();
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1354369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1354369Agenda"]);
         }
     }
 
-    private function calcularComision($item,$tipo)
+    private function calcularComision($item, $tipo)
     {
-        try{
+        try {
             $empleado = Empleado::with('comision')->find($item['vendedor']);
-            $balance=0;
+            $balance = 0;
 
-            if(isset($empleado->comision)){
-                if($tipo=='producto'){
-                    $excepcion = excepcion_producto::where('producto_id',$item['pid'])->where('comision_id',$empleado->comision->id)->first();
+            if (isset($empleado->comision)) {
+                if ($tipo == 'producto') {
+                    $excepcion = excepcion_producto::where('producto_id', $item['pid'])->where('comision_id', $empleado->comision->id)->first();
                     $excepcionCat = 'excepcion_cat_' . $tipo;
-                    $obj=producto::find($item['pid']);
-                    $categorias=$obj->categorias;
-                    foreach($categorias as $cat){
-                        $excepcionCat=excepcion_cat_producto::where('categoria_producto_id',$cat->id)->where('comision_id',$empleado->comision->id)->first();
+                    $obj = producto::find($item['pid']);
+                    $categorias = $obj->categorias;
+                    foreach ($categorias as $cat) {
+                        $excepcionCat = excepcion_cat_producto::where('categoria_producto_id', $cat->id)->where('comision_id', $empleado->comision->id)->first();
                     }
-                    $cant= $empleado->comision->qty_p;
-                    $type=$empleado->comision->type_comission_p;
-                }elseif($tipo=='servicio'){
-                    $excepcion = excepcion_servicio::where('servicio_id',$item['sid'])->where('comision_id',$empleado->comision->id)->first();
-                    $obj=servicio::find($item['sid']);
-                    $categorias=$obj->categorias;
-                    foreach($categorias as $cat){
-                        $excepcionCat=excepcion_cat_servicio::where('categoria_servicio_id',$cat->id)->where('comision_id',$empleado->comision->id)->first();
+                    $cant = $empleado->comision->qty_p;
+                    $type = $empleado->comision->type_comission_p;
+                } elseif ($tipo == 'servicio') {
+                    $excepcion = excepcion_servicio::where('servicio_id', $item['sid'])->where('comision_id', $empleado->comision->id)->first();
+                    $obj = servicio::find($item['sid']);
+                    $categorias = $obj->categorias;
+                    foreach ($categorias as $cat) {
+                        $excepcionCat = excepcion_cat_servicio::where('categoria_servicio_id', $cat->id)->where('comision_id', $empleado->comision->id)->first();
                     }
-                    $cant= $empleado->comision->qty_s;
-                    $type=$empleado->comision->type_comission_s;
+                    $cant = $empleado->comision->qty_s;
+                    $type = $empleado->comision->type_comission_s;
                 }
-                if(isset($empleado->comision->excepcion_servicio)||isset($empleado->comision->excepcion_cat_servicio)){
-                    $base_price=$this->defineBasePrice($item);
-                    $excepcionesObj=$excepcion;
-                    $categorias=$obj->categorias;
-                    foreach($categorias as $cat){
-                        $excepcionesCategoria=$excepcionCat;
+                if (isset($empleado->comision->excepcion_servicio) || isset($empleado->comision->excepcion_cat_servicio)) {
+                    $base_price = $this->defineBasePrice($item);
+                    $excepcionesObj = $excepcion;
+                    $categorias = $obj->categorias;
+                    foreach ($categorias as $cat) {
+                        $excepcionesCategoria = $excepcionCat;
                     }
-                    if(isset($excepcionesObj)){
-                        $cant=$excepcionesObj->qty;
-                        $type=$excepcionesObj->type_comission;
-                    }elseif(isset($excepcionesCategoria)){
-                        $cant=$excepcionesCategoria->qty;
-                        $type=$excepcionesCategoria->type_comission;
+                    if (isset($excepcionesObj)) {
+                        $cant = $excepcionesObj->qty;
+                        $type = $excepcionesObj->type_comission;
+                    } elseif (isset($excepcionesCategoria)) {
+                        $cant = $excepcionesCategoria->qty;
+                        $type = $excepcionesCategoria->type_comission;
                     }
                 }
-                if($type=='percent'){
-                    $balance=($cant/100)*$base_price;
-                }elseif($type=='qty'){
-                    $balance=$cant;
+                if ($type == 'percent') {
+                    $balance = ($cant / 100) * $base_price;
+                } elseif ($type == 'qty') {
+                    $balance = $cant;
                 }
                 return ['balance' => $balance, 'type' => $type];
-
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1370369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1370369Agenda"]);
         }
     }
     private function defineBasePrice($item)
     {
-        try{
-            if($item['base_comision']){
+        try {
+            if ($item['base_comision']) {
                 return $item['total'];
-            }else{
+            } else {
                 return $item['disccount_price'] ? $item['disccount_price'] : $item['sale_price'];
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 138312369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 138312369Agenda"]);
         }
     }
-    public function changeStartDuration($uid,$new_start)
+    public function changeStartDuration($uid, $new_start)
     {
-        try{
+        try {
             $mycart = $this->cartS;
             $oldItem = $mycart->where('id', $uid)->first();
-            $this->recorrerEnd($oldItem,$new_start,$uid);
+            $this->recorrerEnd($oldItem, $new_start, $uid);
 
             $data = $this->determinarNewStartEnd();
             $this->recorrerHorarios($data);
 
             $this->save();
             $this->loadData();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 654Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 654Agenda"]);
         }
     }
-    public function changeEndDuration($uid,$new_end)
+    public function changeEndDuration($uid, $new_end)
     {
-        try{
+        try {
             $duration = 0;
             $mycart = $this->cartS;
             $oldItem = $mycart->where('id', $uid)->first();
@@ -3624,73 +3413,73 @@ class Agenda extends Component
             $old_end = Carbon::createFromFormat('H:i', $oldItem['end']);
             $end = Carbon::createFromFormat('H:i', $new_end);
 
-            $minutes = $old_end->diffInMinutes($end,false);
+            $minutes = $old_end->diffInMinutes($end, false);
 
-            $duration = $oldItem['duration']+$minutes;
-            if($oldItem['start']>$new_end){
+            $duration = $oldItem['duration'] + $minutes;
+            if ($oldItem['start'] > $new_end) {
                 $new_start = Carbon::parse($oldItem['start'])->addMinutes($minutes)->format('H:i');
-                $this->changeDuration($uid,abs($duration),$new_end,$new_start);
-            }else{
-                $this->changeDuration($uid,$duration,$new_end);
+                $this->changeDuration($uid, abs($duration), $new_end, $new_start);
+            } else {
+                $this->changeDuration($uid, $duration, $new_end);
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 512325Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 512325Agenda"]);
         }
     }
-    private function changeDuration($uid,$duration=0,$new_end,$new_start=null)
+    private function changeDuration($uid, $duration = 0, $new_end, $new_start = null)
     {
-        try{
+        try {
             $mycart = $this->cartS;
             $oldItem = $mycart->where('id', $uid)->first();
             $newItem  = $oldItem;
 
             $newItem['duration'] = intval($duration);
             $newItem['end'] = $new_end;
-            if($new_start){
+            if ($new_start) {
                 $newItem['start'] = $new_start;
             }
-            $this->desvincularElementoAnterior('servicio',null,$uid,$newItem);
-            $this->minutes_qty=$this->recalculateDuration();
+            $this->desvincularElementoAnterior('servicio', null, $uid, $newItem);
+            $this->minutes_qty = $this->recalculateDuration();
             $this->loadData();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5776Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5776Agenda"]);
         }
     }
     private function recalculateDuration()
     {
-        try{
-            $total=0;
+        try {
+            $total = 0;
             $mycart = $this->cartS;
-            foreach($mycart as $service){
-                $total+=$service['duration'];
+            foreach ($mycart as $service) {
+                $total += $service['duration'];
             }
             return $total;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 25631Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 25631Agenda"]);
         }
     }
-    private function recorrerEnd($oldItem,$new_start,$uid)
+    private function recorrerEnd($oldItem, $new_start, $uid)
     {
-        try{
+        try {
             $newStartC = Carbon::createFromFormat('H:i', $new_start);
             $newItem  = $oldItem;
 
             $newItem['start'] = $new_start;
             $newItem['end'] = $newStartC->addMinutes($newItem['duration'])->format('H:i');
-            $this->desvincularElementoAnterior('servicio',null,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 59251Agenda"] );
+            $this->desvincularElementoAnterior('servicio', null, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 59251Agenda"]);
         }
     }
     private function determinarNewStartEnd()
     {
-        try{
+        try {
             $items = $this->cartS;
             $minStart = null;
             $maxEnd = null;
 
             foreach ($items as $item) {
-                
+
                 $start = Carbon::createFromFormat('H:i', $item['start']);
                 $end = Carbon::createFromFormat('H:i', $item['end']);
 
@@ -3702,38 +3491,38 @@ class Agenda extends Component
                     $maxEnd = $end;
                 }
             }
-            return ['start'=>$minStart->format('H:i'),'end' => $maxEnd->format('H:i')];
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 7761Agenda"] );
+            return ['start' => $minStart->format('H:i'), 'end' => $maxEnd->format('H:i')];
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 7761Agenda"]);
         }
     }
     private function recorrerHorarios($data)
     {
-        try{
+        try {
             $fechas = $this->mergeFechas($data);
             $fechaConHoraStart = $fechas['start'];
             $fechaConHoraEnd = $fechas['end'];
-            
-            $this->start_date=$fechaConHoraStart;
-            $this->start_date_DB= Carbon::parse($this->start_date)->format('Y-m-d H:i:s');
-            $this->start_date= Carbon::parse($this->start_date)->format('H:i');
+
+            $this->start_date = $fechaConHoraStart;
+            $this->start_date_DB = Carbon::parse($this->start_date)->format('Y-m-d H:i:s');
+            $this->start_date = Carbon::parse($this->start_date)->format('H:i');
             $end_date = Carbon::parse($this->start_date);
             $end_date->addMinutes(intval($this->minutes_qty));
-            if($data['end']>$end_date){
-                $this->end_date=$fechaConHoraEnd;
-                $this->end_date_DB= Carbon::parse($this->end_date)->format('Y-m-d H:i:s');
-                $this->end_date= Carbon::parse($this->end_date)->format('H:i');
+            if ($data['end'] > $end_date) {
+                $this->end_date = $fechaConHoraEnd;
+                $this->end_date_DB = Carbon::parse($this->end_date)->format('Y-m-d H:i:s');
+                $this->end_date = Carbon::parse($this->end_date)->format('H:i');
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1641Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1641Agenda"]);
         }
     }
     private function mergeFechas($data)
     {
-        try{
+        try {
             // Crear un objeto Carbon a partir de la fecha dada
             $fechaCarbon = Carbon::createFromFormat('Y-m-d H:i:s', $this->start_date_DB);
-            
+
             // Separar la fecha y la hora
             $fechaParte = $fechaCarbon->format('Y-m-d');
             $horaParte = $data['start'];
@@ -3742,21 +3531,21 @@ class Agenda extends Component
             $fechaConHoraStart = Carbon::createFromFormat('Y-m-d H:i', $fechaParte . ' ' . $horaParte);
             $fechaConHoraEnd = Carbon::createFromFormat('Y-m-d H:i', $fechaParte . ' ' . $horaParteE);
 
-            return ['start'=>$fechaConHoraStart,'end'=>$fechaConHoraEnd];
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 6547Agenda"] );
+            return ['start' => $fechaConHoraStart, 'end' => $fechaConHoraEnd];
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 6547Agenda"]);
         }
     }
     public function deleteMov($type)
     {
-        if($type == 'cita'){
+        if ($type == 'cita') {
             $this->cancelarStock();
             $this->cancelarPuntos();
             // $respaldoData = $this->respaldarInfo();
             // $this->recuperarMensajes();
             $this->deleteRelations(1);
-        }elseif($type == 'bloqueo'){
-            bloqueo::find($this->asignacion_id)->delete();  
+        } elseif ($type == 'bloqueo') {
+            bloqueo::find($this->asignacion_id)->delete();
             $this->dispatchBrowserEvent('cerrarBlockMenuForm');
         }
         $this->dispatchBrowserEvent('noty', ['msg' => "MOVIMIENTO ELIMINADO PERMANENTEMENTE"]);
@@ -3764,47 +3553,47 @@ class Agenda extends Component
     }
     private function cancelarPuntos()
     {
-        try{
-            if(isset($this->itemSelected->customer->tarjetaPuntos)){
+        try {
+            if (isset($this->itemSelected->customer->tarjetaPuntos)) {
                 $tarjeta = $this->itemSelected->customer->tarjetaPuntos;
                 $tarjeta->balance -= $this->itemSelected->generated_points;
                 $tarjeta->save();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1575369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1575369Agenda"]);
         }
     }
     private function cancelarStock()
     {
-        try{
+        try {
             $details = $this->itemSelected->details;
-            foreach($details as $assigment){
+            foreach ($details as $assigment) {
                 $materiales = $assigment->materiales;
-                foreach($materiales as $material){
+                foreach ($materiales as $material) {
                     $qty = $material->qty;
                     $product = $material->producto;
                     $product->stock_qty += $qty;
                     $product->save();
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1585369Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1585369Agenda"]);
         }
     }
-    public function setCitaDragged($casilla,$cita)
+    public function setCitaDragged($casilla, $cita)
     {
         $type = $cita['type'];
         $type_date = $cita['type_date'];
         $cita = $type == 'cita' ? asignacion_servicio::find($cita['id']) : bloqueo::find($cita['id']);
-        try{
-            if(isset($casilla) && isset($cita)){
+        try {
+            if (isset($casilla) && isset($cita)) {
                 $fecha = null;
-                    // Eliminar los paréntesis al principio y al final de la casilla
+                // Eliminar los paréntesis al principio y al final de la casilla
                 $casilla = trim($casilla, '()');
-                
+
                 // Dividir la casilla en dos partes usando la coma como delimitador
                 $valores = explode(',', $casilla);
-                
+
                 // Limpiar los espacios en blanco alrededor de cada valor
                 $hora = trim($valores[0], " '");
 
@@ -3813,7 +3602,7 @@ class Agenda extends Component
 
 
                 // Obtener la hora y los minutos de la variable $hora
-                $horario = explode(":",$hora);
+                $horario = explode(":", $hora);
 
                 // Establecer la nueva hora y los nuevos minutos
                 $hour = $horario[0];
@@ -3823,18 +3612,18 @@ class Agenda extends Component
                 // Obtener la fecha y hora con la nueva hora
                 $nuevaFecha = $fecha->format('Y-m-d H:i:s');
                 $empleado = trim($valores[1], " '");
-            }else{
+            } else {
                 $this->loadDateByAgenda();
                 return;
             }
 
             $same_empl = $cita->empleado_id != $empleado;
             $color = empleado::select('color_preset')->find($empleado)->color_preset;
-            if(($cita->start != $nuevaFecha || $same_empl)){
-                if($type == 'cita'){
+            if (($cita->start != $nuevaFecha || $same_empl)) {
+                if ($type == 'cita') {
                     $item = [];
                     $cita->start = $nuevaFecha;
-                    if($same_empl){
+                    if ($same_empl) {
                         $cita->empleado_id = $empleado;
                         $cita->color = $color;
                         $item['sid'] = $cita->selected_service;
@@ -3843,16 +3632,15 @@ class Agenda extends Component
                         $item['disccount_price'] = floatval($cita->disccount_price);
                         $item['sale_price'] = floatval($cita->current_price);
                         $price = $cita->disccount_price > 0 ? $cita->disccount_price : $cita->current_price;
-                        $item['total'] = $cita->discount_qty > 0 ? ($cita->discount_type == 'Porcentaje' ? floatval($price - (($cita->discount_qty/100)*$price)) : floatval($price - $cita->discount_qty)) : floatval($price);
-                        $comision = $this->calcularComision($item,'servicio');
+                        $item['total'] = $cita->discount_qty > 0 ? ($cita->discount_type == 'Porcentaje' ? floatval($price - (($cita->discount_qty / 100) * $price)) : floatval($price - $cita->discount_qty)) : floatval($price);
+                        $comision = $this->calcularComision($item, 'servicio');
                         $cita->comission = $comision['balance'];
                         $cita->type_comision_calculated = $comision['type'];
                     }
-                    $citas_continuas = $this->identificarCitasContinuas($cita,$type_date);
+                    $citas_continuas = $this->identificarCitasContinuas($cita, $type_date);
 
-                    foreach($citas_continuas as $cita_cont)
-                    {
-                        if($same_empl){
+                    foreach ($citas_continuas as $cita_cont) {
+                        if ($same_empl) {
                             $cita_cont->empleado_id = $empleado;
                             $cita_cont->color = $color;
                         }
@@ -3861,14 +3649,14 @@ class Agenda extends Component
                         $cita_cont->save();
                     }
 
-                    $cita->save(); 
-                    $cita = asignacion_servicio::with('date.details')->find($cita->id); 
+                    $cita->save();
+                    $cita = asignacion_servicio::with('date.details')->find($cita->id);
                     $date = $cita->date;
                     $data = $this->calculateStartEndDate($date);
                     $date->start = $data['start'];
                     $date->end = $data['end'];
                     $date->save();
-                }elseif($type == 'bloqueo'){
+                } elseif ($type == 'bloqueo') {
                     $minutes_qty = carbon::parse($cita->end)->diffInMinutes(Carbon::parse($cita->start));
                     $cita->start = $nuevaFecha;
                     $cita->end = Carbon::parse($nuevaFecha)->addMinutes($minutes_qty)->format('Y-m-d H:i:s');
@@ -3876,49 +3664,48 @@ class Agenda extends Component
                     $cita->color = $color;
                     $cita->save();
                 }
-                $this->currentDateC= Carbon::parse($nuevaFecha);
-                $this->currentDate= $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+                $this->currentDateC = Carbon::parse($nuevaFecha);
+                $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
                 $this->loadDateByAgenda();
-            }else{
+            } else {
                 $this->cancelarCaptura();
                 return;
             }
-        
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1491300Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1491300Agenda"]);
         }
     }
     private function calculateStartEndDate($date)
     {
-        try{
+        try {
             // Ordenar los detalles por el campo 'start'
             $details = $date->details->sortBy('start');
-        
+
             // Obtener el primer y último elemento después de ordenar
             $newStart = $details->first()->start;
             $lastDetail = $details->last();
-        
+
             // Calcular 'newEnd' sumando la duración del último detalle al 'start' del último detalle
             $lastStart = Carbon::parse($lastDetail->start);
             $newEnd = $lastStart->addMinutes($lastDetail->duration)->format('Y-m-d H:i:s');
-        
+
             return [
                 'start' => $newStart,
                 'end' => $newEnd
             ];
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 645Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 645Agenda"]);
         }
     }
-    public function changeWindow($tipo,$cita_id=null)
+    public function changeWindow($tipo, $cita_id = null)
     {
-        try{
+        try {
             $this->loadCartTotales();
             $this->pestaña = $tipo;
-            if($cita_id!=null){
+            if ($cita_id != null) {
                 $this->clear();
-                $this->itemSelected = cita::with('user','customer','metodosPago','propinas','details')->find($cita_id);
-                if($this->itemSelected!==null && $this->itemSelected->salon_id == Auth::user()->salon_id){
+                $this->itemSelected = cita::with('user', 'customer', 'metodosPago', 'propinas', 'details')->find($cita_id);
+                if ($this->itemSelected !== null && $this->itemSelected->salon_id == Auth::user()->salon_id) {
                     $this->billRequired = $this->itemSelected->billing;
                     $this->billed = $this->billRequired === 2 ? true : false;
                     $this->usoCfdi = $this->itemSelected->billing_description;
@@ -3931,26 +3718,26 @@ class Agenda extends Component
                     $this->dateSelected();
                     $this->enviarFechas();
                     $this->emit('loadFlatForm');
-                    $this->action=2;
+                    $this->action = 2;
                     $this->loadCartTotales();
-                    if($this->itemSelected->customer!=null){
-                        $this->setCustomerId($this->itemSelected->customer->id,false);
+                    if ($this->itemSelected->customer != null) {
+                        $this->setCustomerId($this->itemSelected->customer->id, false);
                     }
                     $this->save();
-                }else{
+                } else {
                     return redirect()->to(route('/'));
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2341Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2341Agenda"]);
         }
     }
     private function enviarFechas()
     {
-        try{
+        try {
             $cart = $this->cartS;
             $starts = [];
-            foreach($cart as $item){
+            foreach ($cart as $item) {
                 $starts[] = $item['start'];
             }
             $info = [
@@ -3959,8 +3746,8 @@ class Agenda extends Component
                 'starts' => $starts,
             ];
             $this->infoDate = $info;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1416298Agenda"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1416298Agenda"]);
         }
     }
     public function recibirMethods($data)
@@ -3973,7 +3760,7 @@ class Agenda extends Component
     }
     public function editTaxData()
     {
-        $this->emit('viewTaxData',$this->customerId);
+        $this->emit('viewTaxData', $this->customerId);
     }
     public function rfcSelected($rfcid)
     {

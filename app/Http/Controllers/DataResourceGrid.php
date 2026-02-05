@@ -590,7 +590,7 @@ class DataResourceGrid extends Controller
             Log::error($th->getMessage());
         }
     }
-    public static function calculateRewardPoints($item_id, $is_service, $total, $request, $customer_id = null)
+    public static function calculateRewardPoints($item_id, $is_service, $total, $request = null, $customer_id = null, $recompensa_global = null)
     {
         try {
             $is_service = filter_var($is_service, FILTER_VALIDATE_BOOLEAN);
@@ -647,7 +647,7 @@ class DataResourceGrid extends Controller
             }
 
             // Default: regresar la excepcion global
-            $recompensa_global = $request->user()->salon->recompensaGeneral()->first();
+            $recompensa_global = $recompensa_global ?? $request->user()->salon->recompensaGeneral()->first();
             if ($is_service) {
                 $recompensa_global->type_comission = $recompensa_global->type_comission_s;
                 $recompensa_global->qty = $recompensa_global->qty_s;
