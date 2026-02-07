@@ -39,22 +39,22 @@ class DataTransactions extends Controller
             } else {
                 [$start, $end] = self::getDateRange($filter_type);
             }
-            if ($filters['ventasFilter']) {
+            if (self::castBoolean($filters['ventasFilter'])) {
                 $ventas = venta::transactionsBetweenDates($salon_id, $start, $end);
             }
-            if ($filters['citasFilter']) {
+            if (self::castBoolean($filters['citasFilter'])) {
                 $citas = cita::transactionsBetweenDates($salon_id, $start, $end);
             }
-            if ($filters['aperturasFilter']) {
+            if (self::castBoolean($filters['aperturasFilter'])) {
                 $aperturas = caja_apertura::transactionsBetweenDates($salon_id, $start, $end);
             }
-            if ($filters['cortesFilter']) {
+            if (self::castBoolean($filters['cortesFilter'])) {
                 $cortes = caja_corte::transactionsBetweenDates($salon_id, $start, $end);
             }
-            if ($filters['usosFilter']) {
+            if (self::castBoolean($filters['usosFilter'])) {
                 $usos = Material::transactionsBetweenDates($salon_id, $start, $end);
             }
-            if ($filters['entradasFilter']) {
+            if (self::castBoolean($filters['entradasFilter'])) {
                 $entradas = Entrada::transactionsBetweenDates($salon_id, $start, $end);
             }
 
@@ -72,6 +72,13 @@ class DataTransactions extends Controller
             Log::error($th->getMessage());
             return response()->json(['error' => 'error loading transactions'], 200);
         }
+    }
+    private static function castBoolean($value)
+    {
+        if (is_string($value)) {
+            return strtolower($value) === 'true';
+        }
+        return (bool)$value;
     }
     private static function getDateRange($filter_type)
     {
