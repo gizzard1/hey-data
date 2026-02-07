@@ -59,7 +59,6 @@ class AuthController extends Controller
     public static function updateUserData(Request $request)
     {
         try{
-            Log::info($request->all());
             $request->validate([
                 'username' => 'required|string',
                 'email' => 'required',

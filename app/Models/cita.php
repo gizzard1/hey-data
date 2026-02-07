@@ -31,31 +31,31 @@ class cita extends Model
 
     public function details()
     {
-        return $this->hasMany(Asignacion_servicio::class,'cita_id');
+        return $this->hasMany(Asignacion_servicio::class, 'cita_id');
     }
     public function details_product()
     {
-        return $this->hasMany(Asignacion_venta::class,'cita_id');
+        return $this->hasMany(Asignacion_venta::class, 'cita_id');
     }
     public function propinas()
     {
-        return $this->hasMany(Propina::class,'cita_id');
+        return $this->hasMany(Propina::class, 'cita_id');
     }
     public function abonos()
     {
-        return $this->hasMany(abono::class,'cita_id');
+        return $this->hasMany(abono::class, 'cita_id');
     }
     public function abonoPropinas()
     {
-        return $this->hasMany(abonoPropina::class,'cita_id');
+        return $this->hasMany(abonoPropina::class, 'cita_id');
     }
     public function customer()
     {
-        return $this->belongsTo(cliente::class,'customer_id');
+        return $this->belongsTo(cliente::class, 'customer_id');
     }
     public function etiquetas()
     {
-        return $this->belongsToMany(etiquetas_cita::class,'etiquetas_citas_pivs');
+        return $this->belongsToMany(etiquetas_cita::class, 'etiquetas_citas_pivs');
     }
 
     public function user()
@@ -64,41 +64,58 @@ class cita extends Model
     }
     public function metodosPago()
     {
-        return $this->hasMany(metodo_pago_servicio::class,'cita_id');
+        return $this->hasMany(metodo_pago_servicio::class, 'cita_id');
     }
     public function salon()
     {
-        return $this->belongsTo(Salon::class,'salon_id');
+        return $this->belongsTo(Salon::class, 'salon_id');
     }
     public function ventaProductos()
     {
-        return $this->belongsToMany(Asignacion_venta::class,'asignacion_venta_citas');
-    }    
+        return $this->belongsToMany(Asignacion_venta::class, 'asignacion_venta_citas');
+    }
     public function mensajesEnviados()
     {
-        return $this->hasMany(walog::class,'cita_id');
+        return $this->hasMany(walog::class, 'cita_id');
     }
-    
+
     public function files()
     {
-        return $this->morphMany(File::class,'model');
+        return $this->morphMany(File::class, 'model');
     }
 
     public function latestImage()
     {
         //recent file
-        return $this->morphOne(File::class,'model')->latestOfMany();
+        return $this->morphOne(File::class, 'model')->latestOfMany();
     }
     public function getPhotosAttribute()
     {
         if (count($this->files)) {
             return $this->files->map(function ($file) {
-                if(file_exists('storage/citas/' . $file->file)){
+                if (file_exists('storage/citas/' . $file->file)) {
                     return "storage/citas/" . $file->file;
-                }else{
+                } else {
                     return 'storage/Image-not-found.png';
                 }
             });
         }
+    }
+    public function scopeTransactionsBetweenDates($query, $salon_id, $start, $end)
+    {
+        return $query->with('etiquetas', 'user', 'customer', 'details_product.product', 'details.servicio', 'metodosPago.metodoPago', 'propinas')
+            ->where('salon_id', $salon_id)
+            ->whereBetween('start', [$start, $end])
+            ->orderBy('start', 'desc')
+            ->get();
+    }
+    public function scopeTransactionsBetweenDatesBetweenTotal($query, $salon_id, $start, $end, $minTotal, $maxTotal)
+    {
+        return $query->with('etiquetas', 'user', 'customer', 'details_product.product', 'details.servicio', 'metodosPago.metodoPago', 'propinas')
+            ->whereBetween('total', [$minTotal ?? 0, $maxTotal ?? PHP_INT_MAX])
+            ->where('salon_id', $salon_id)
+            ->whereBetween('start', [$start, $end])
+            ->orderBy('start', 'desc')
+            ->get();
     }
 }
