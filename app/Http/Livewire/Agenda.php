@@ -13,10 +13,6 @@ use App\Models\cliente;
 use App\Models\coupon;
 use App\Models\Empleado;
 use App\Models\etiquetas_cita;
-use App\Models\excepcion_cat_producto;
-use App\Models\excepcion_cat_servicio;
-use App\Models\excepcion_producto;
-use App\Models\excepcion_servicio;
 use App\Models\File;
 use App\Models\log;
 use App\Models\Material;
@@ -36,6 +32,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use App\Http\Controllers\DataResourceGrid as DRG;
+use App\Http\Controllers\DataSales as DS;
 
 class Agenda extends Component
 {
@@ -1839,7 +1836,6 @@ class Agenda extends Component
                 $this->desvincularElementoAnterior($type, $item_id, $uid, $newItem);
             }
         } catch (\Throwable $th) {
-            dd($th);
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 710369Agenda"]);
         }
     }
@@ -2775,7 +2771,7 @@ class Agenda extends Component
                     $asignacion->cita_id = $cita_id;
                     $asignacion->selected_item = $item['pid'];
                     $asignacion->quantity = $item['qty'];
-                    $comission = $this->calcularComision($item, 'producto');
+                    $comission = DS::defineComisionProduct($item);
                     $asignacion->comission = $comission['balance'];
                     $asignacion->type_comision_calculated = $comission['type'] ?? 'percent';
                     $this->ajustarStock($item);
@@ -2791,7 +2787,7 @@ class Agenda extends Component
                     $asignacion->selected = $item['selected'];
                     $asignacion->selected_service = $item['sid'];
                     $asignacion->cita_id = $cita_id;
-                    $comission = $this->calcularComision($item, 'servicio');
+                    $comission = DRG::defineComisionService($item);
                     $asignacion->comission = $comission['balance'] ?? 0;
                     $asignacion->type_comision_calculated = $comission['type'] ?? 'percent';
                     $asignacion->duration = $item['duration'];
@@ -2885,7 +2881,7 @@ class Agenda extends Component
                 }
             }
 
-            // $this->recuperarMensajes($movimiento);
+            $this->recuperarMensajes($movimiento);
 
             if ($this->isBirthDate($this->customer->birth_date, $this->start_date_DB)) {
                 $this->listTags = $this->addTagToArray($this->listTags, '2');
@@ -3199,7 +3195,7 @@ class Agenda extends Component
     private function respaldarInfo()
     {
         try {
-            // $this->mensajesRespaldados = $this->itemSelected->mensajesEnviados;
+            $this->mensajesRespaldados = $this->itemSelected->mensajesEnviados;
             $cid = $this->itemSelected->id;
             $generated_points = $this->itemSelected->generated_points;
             $created_at = $this->itemSelected->created_at;
@@ -3245,7 +3241,7 @@ class Agenda extends Component
         }
         $this->deleteItems($this->itemSelected->metodosPago);
         $this->deleteItems($this->itemSelected->propinas);
-        // $this->deleteItems($this->itemSelected->mensajesEnviados);
+        $this->deleteItems($this->itemSelected->mensajesEnviados);
         foreach ($this->itemSelected->details as $detail) {
             if (isset($detail->materiales)) {
                 $this->deleteItems($detail->materiales);
@@ -3319,60 +3315,6 @@ class Agenda extends Component
             }
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1354369Agenda"]);
-        }
-    }
-
-    private function calcularComision($item, $tipo)
-    {
-        try {
-            $empleado = Empleado::with('comision')->find($item['vendedor']);
-            $balance = 0;
-
-            if (isset($empleado->comision)) {
-                if ($tipo == 'producto') {
-                    $excepcion = excepcion_producto::where('producto_id', $item['pid'])->where('comision_id', $empleado->comision->id)->first();
-                    $excepcionCat = 'excepcion_cat_' . $tipo;
-                    $obj = producto::find($item['pid']);
-                    $categorias = $obj->categorias;
-                    foreach ($categorias as $cat) {
-                        $excepcionCat = excepcion_cat_producto::where('categoria_producto_id', $cat->id)->where('comision_id', $empleado->comision->id)->first();
-                    }
-                    $cant = $empleado->comision->qty_p;
-                    $type = $empleado->comision->type_comission_p;
-                } elseif ($tipo == 'servicio') {
-                    $excepcion = excepcion_servicio::where('servicio_id', $item['sid'])->where('comision_id', $empleado->comision->id)->first();
-                    $obj = servicio::find($item['sid']);
-                    $categorias = $obj->categorias;
-                    foreach ($categorias as $cat) {
-                        $excepcionCat = excepcion_cat_servicio::where('categoria_servicio_id', $cat->id)->where('comision_id', $empleado->comision->id)->first();
-                    }
-                    $cant = $empleado->comision->qty_s;
-                    $type = $empleado->comision->type_comission_s;
-                }
-                if (isset($empleado->comision->excepcion_servicio) || isset($empleado->comision->excepcion_cat_servicio)) {
-                    $base_price = $this->defineBasePrice($item);
-                    $excepcionesObj = $excepcion;
-                    $categorias = $obj->categorias;
-                    foreach ($categorias as $cat) {
-                        $excepcionesCategoria = $excepcionCat;
-                    }
-                    if (isset($excepcionesObj)) {
-                        $cant = $excepcionesObj->qty;
-                        $type = $excepcionesObj->type_comission;
-                    } elseif (isset($excepcionesCategoria)) {
-                        $cant = $excepcionesCategoria->qty;
-                        $type = $excepcionesCategoria->type_comission;
-                    }
-                }
-                if ($type == 'percent') {
-                    $balance = ($cant / 100) * $base_price;
-                } elseif ($type == 'qty') {
-                    $balance = $cant;
-                }
-                return ['balance' => $balance, 'type' => $type];
-            }
-        } catch (\Throwable $th) {
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1370369Agenda"]);
         }
     }
     private function defineBasePrice($item)
@@ -3633,7 +3575,7 @@ class Agenda extends Component
                         $item['sale_price'] = floatval($cita->current_price);
                         $price = $cita->disccount_price > 0 ? $cita->disccount_price : $cita->current_price;
                         $item['total'] = $cita->discount_qty > 0 ? ($cita->discount_type == 'Porcentaje' ? floatval($price - (($cita->discount_qty / 100) * $price)) : floatval($price - $cita->discount_qty)) : floatval($price);
-                        $comision = $this->calcularComision($item, 'servicio');
+                        $comision = DRG::defineComisionService($item);
                         $cita->comission = $comision['balance'];
                         $cita->type_comision_calculated = $comision['type'];
                     }

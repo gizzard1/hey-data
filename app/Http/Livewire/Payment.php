@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Http\Controllers\DataResourceGrid as DRG;
+use App\Http\Controllers\DataSales as DS;
 
 class Payment extends Component
 {
@@ -884,53 +885,6 @@ class Payment extends Component
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 9655Cortes"]);
         }
     }
-    private function calculateCustomerPoints($total)
-    {
-
-        try {
-            $excepcion = $this->customer->excepciones()
-                ->latest()
-                ->first();
-
-            if ($excepcion) {
-                return $this->getRewardPoints($excepcion, $total);
-            }
-
-            // Buscar categorías y excepciones asociadas a las categorías
-            $categoria = $this->customer->categorias()->latest()->first();
-
-            if ($categoria) {
-                $excepcion = $categoria->excepciones()
-                    ->whereNotNull('programa_recompensa_id')
-                    ->latest()
-                    ->first();
-
-                if ($excepcion) {
-                    return $this->getRewardPoints($excepcion, $total);
-                }
-            }
-
-            // Si no hay excepciones ni categorías, retornar 0
-            return 0;
-        } catch (\Throwable $th) {
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 3469Payment"]);
-        }
-    }
-    private function getRewardPoints($excepcion, $total)
-    {
-        switch ($excepcion->type_comission) {
-            case 'percent':
-                $points = ($total * $excepcion->qty) / 100;
-                break;
-            case 'qty':
-                $points = $excepcion->qty;
-                break;
-            default:
-                $points = 0;
-                break;
-        }
-        return $points;
-    }
     public function storeDate()
     {
         if ($this->billRequired && !$this->billed) {
@@ -1023,7 +977,7 @@ class Payment extends Component
 
             //asignaciones de venta
             foreach ($cart as $item) {
-                $comission = $this->calcularComision($item);
+                $comission = DS::defineComisionProduct(DS::generateItemToCalculateComision($item, $item['vendedor'] !== null ? $item['vendedor'] : Empleado::where('salon_id', Auth::user()->salon->id)->first()->id));
                 $final_price = $item['gross_price'] > $item['sale_price'] ? $item['gross_price'] : $item['sale_price'];
                 $rewardPoints = DRG::calculateRewardPoints($item['pid'], false, $final_price, null, $this->customerId, Auth::user()->salon->recompensaGeneral());
                 $asignacion = new Asignacion_venta([

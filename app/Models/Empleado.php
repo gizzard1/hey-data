@@ -42,7 +42,7 @@ class Empleado extends Model
     }    
     function comision()
     {
-        return $this->hasOne(Comision::class);
+        return $this->hasOne(Comision::class,'empleado_id');
     }
     public function asignacionesServicios()
     {

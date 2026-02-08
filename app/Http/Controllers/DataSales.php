@@ -155,7 +155,7 @@ class DataSales extends Controller
             Log::error($th->getMessage());
         }
     }
-    private static function generateItemToCalculateComision($sale, $empleado)
+    public static function generateItemToCalculateComision($sale, $empleado)
     {
         $item['pid'] = $sale->selected_item ?? $sale['selected_item'];
         $item['vendedor'] = $empleado;
