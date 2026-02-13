@@ -977,7 +977,7 @@ class Payment extends Component
 
             //asignaciones de venta
             foreach ($cart as $item) {
-                $comission = DS::defineComisionProduct(DS::generateItemToCalculateComision($item, $item['vendedor'] !== null ? $item['vendedor'] : Empleado::where('salon_id', Auth::user()->salon->id)->first()->id));
+                $comission = DS::defineComisionProduct($item);
                 $final_price = $item['gross_price'] > $item['sale_price'] ? $item['gross_price'] : $item['sale_price'];
                 $rewardPoints = DRG::calculateRewardPoints($item['pid'], false, $final_price, null, $this->customerId, Auth::user()->salon->recompensaGeneral());
                 $asignacion = new Asignacion_venta([
@@ -1120,6 +1120,7 @@ class Payment extends Component
                 Carbon::setTestNow();
             }
         } catch (\Throwable $th) {
+            dd($th);
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "537263Payment"]);
         }
     }
