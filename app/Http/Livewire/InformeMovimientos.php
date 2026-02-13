@@ -378,12 +378,11 @@ class InformeMovimientos extends Component
     {
         $this->balance = 0;
         foreach ($info as $item => $value) {
-            if ($item == 'aperturas' && $item == 'cortes') {
+            // Solo acumular para ventas y citas, los demás no afectan el balance de ingresos
+            if ($item !== 'ventas'  && $item !== 'citas') {
                 continue;
             }
-            if ($item !== 'ventas'  || $item !== 'citas') {
-                continue;
-            }
+            // Acumular el balance de cada transacción
             foreach ($value as $movimiento) {
                 foreach ($movimiento->metodosPago as $method) {
                     if ($method->payment_method_id === 4) {
