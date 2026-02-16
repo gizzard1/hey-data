@@ -1120,7 +1120,6 @@ class Payment extends Component
                 Carbon::setTestNow();
             }
         } catch (\Throwable $th) {
-            dd($th);
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "537263Payment"]);
         }
     }
