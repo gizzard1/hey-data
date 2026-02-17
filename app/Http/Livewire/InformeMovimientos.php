@@ -297,22 +297,22 @@ class InformeMovimientos extends Component
             $entradas = [];
             $this->salon_id = Auth::user()->salon_id;
             if ($this->ventasFilter) {
-                $ventas = venta::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd);
+                $ventas = venta::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd)->get();
             }
             if ($this->citasFilter) {
-                $citas = cita::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd);
+                $citas = cita::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd)->get();
             }
             if ($this->aperturasFilter) {
-                $aperturas = caja_apertura::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd);
+                $aperturas = caja_apertura::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd)->get();
             }
             if ($this->cortesFilter) {
-                $cortes = caja_corte::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd);
+                $cortes = caja_corte::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd)->get();
             }
             if ($this->usosFilter) {
-                $usos = Material::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd);
+                $usos = Material::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd)->get();
             }
             if ($this->entradasFilter) {
-                $entradas = Entrada::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd);
+                $entradas = Entrada::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd)->get();
             }
 
             $info = [
@@ -427,13 +427,13 @@ class InformeMovimientos extends Component
             $cortes = [];
             $this->salon_id = Auth::user()->salon_id;
             if ($this->ventasFilter) {
-                $ventas = venta::transactionsBetweenDatesBetweenTotal($this->salon_id, $this->currentDateC, $this->currentDateCEnd, $this->min, $this->max);
+                $ventas = venta::transactionsBetweenDatesBetweenTotal($this->salon_id, $this->currentDateC, $this->currentDateCEnd, $this->min, $this->max)->get();
             }
             if ($this->citasFilter) {
-                $citas = cita::transactionsBetweenDatesBetweenTotal($this->salon_id, $this->currentDateC, $this->currentDateCEnd, $this->min, $this->max);
+                $citas = cita::transactionsBetweenDatesBetweenTotal($this->salon_id, $this->currentDateC, $this->currentDateCEnd, $this->min, $this->max)->get();
             }
             if ($this->cortesFilter) {
-                $cortes = caja_corte::transactionsBetweenDatesBetweenTotal($this->salon_id, $this->currentDateC, $this->currentDateCEnd, $this->min, $this->max);
+                $cortes = caja_corte::transactionsBetweenDatesBetweenTotal($this->salon_id, $this->currentDateC, $this->currentDateCEnd, $this->min, $this->max)->get();
             }
 
             $info = [

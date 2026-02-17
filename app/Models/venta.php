@@ -63,19 +63,19 @@ class venta extends Model
     }
     public function scopeTransactionsBetweenDates($query, $salon_id, $start, $end)
     {
-        return $query->where('salon_id', $salon_id)
-            ->with('user', 'customer', 'metodosPago.metodoPago', 'propinas', 'details.product')
+        return $query->select('id', 'status', 'created_at', 'total', 'disccount','customer_id', 'salon_id', 'user_id')
+            ->where('salon_id', $salon_id)
+            ->with('user:id,name', 'customer:id,first_name,last_name', 'metodosPago:id,venta_id,payment_method_id,tipo,reference,amount,change,created_at', 'metodosPago.metodoPago:id,Payment_method','details:id,selected_item,venta_id,quantity,disccount_price,discount_type,discount_qty,current_price','details.product:id,name')
             ->whereBetween('created_at', [$start, $end])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
     }
     public function scopeTransactionsBetweenDatesBetweenTotal($query, $salon_id, $start, $end, $minTotal, $maxTotal)
     {
-        return $query->where('salon_id', $salon_id)
+        return $query->select('id', 'status', 'created_at', 'total', 'disccount','customer_id', 'salon_id', 'user_id')
+            ->where('salon_id', $salon_id)
             ->whereBetween('total', [$minTotal ?? 0, $maxTotal ?? PHP_INT_MAX])
-            ->with('user', 'customer', 'metodosPago.metodoPago', 'propinas', 'details.product')
+            ->with('user:id,name', 'customer:id,first_name,last_name', 'metodosPago:id,venta_id,payment_method_id,tipo,reference,amount,change,created_at', 'metodosPago.metodoPago:id,Payment_method','details:id,selected_item,venta_id,quantity,disccount_price,discount_type,discount_qty,current_price','details.product:id,name')
             ->whereBetween('created_at', [$start, $end])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
     }
 }

@@ -44,19 +44,19 @@ class DataTransactions extends Controller
                 [$start, $end] = self::getDateRange($filter_type);
             }
             if (self::castBoolean($filters['ventasFilter'])) {
-                $ventas = venta::transactionsBetweenDates($salon_id, $start, $end);
+                $ventas = venta::transactionsBetweenDates($salon_id, $start, $end)->paginate(50);
                 $transactions = $ventas;
             }
             if (self::castBoolean($filters['citasFilter'])) {
-                $citas = cita::transactionsBetweenDates($salon_id, $start, $end);
+                $citas = cita::transactionsBetweenDates($salon_id, $start, $end)->paginate(50);
                 $transactions = $citas;
             }
             if (self::castBoolean($filters['aperturasFilter'])) {
-                $aperturas = caja_apertura::transactionsBetweenDates($salon_id, $start, $end);
+                $aperturas = caja_apertura::transactionsBetweenDates($salon_id, $start, $end)->paginate(50);
                 $transactions = $aperturas;
             }
             if (self::castBoolean($filters['cortesFilter'])) {
-                $cortes = caja_corte::transactionsBetweenDates($salon_id, $start, $end);
+                $cortes = caja_corte::transactionsBetweenDates($salon_id, $start, $end)->paginate(50);
                 $transactions = $cortes;
             }
             if (self::castBoolean($filters['usosFilter'])) {
@@ -77,8 +77,6 @@ class DataTransactions extends Controller
                 'materials' => $usos,
                 'transactions' => $transactions,
             ];
-
-            Log::info('Transactions loaded successfully', ['salon_id' => $salon_id, 'filters' => $filters,'info' => $info['transactions']]);
 
             return response()->json([$info]);
         } catch (\Throwable $th) {

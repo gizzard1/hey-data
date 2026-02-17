@@ -103,19 +103,19 @@ class cita extends Model
     }
     public function scopeTransactionsBetweenDates($query, $salon_id, $start, $end)
     {
-        return $query->with('etiquetas', 'user', 'customer', 'details_product.product', 'details.servicio', 'metodosPago.metodoPago', 'propinas')
+        return $query->select('id', 'status', 'start', 'created_at', 'total', 'disccount', 'customer_id', 'salon_id', 'user_id')
+            ->with('user:id,name', 'customer:id,first_name,last_name', 'metodosPago:id,cita_id,payment_method_id,tipo,reference,amount,change,created_at', 'metodosPago.metodoPago:id,Payment_method','details_product:id,selected_item,cita_id,quantity,disccount_price,discount_type,discount_qty,current_price','details_product.product:id,name','details:id,selected_service,cita_id,discount_qty,disccount_price,discount_type,current_price','details.servicio:id,name')
             ->where('salon_id', $salon_id)
             ->whereBetween('start', [$start, $end])
-            ->orderBy('start', 'desc')
-            ->get();
+            ->orderBy('start', 'desc');
     }
     public function scopeTransactionsBetweenDatesBetweenTotal($query, $salon_id, $start, $end, $minTotal, $maxTotal)
     {
-        return $query->with('etiquetas', 'user', 'customer', 'details_product.product', 'details.servicio', 'metodosPago.metodoPago', 'propinas')
+        return $query->select('id', 'status', 'start', 'created_at', 'total', 'disccount', 'customer_id', 'salon_id', 'user_id')
+            ->with('user:id,name', 'customer:id,first_name,last_name', 'metodosPago:id,cita_id,payment_method_id,tipo,reference,amount,change,created_at', 'metodosPago.metodoPago:id,Payment_method','details_product:id,selected_item,cita_id,quantity,disccount_price,discount_type,discount_qty,current_price','details_product.product:id,name','details:id,selected_service,cita_id,discount_qty,disccount_price,discount_type,current_price','details.servicio:id,name')
             ->whereBetween('total', [$minTotal ?? 0, $maxTotal ?? PHP_INT_MAX])
             ->where('salon_id', $salon_id)
             ->whereBetween('start', [$start, $end])
-            ->orderBy('start', 'desc')
-            ->get();
+            ->orderBy('start', 'desc');
     }
 }
