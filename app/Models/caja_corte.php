@@ -45,8 +45,7 @@ class caja_corte extends Model
                 $query->where('salon_id', $salon_id);
             })
             ->whereBetween('created_at', [$start, $end])
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc');
     }
     public function scopeTransactionsBetweenDatesBetweenTotal($query, $salon_id, $start, $end, $minTotal, $maxTotal)
     {

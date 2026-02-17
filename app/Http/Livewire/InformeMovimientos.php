@@ -309,10 +309,10 @@ class InformeMovimientos extends Component
                 $cortes = caja_corte::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd)->get();
             }
             if ($this->usosFilter) {
-                $usos = Material::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd)->get();
+                $usos = Material::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd);
             }
             if ($this->entradasFilter) {
-                $entradas = Entrada::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd)->get();
+                $entradas = Entrada::transactionsBetweenDates($this->salon_id, $this->currentDateC, $this->currentDateCEnd);
             }
 
             $info = [
