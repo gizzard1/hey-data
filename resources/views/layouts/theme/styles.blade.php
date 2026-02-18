@@ -15,6 +15,9 @@
 <link rel="stylesheet" href="{{ asset('vendor/pickadate/themes/default.date.css') }}">
 
 <style>
+.list-group-item {
+    border:none!important;
+}
 .orderByMenu{
     display: grid;
     row-gap: 1rem;
@@ -25,6 +28,12 @@
 }
 .ranking-table {
     height: 34dvh;
+    overflow: auto;
+    display: flex;
+    margin-top: 2dvh;
+}
+.ranking-table-container {
+    height: 21dvh;
     overflow: auto;
     display: flex;
     margin-top: 2dvh;

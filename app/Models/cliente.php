@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class cliente extends Model
 {
@@ -76,11 +77,11 @@ class cliente extends Model
     {
         $inicio = $fecha_inicio ?? request('start_date');
         $fin = $fecha_fin ?? request('end_date');
-        
+
         return $query->withCount([
             'citas' => function (Builder $q) use ($inicio, $fin) {
                 $q->whereBetween('start', [$inicio, $fin]);
-            }, 
+            },
             'compras' => function (Builder $q) use ($inicio, $fin) {
                 $q->whereBetween('created_at', [$inicio, $fin]);
             }
@@ -104,5 +105,24 @@ class cliente extends Model
             ->orderBy('birthday_proximity', $direction);
 
         return $query;
+    }
+    public function top10ServicesConsumed()
+    {
+        return $this->hasManyThrough(Asignacion_servicio::class, cita::class, 'customer_id', 'cita_id')
+            ->select('selected_service', DB::raw('COUNT(*) as times_consumed, SUM(current_price - disccount_price) as total_spent'))
+            ->with('servicio:id,name')
+            ->groupBy('selected_service', 'citas.customer_id')
+            ->orderByDesc('total_spent')
+            ->limit(10);
+    }
+    public function top10ServicesCategoriesConsumed()
+    {
+        return $this->hasManyThrough(Asignacion_servicio::class, cita::class, 'customer_id', 'cita_id')
+            ->join('categoria_servicios_pivs', 'categoria_servicios_pivs.servicio_id', '=', 'asignacion_servicios.selected_service')
+            ->join('categoria_servicios', 'categoria_servicios.id', '=', 'categoria_servicios_pivs.categoria_servicio_id')
+            ->select('categoria_servicios.name as category_name', DB::raw('COUNT(*) as times_consumed, SUM(asignacion_servicios.current_price - asignacion_servicios.disccount_price) as total_spent'))
+            ->groupBy('categoria_servicios.name', 'citas.customer_id')
+            ->orderByDesc('total_spent')
+            ->limit(10);
     }
 }

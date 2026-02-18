@@ -52,6 +52,7 @@ class Clientes extends Component
     public $pestaña = 1, $infoSales = [], $infoDates = [], $lada, $procedencias = [];
     public $showmeMore = 0, $productos = [], $categoriaProductos = [], $servicios = [], $categoriaServicios = [], $proveedores = [];
     public $editingTaxData = false;
+    public $orderRankingTable = 'service';
     public $tax_systems = [
         "601" => "General de Ley Personas Morales",
         "603" => "Personas Morales con Fines no Lucrativos",
