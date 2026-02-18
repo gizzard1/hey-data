@@ -8,6 +8,7 @@ use App\Models\Asignacion_servicio;
 use App\Models\metodo_pago;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 
 class cita extends Model
 {
@@ -104,7 +105,31 @@ class cita extends Model
     public function scopeTransactionsBetweenDates($query, $salon_id, $start, $end)
     {
         return $query->select('id', 'status', 'start', 'created_at', 'total', 'disccount', 'customer_id', 'salon_id', 'user_id')
-            ->with('user:id,name', 'customer:id,first_name,last_name', 'metodosPago:id,cita_id,payment_method_id,tipo,reference,amount,change,created_at', 'metodosPago.metodoPago:id,Payment_method','details_product:id,selected_item,cita_id,quantity,disccount_price,discount_type,discount_qty,current_price','details_product.product:id,name','details:id,selected_service,cita_id,discount_qty,disccount_price,discount_type,current_price','details.servicio:id,name')
+            ->with([
+                'user:id,name',
+                'metodosPago:id,cita_id,payment_method_id,tipo,reference,amount,change,created_at',
+                'details_product:id,selected_item,cita_id,quantity,disccount_price,discount_type,discount_qty,current_price',
+                'details_product.product:id,name',
+                'details:id,selected_service,cita_id,discount_qty,disccount_price,discount_type,current_price',
+                'details.servicio:id,name',
+                'customer' => function ($q) {
+                    $q->select(
+                        'id',
+                        'first_name',
+                        'last_name',
+                        'phone',
+                        DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"),
+                        DB::raw("phone as telefono"),
+                    );
+                },
+                'metodosPago.metodoPago' => function ($q) {
+                    $q->select(
+                        'id',
+                        'Payment_method',
+                        DB::raw("Payment_method as name"),
+                    );
+                }
+            ])
             ->where('salon_id', $salon_id)
             ->whereBetween('start', [$start, $end])
             ->orderBy('start', 'desc');
@@ -112,7 +137,31 @@ class cita extends Model
     public function scopeTransactionsBetweenDatesBetweenTotal($query, $salon_id, $start, $end, $minTotal, $maxTotal)
     {
         return $query->select('id', 'status', 'start', 'created_at', 'total', 'disccount', 'customer_id', 'salon_id', 'user_id')
-            ->with('user:id,name', 'customer:id,first_name,last_name', 'metodosPago:id,cita_id,payment_method_id,tipo,reference,amount,change,created_at', 'metodosPago.metodoPago:id,Payment_method','details_product:id,selected_item,cita_id,quantity,disccount_price,discount_type,discount_qty,current_price','details_product.product:id,name','details:id,selected_service,cita_id,discount_qty,disccount_price,discount_type,current_price','details.servicio:id,name')
+            ->with([
+                'user:id,name',
+                'metodosPago:id,cita_id,payment_method_id,tipo,reference,amount,change,created_at',
+                'details_product:id,selected_item,cita_id,quantity,disccount_price,discount_type,discount_qty,current_price',
+                'details_product.product:id,name',
+                'details:id,selected_service,cita_id,discount_qty,disccount_price,discount_type,current_price',
+                'details.servicio:id,name',
+                'customer' => function ($q) {
+                    $q->select(
+                        'id',
+                        'first_name',
+                        'last_name',
+                        'phone',
+                        DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"),
+                        DB::raw("phone as telefono"),
+                    );
+                },
+                'metodosPago.metodoPago' => function ($q) {
+                    $q->select(
+                        'id',
+                        'Payment_method',
+                        DB::raw("Payment_method as name"),
+                    );
+                }
+            ])
             ->whereBetween('total', [$minTotal ?? 0, $maxTotal ?? PHP_INT_MAX])
             ->where('salon_id', $salon_id)
             ->whereBetween('start', [$start, $end])
