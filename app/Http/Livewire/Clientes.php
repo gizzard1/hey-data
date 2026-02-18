@@ -2084,8 +2084,10 @@ class Clientes extends Component
         $total = 0;
         $qty = 0;
         foreach ($this->customerSelected->calificaciones as $calificacion) {
-            $total += $calificacion->puntaje;
-            $qty += 1;
+            if ($calificacion->puntaje != null) {
+                $total += $calificacion->puntaje;
+                $qty += 1;
+            }
         }
 
         if ($qty > 0) {
