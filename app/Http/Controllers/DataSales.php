@@ -10,6 +10,7 @@ use App\Models\Empleado;
 use App\Http\Controllers\DataResourceGrid as DRG;
 use App\Models\Asignacion_venta;
 use App\Models\producto;
+use App\Models\Propina;
 use Illuminate\Support\Facades\DB;
 
 class DataSales extends Controller
@@ -227,7 +228,6 @@ class DataSales extends Controller
     public static function loadSale(Request $request)
     {
         try {
-            Log::info('Cargando datos de venta para ID: ' . $request->query('sale_id'));
             $sale_id = $request->query('sale_id');
             $sale = venta::select(
                 'id',
@@ -287,10 +287,23 @@ class DataSales extends Controller
                 ]);
             }])->find($sale_id);
 
+            $tips = Propina::select('id','payment_method_id','reference','amount','empleado_id')->with([
+                'empleado' => function ($q) {
+                    $q->select(
+                        'id',
+                        DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
+                        DB::raw("color_preset as color")
+                    );
+                },
+                'metodoPago' => function ($q) {
+                    $q->select('id', DB::raw("Payment_method as name"));
+                }
+            ])->where('venta_id', $sale_id)->get();
+
             if (!$sale) {
                 return response()->json(['message' => 'Sale not found'], 404);
             }
-            return response()->json($sale);
+            return response()->json(['sale' => $sale, 'tips' => $tips]);
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
