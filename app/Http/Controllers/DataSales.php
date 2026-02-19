@@ -10,6 +10,7 @@ use App\Models\Empleado;
 use App\Http\Controllers\DataResourceGrid as DRG;
 use App\Models\Asignacion_venta;
 use App\Models\producto;
+use Illuminate\Support\Facades\DB;
 
 class DataSales extends Controller
 {
@@ -18,7 +19,7 @@ class DataSales extends Controller
         try {
             // Obtener los datos de la venta desde la solicitud
             $details = $request->input('details') ?? $request->input('methods');
-            $sale = $details['detailsVenta'][0]['sale'];
+            $sale = isset($details['sale']) ? $details['sale'] : $details['detailsVenta'][0]['sale'];
 
             // Crear o actualizar la venta
             $sale_id = $sale['id'] ?? venta::create([
@@ -219,6 +220,77 @@ class DataSales extends Controller
             }
 
             return ['balance' => $balance, 'type' => $type];
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+        }
+    }
+    public static function loadSale(Request $request)
+    {
+        try {
+            Log::info('Cargando datos de venta para ID: ' . $request->query('sale_id'));
+            $sale_id = $request->query('sale_id');
+            $sale = venta::select(
+                'id',
+                'customer_id',
+                'status',
+                'total',
+                'disccount',
+                DB::raw('total - COALESCE(`disccount`, 0) as totalSubDiscount'),
+                'created_at',
+                'updated_at'
+            )->with(['customer' => function ($q) {
+                $q->select(
+                    'id',
+                    DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"),
+                    DB::raw("phone as telefono"),
+                )->with(['tarjetaPuntos' => function ($q) {
+                    $q->select('id', 'intern_barcode', 'balance', 'cliente_id');
+                }]);
+            }, 'details' => function ($q) {
+                $q->select(
+                    'id',
+                    'selected_item',
+                    'venta_id',
+                    'empleado_id',
+                    'quantity',
+                    'discount_qty',
+                    'discount_type',
+                    'current_price',
+                    'disccount_price',
+                    'generated_points',
+                    'base_comision',
+                    'iva',
+                )->with([
+                    'product:id,name,description,gross_price,iva,disccount_price,unit_type,sku',
+                    'empleado' => function ($q) {
+                        $q->select(
+                            'id',
+                            DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
+                            DB::raw("color_preset as color")
+                        );
+                    }
+                ]);
+            }, 'metodosPago' => function ($q) {
+                $q->select(
+                    'id',
+                    'venta_id',
+                    'payment_method_id',
+                    'reference',
+                    'amount',
+                    'tipo',
+                    'change',
+                    'created_at'
+                )->with([
+                    'metodoPago' => function ($q) {
+                        $q->select('id', DB::raw("Payment_method as name"));
+                    }
+                ]);
+            }])->find($sale_id);
+
+            if (!$sale) {
+                return response()->json(['message' => 'Sale not found'], 404);
+            }
+            return response()->json($sale);
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }

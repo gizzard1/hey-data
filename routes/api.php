@@ -59,6 +59,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::put('/update-or-create-service', [DataServices::class,'storeService']);
 
+    Route::get('/data-sale', [DataSales::class, 'loadSale']);
     Route::put('/update-details-sale', [DataSales::class, 'updateOrCreateSale']);
 
     Route::get('/load-reward-points',[DataSalon::class,'loadRewardPoints']);
