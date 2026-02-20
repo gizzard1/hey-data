@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\Log;
 class DataProducts extends Controller
 {
     public static function loadProducts(Request $request)
-    {    
-        try{
+    {
+        try {
             $salon_id = $request->user()->salon_id;
-            $productos = producto::select(
+            $search = $request->search;
+            $productos = producto::query()
+                ->select(
                     'id',
                     'name',
                     'description',
@@ -29,23 +31,31 @@ class DataProducts extends Controller
                     'type_product',
                 )
                 ->where('salon_id', $salon_id)
-                ->where('visibility','visible')
+                ->where('visibility', 'visible')
                 ->where('name', '!=', 'Producto eliminado')
-                ->with('categorias:id,name', 'marca:id,name','files:id,model_id,file,model_type')
-                ->get();
+                ->when($search, function ($q) use ($search) {
+                    $q->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('sku', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                    });
+                })
+                ->with('categorias:id,name', 'marca:id,name', 'files:id,model_id,file,model_type')
+                ->orderBy('name', 'asc')
+                ->paginate(50);
 
             return ['productos' => $productos];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function storeProduct(Request $request)
     {
-        try{
+        try {
             $salon_id = $request->user()->salon_id;
             $product = $request->input('product');
             $iva = isset($product['iva']) ? ($product['iva'] === '8%' ? '0.08' : ($product['iva'] === '16%' ? '0.16' : ($product['iva'] === 'Exento' ? '0' : $product['iva']))) : '0.16';
-            
+
             $newProduct = producto::updateOrCreate(
                 [
                     'id' => $product['id'] ?? null
@@ -68,9 +78,8 @@ class DataProducts extends Controller
             );
 
             return ['producto' => $newProduct];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
 }
-

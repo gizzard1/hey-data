@@ -14,10 +14,12 @@ use Svg\Tag\Rect;
 class DataCustomers extends Controller
 {
     public static function loadCustomers(Request $request)
-    {    
-        try{
+    {
+        try {
             $salon_id = $request->user()->salon_id;
-            $clientes = cliente::select(
+            $search = $request->search;
+            $clientes = cliente::query()
+                ->select(
                     'id',
                     DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"),
                     'email',
@@ -25,18 +27,31 @@ class DataCustomers extends Controller
                     DB::raw("CONCAT(UPPER(LEFT(COALESCE(first_name, ''), 1)),UPPER(LEFT(COALESCE(last_name, ''), 1))) as iniciales")
                 )
                 ->where('salon_id', $salon_id)
-                ->get();
-            return ['clientes' => $clientes];   
-        }catch(\Throwable $th){
+                ->when($search, function ($q) use ($search) {
+                    $q->where(function ($q) use ($search) {
+                        $q->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere(DB::raw("CONCAT_WS(' ', TRIM(first_name), TRIM(last_name))"), 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                    });
+                })
+                ->orderBy('first_name', 'asc')
+                ->paginate(50);
+            return ['clientes' => $clientes];
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function loadCustomer(Request $request)
     {
-        try{
+        try {
             $cust_id = $request->query('cust_id');
             $cliente = cliente::select(
-                'id','email','want_custom_messages','procedencia_id',
+                'id',
+                'email',
+                'want_custom_messages',
+                'procedencia_id',
                 DB::raw('first_name as nombre'),
                 DB::raw('last_name as apellidos'),
                 DB::raw("CONCAT(UPPER(LEFT(COALESCE(first_name, ''), 1)),UPPER(LEFT(COALESCE(last_name, ''), 1))) as iniciales"),
@@ -45,30 +60,30 @@ class DataCustomers extends Controller
                 DB::raw("postcode as codigo_postal"),
                 DB::raw("birth_date as fecha_nacimiento")
             )
-            ->with([
-                    'procedencia' => function($q) {
-                        $q->select('id', 'name'); 
+                ->with([
+                    'procedencia' => function ($q) {
+                        $q->select('id', 'name');
                     },
-                    'tarjetaPuntos' => function($q) {
-                        $q->select('id', 'intern_barcode', 'balance', 'cliente_id'); 
+                    'tarjetaPuntos' => function ($q) {
+                        $q->select('id', 'intern_barcode', 'balance', 'cliente_id');
                     },
-                    'calificaciones' => function($q) {
-                        $q->select('id', 'puntaje', 'cliente_id'); 
+                    'calificaciones' => function ($q) {
+                        $q->select('id', 'puntaje', 'cliente_id');
                     },
-                    'categorias' => function($q) {
+                    'categorias' => function ($q) {
                         $q->select('categoria_clientes.id', 'categoria_clientes.name');
                     },
                 ])
-            ->withAvg('calificaciones', 'puntaje')
-            ->find($cust_id);
-            return $cliente;                
-        }catch(\Throwable $th){
+                ->withAvg('calificaciones', 'puntaje')
+                ->find($cust_id);
+            return $cliente;
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function validateRewardPoints(Request $request)
     {
-        try{
+        try {
             $cust_id = $request->query('cust_id');
             $rc = tarjetas_punto::firstWhere('cliente_id', $cust_id);
 
@@ -81,13 +96,13 @@ class DataCustomers extends Controller
             }
 
             return response()->json(['message' => 'ok', 'card' => $rc]);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function createCardCust(Request $request)
     {
-        try{
+        try {
             $cust_id = $request->input('cust_id');
 
             $existingCard = tarjetas_punto::firstWhere('cliente_id', $cust_id);
@@ -101,32 +116,33 @@ class DataCustomers extends Controller
             $newCard->save();
 
             return response()->json(['message' => 'ok', 'card' => $newCard]);
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function loadOrigins(Request $request)
     {
-        try{
+        try {
             $salon_id = $request->user()->salon_id;
             $data['origins'] = procedencia::select(
-                    'id','name'
-                )
-                ->where('salon_id',$salon_id)
-                ->orWhere('salon_id',null)
+                'id',
+                'name'
+            )
+                ->where('salon_id', $salon_id)
+                ->orWhere('salon_id', null)
                 ->get();
 
             return $data;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public function storeClient(Request $request)
     {
-        try{
+        try {
             $salon_id = $request->user()->salon_id;
             $cliente = $request->input('cliente');
-            
+
             $newClient = cliente::updateOrCreate(
                 [
                     'id' => $cliente['id'] ?? null
@@ -160,9 +176,8 @@ class DataCustomers extends Controller
             ];
 
             return $sendClient;
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
 }
-
