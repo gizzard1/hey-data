@@ -112,7 +112,7 @@ class cliente extends Model
             ->select('selected_service', DB::raw('COUNT(*) as times_consumed, SUM(current_price - disccount_price) as total_spent'))
             ->with('servicio:id,name')
             ->groupBy('selected_service', 'citas.customer_id')
-            ->orderByDesc('total_spent')
+            ->orderByDesc('times_consumed')
             ->limit(10);
     }
     public function top10ServicesCategoriesConsumed()
@@ -122,7 +122,7 @@ class cliente extends Model
             ->join('categoria_servicios', 'categoria_servicios.id', '=', 'categoria_servicios_pivs.categoria_servicio_id')
             ->select('categoria_servicios.name as category_name', DB::raw('COUNT(*) as times_consumed, SUM(asignacion_servicios.current_price - asignacion_servicios.disccount_price) as total_spent'))
             ->groupBy('categoria_servicios.name', 'citas.customer_id')
-            ->orderByDesc('total_spent')
+            ->orderByDesc('times_consumed')
             ->limit(10);
     }
 }
