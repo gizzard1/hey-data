@@ -287,7 +287,7 @@ class DataSales extends Controller
                 ]);
             }])->find($sale_id);
 
-            $tips = Propina::select('id','payment_method_id','reference','amount','empleado_id')->with([
+            $tips = Propina::select('id', 'payment_method_id', 'reference', 'amount', 'empleado_id')->with([
                 'empleado' => function ($q) {
                     $q->select(
                         'id',
@@ -306,6 +306,39 @@ class DataSales extends Controller
             return response()->json(['sale' => $sale, 'tips' => $tips]);
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
+        }
+    }
+    public static function deleteSale(Request $request)
+    {
+        try {
+            $sale_id = $request->input('sale_id');
+            $itemSelected = venta::with('details.product', 'metodosPago', 'customer.tarjetaPuntos')->find($sale_id);
+            $hasGiftCardsRedeemed = isset($itemSelected->details) &&$itemSelected->details->contains(fn($detail) => optional($detail->giftCard)->redeemed);
+            $sameSalon = $itemSelected->salon_id === $request->user()->salon_id;
+            if ($hasGiftCardsRedeemed) {
+                return response()->json(['message' => 'giftcard_redeemed'], 400);
+            }
+
+            if (!$sameSalon) {
+                return response()->json(['message' => 'salon_not_allowed'], 404);
+            }
+            self::cancelarStock($itemSelected);
+            DRG::cancelarPuntos($itemSelected);
+            // $this->recuperarMensajes();
+            DRG::deleteRelations($itemSelected);
+            return response()->json(['message' => 'Sale deleted successfully']);
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+        }
+    }
+    private static function cancelarStock($itemSelected)
+    {
+        if(!isset($itemSelected->details)) return;
+        foreach ($itemSelected->details as $detail) {
+            if ($detail->product) {
+                $detail->product->stock_qty += $detail->quantity;
+                $detail->product->save();
+            }
         }
     }
 }

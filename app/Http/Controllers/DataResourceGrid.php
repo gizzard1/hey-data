@@ -39,6 +39,7 @@ class DataResourceGrid extends Controller
                 'discount_type',
                 'current_price',
                 'base_comision',
+                'generated_points',
                 'iva',
                 DB::raw("duration as duracionMinutos"),
                 DB::raw("selected_service as servicioId"),
@@ -979,18 +980,11 @@ class DataResourceGrid extends Controller
             if (!$date) {
                 return response()->json(['message' => 'not found']);
             }
-            // if($type == 'cita'){
             // self::cancelarStock();
             self::cancelarPuntos($date);
-            // $respaldoData = $this->respaldarInfo();
             // $this->recuperarMensajes();
             self::deleteRelations($date);
-            // }
-            // elseif($type == 'bloqueo'){
-            //     bloqueo::find($this->asignacion_id)->delete();  
-            //     $this->dispatchBrowserEvent('cerrarBlockMenuForm');
-            // }
-            return response()->json(['message' => 'ok']);
+            return response()->json(['message' => 'Date deleted successfully']);
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
@@ -1010,24 +1004,20 @@ class DataResourceGrid extends Controller
         }
     }
 
-    private static function deleteRelations($date)
+    public static function deleteRelations($date)
     {
-        if (isset($date->files)) {
-            self::deleteFiles($date->files);
-        }
-        self::deleteItems($date->metodosPago);
-        self::deleteItems($date->propinas);
-        // self::deleteItems($date->mensajesEnviados);
+        if (isset($date->files)) self::deleteFiles($date->files);
+        if (isset($date->metodosPago)) self::deleteItems($date->metodosPago);
+        if (isset($date->propinas)) self::deleteItems($date->propinas);
+        // if(isset($date->mensajesEnviados)) self::deleteItems($date->mensajesEnviados);
         foreach ($date->details as $detail) {
-            if (isset($detail->materiales)) {
-                self::deleteItems($detail->materiales);
-            }
+            if (isset($detail->materiales)) self::deleteItems($detail->materiales);
         }
-        $date->etiquetas()->detach();
-        self::deleteItems($date->details);
-        self::deleteItems($date->details_product);
-        self::deleteItems($date->abonos);
-        self::deleteItems($date->abonoPropinas);
+        if (isset($date->etiquetas)) $date->etiquetas()->detach();
+        if (isset($date->details)) self::deleteItems($date->details);
+        if (isset($date->details_product)) self::deleteItems($date->details_product);
+        if (isset($date->abonos)) self::deleteItems($date->abonos);
+        if (isset($date->abonoPropinas)) self::deleteItems($date->abonoPropinas);
         $date->delete();
     }
 
@@ -1054,10 +1044,10 @@ class DataResourceGrid extends Controller
         }
     }
 
-    private static function cancelarPuntos($date)
+    public static function cancelarPuntos($date)
     {
         try {
-            if (isset($date->customer->tarjetaPuntos)) {
+            if (isset($date->customer?->tarjetaPuntos)) {
                 $tarjeta = $date->customer->tarjetaPuntos;
                 $tarjeta->balance -= $date->generated_points;
                 $tarjeta->save();
