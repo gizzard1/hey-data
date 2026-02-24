@@ -306,6 +306,9 @@ class Agenda extends Component
         $this->billRequired = 0;
         $this->usoCfdi = null;
         $this->billed = false;
+
+        $this->queryServices = '';
+        $this->query = '';
     }
     public function cancelarCaptura()
     {
@@ -2881,7 +2884,7 @@ class Agenda extends Component
                 }
             }
 
-            $this->recuperarMensajes($movimiento);
+            // $this->recuperarMensajes($movimiento);
 
             if ($this->isBirthDate($this->customer->birth_date, $this->start_date_DB)) {
                 $this->listTags = $this->addTagToArray($this->listTags, '2');
@@ -2954,6 +2957,7 @@ class Agenda extends Component
                 $this->dispatchBrowserEvent('noty', ['msg' => "SOLICITUD PROCESADA CON ÉXITO"]);
                 $this->dispatchBrowserEvent('close-form');
             }
+            // $this->sendMessage('confirmacion_cita', $movimiento);
 
             $this->clear();
             $this->cancelarCaptura();
@@ -2967,6 +2971,24 @@ class Agenda extends Component
             }
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1169Agenda"]);
+        }
+    }
+    private function sendMessage($type, $movimiento)
+    {
+        try {
+            $data = [
+                'uid' => uniqid(),
+                'type' => $type,
+                'phone' => $this->customer->phone,
+                'salon_name' => Auth::user()->salon->name,
+                'date' => Carbon::parse($movimiento->start)->locale('es')->format('d \d\e M'),
+                'time' => Carbon::parse($movimiento->start)->format('H:i'),
+                'services' => implode(", ", $movimiento->details()->with('servicio')->get()->pluck('servicio.name')->toArray()),
+                'cita_id' => $movimiento->id,
+            ];
+            return redirect()->route('envia', ['uid' => $data['uid'], 'data' => $data]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 213129Agenda"]);
         }
     }
     public function continueStoring()
@@ -3195,7 +3217,7 @@ class Agenda extends Component
     private function respaldarInfo()
     {
         try {
-            $this->mensajesRespaldados = $this->itemSelected->mensajesEnviados;
+            // $this->mensajesRespaldados = $this->itemSelected->mensajesEnviados;
             $cid = $this->itemSelected->id;
             $generated_points = $this->itemSelected->generated_points;
             $created_at = $this->itemSelected->created_at;
@@ -3241,7 +3263,7 @@ class Agenda extends Component
         }
         $this->deleteItems($this->itemSelected->metodosPago);
         $this->deleteItems($this->itemSelected->propinas);
-        $this->deleteItems($this->itemSelected->mensajesEnviados);
+        // $this->deleteItems($this->itemSelected->mensajesEnviados);
         foreach ($this->itemSelected->details as $detail) {
             if (isset($detail->materiales)) {
                 $this->deleteItems($detail->materiales);
