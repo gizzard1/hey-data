@@ -336,7 +336,7 @@ function initializeTutorial_1()
             { element: '#controls', popover: { title: 'Fecha', description: 'Con estos controles podrás filtrar la fecha en que deseas ver la agenda.' ,side: "bottom",align: 'start' } },
             { element: '#hoy', popover: { title: 'Botón Hoy', description: 'Con este botón podrás volver a la fecha actual con un sólo clic' ,side: "bottom",align: 'start' } },
             { element: '#empleados', popover: { title: 'Estilistas', description: 'Aquí se muestran tus estilistas activos, si quieres dejar de ver o volver a ver la agenda de un estilista, debes presionar su nombre' ,side: "bottom",align: 'start' } },
-            { element: '#agenda', popover: { title: 'Agenda', description: 'Aquí podrás visualizar tus citas una vez que se generen. Haz clic en una casilla debajo del nombre de tu estilista' ,side: "bottom",align: 'start' } },
+            { element: '#agenda', popover: { title: 'Agenda', description: 'Aquí podrás visualizar tus citas una vez que se generen. Haz clic en una casilla debajo del nombre de tu estilista y escoje crear cita' ,side: "bottom",align: 'start' } },
             { popover: { title: 'Vista rápida', description: 'Esta ventana nos permite crear citas de manera rápida.' ,side: "bottom",align: 'start' } },
             { element: '#buscar-serv', popover: { title: 'Busca un servicio', description: 'Busca un servicio en este apartado' ,side: "bottom",align: 'start' } },
         ]

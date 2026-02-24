@@ -2,7 +2,7 @@
     <div class="card-body">
         <div class="table-responsive" style="height: auto !important;">
 
-            <table id="cart-view" class="table table-striped table-responsive-sm">
+            <table class="table table-striped table-responsive-sm">
                 <thead>
                     <tr class="text-center">
                         <!-- <th width="96"><i class="las la-download"></i>Uso</th> -->
