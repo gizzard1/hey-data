@@ -409,10 +409,15 @@ class Clientes extends Component
     public function activateCard($cliente_id = null)
     {
         try {
+            $cliente = null;
             if ($cliente_id) {
                 $cliente = cliente::with('tarjetaPuntos')->find($cliente_id);
-            } else {
+            } else if (isset($this->selectedItems[0])) {
                 $cliente = cliente::with('tarjetaPuntos')->find($this->selectedItems[0]);
+            }
+            if (!$cliente) {
+                $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Cliente no encontrado."]);
+                return;
             }
             $this->customer_card = $cliente;
             $this->barcode = $cliente->tarjetaPuntos->intern_barcode ?? null;
