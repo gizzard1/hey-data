@@ -235,7 +235,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="tableServices"></tbody>
-                                    @foreach($orderRankingTable == 'service' ? $customerSelected->top10ServicesConsumed($orderRankingTable)->get() : $customerSelected->top10ServicesCategoriesConsumed($orderRankingTable)->get() as $index => $item)
+                                    @foreach($orderRankingTable == 'service' ? $customerSelected->top10ServicesConsumed()->get() : $customerSelected->top10ServicesCategoriesConsumed()->get() as $index => $item)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
                                             <td class="nombre-column">{{ $orderRankingTable == 'service' ? ($item->servicio->name ?? 'Servicio Desconocido') : ($item->category_name ?? 'Sin Categoría') }}</td>
