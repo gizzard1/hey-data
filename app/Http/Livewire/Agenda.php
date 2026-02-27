@@ -84,6 +84,7 @@ class Agenda extends Component
     public $listTags = null, $searchPassword = null;
     public $billRequired = 0, $usoCfdi = null, $billed = false;
     public $vista;
+    public $type_mov = "cita";
     public $usos = [
         "G01" => "G01 | Adquisición de mercancías",
         "G02" => "G02 | Devoluciones, descuento o bonificaciones",
@@ -877,6 +878,7 @@ class Agenda extends Component
 
             $this->recibido = $puntos;
             $this->addMethod($puntos, '', '5', $this->methods);
+            $this->totalMethods();
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 101207Agenda"]);
         }
