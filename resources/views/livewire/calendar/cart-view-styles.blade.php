@@ -212,9 +212,10 @@
 
     .money-icon {
         border: 2px solid;
-        width: fit-content;
+        width: 5dvh;
         border-radius: 50%;
-        margin-right: 1dvh;
+        margin-right: 2dvh;
+        text-align: center;
     }
 
     .percent-qty-tip {
