@@ -49,6 +49,38 @@ class DataResourceGrid extends Controller
                 DB::raw("DATE_FORMAT('start', 'Y-m-d') as fecha"),
                 DB::raw("DATE_FORMAT(ADDTIME(`start`, SEC_TO_TIME(duration * 60)), '%H:%i') as finServicio"),
             )->with([
+                'materiales' => function ($q) {
+                    $q->select(
+                        'id',
+                        'qty',
+                        'sale_price',
+                        'asignacion_id',
+                        'producto_id',
+                        'user_id',
+                        'empleado_id',
+                        'cliente_id',
+                        'created_at',
+                    )->with([
+                        'producto' => function ($q) {
+                            $q->select(
+                                'id',
+                                'name',
+                                'description',
+                                'gross_price',
+                                'iva',
+                                'unit_type',
+                            );
+                        },
+                        'user' => function ($q) {
+                            $q->select(
+                                'id',
+                                'name',
+                                'email',
+                                'role',
+                            );
+                        },
+                    ]);
+                },
                 'servicio' => function ($q) {
                     $q->select(
                         'id',
