@@ -68,6 +68,7 @@ class DataResourceGrid extends Controller
                                 'description',
                                 'gross_price',
                                 'iva',
+                                'sku',
                                 'unit_type',
                             );
                         },
@@ -77,6 +78,13 @@ class DataResourceGrid extends Controller
                                 'name',
                                 'email',
                                 'role',
+                            );
+                        },
+                        'empleado' => function ($q) {
+                            $q->select(
+                                'id',
+                                'first_name',
+                                'last_name',
                             );
                         },
                     ]);
