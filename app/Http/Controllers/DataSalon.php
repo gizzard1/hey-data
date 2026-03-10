@@ -28,8 +28,6 @@ class DataSalon extends Controller
             $exists = Salon::where('email', $email)
                 ->where('id', '!=', $salonId)
                 ->exists();
-
-                Log::info(['salonId'=>$salonId,'email'=>$email,'exists'=>$exists]);
             return ['is_unique' => !$exists];
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
