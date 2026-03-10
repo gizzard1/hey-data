@@ -6,11 +6,13 @@ use App\Http\Livewire\Agenda;
 use App\Models\Asignacion_servicio;
 use App\Models\cita;
 use App\Http\Controllers\DataSales as DS;
+use App\Http\Controllers\DataMaterials as DM;
 use App\Models\Asignacion_venta;
 use App\Models\bloqueo;
 use App\Models\cliente;
 use App\Models\coupon;
 use App\Models\Empleado;
+use App\Models\Material;
 use App\Models\metodo_pago;
 use App\Models\metodo_pago_servicio;
 use App\Models\producto;
@@ -500,6 +502,7 @@ class DataResourceGrid extends Controller
 
             // Crear un array para rastrear los IDs que siguen vigentes
             $keptIds = [];
+            $keptMaterialIds = [];
             $startTimeToMinutes = 1500;
             $endTimeToMinutes = 0;
             $total_rp = 0;
@@ -541,6 +544,21 @@ class DataResourceGrid extends Controller
                 );
                 // Guardamos los IDs que quedan vigentes
                 $keptIds[] = $asignacion->id;
+
+                // Actualizar o crear los materiales asociados a la asignación
+                if (isset($detail['materiales'])){
+                    foreach ($detail['materiales'] as $material) {
+                        $material['asignacion_id'] = $asignacion->id; // Asociar el material con la asignación creada o actualizada
+                        $material['salon_id'] = $request->user()->salon_id; // Agregar el ID del salón al material
+                        $material['cliente_id'] = $date['clienteId']; // Agregar el ID del cliente al material
+                        $material['user_id'] = $request->user()->id; // Agregar el ID del usuario al material
+                        $id = DM::updateMaterial($material);
+                        $keptMaterialIds[] = $id; // Guardar el ID del material para mantenerlo
+                    }
+                }
+
+                // Si el material no tiene ID, significa que es nuevo y se acaba de crear, por lo que obtenemos su ID después de la creación
+                DM::deleteMaterials(Material::where('asignacion_id', $asignacion->id)->whereNotIn('id', $keptMaterialIds)->get());
             }
 
             // Actualizar los detalles de ventas en la cita
@@ -564,9 +582,19 @@ class DataResourceGrid extends Controller
             }
 
             // Borrar asignaciones que ya no aparecen en la petición
+            // Tomar en cuenta los materiales asociados y su stock
             Asignacion_servicio::where('cita_id', $date_id)
                 ->whereNotIn('id', $keptIds)
-                ->delete();
+                ->get()
+                ->each(function ($asignacion) {
+                    // Revertir stock de materiales asociados
+                    $asignacion->materiales()->each(function ($material) {
+                        producto::where('id', $material->producto_id)->increment('stock_qty', $material->qty);
+                    });
+                    // Eliminar materiales asociados y la asignación
+                    $asignacion->materiales()->delete();
+                    $asignacion->delete();
+                });
 
             // Recalcular el descuento total
             $discount = self::getTotalDiscounts($paymentMethods, $total_date);
@@ -1051,11 +1079,14 @@ class DataResourceGrid extends Controller
         if (isset($date->propinas)) self::deleteItems($date->propinas);
         // if(isset($date->mensajesEnviados)) self::deleteItems($date->mensajesEnviados);
         foreach ($date->details as $detail) {
-            if (isset($detail->materiales)) self::deleteItems($detail->materiales);
+            if (isset($detail->materiales)) DM::deleteMaterials($detail->materiales);
         }
         if (isset($date->etiquetas)) $date->etiquetas()->detach();
         if (isset($date->details)) self::deleteItems($date->details);
-        if (isset($date->details_product)) self::deleteItems($date->details_product);
+        if (isset($date->details_product)){
+            DS::cancelarStock($date->details_product);
+            self::deleteItems($date->details_product);
+        }    
         if (isset($date->abonos)) self::deleteItems($date->abonos);
         if (isset($date->abonoPropinas)) self::deleteItems($date->abonoPropinas);
         $date->delete();

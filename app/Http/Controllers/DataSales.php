@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Empleado;
 use App\Http\Controllers\DataResourceGrid as DRG;
+use App\Http\Controllers\DataMaterials as DM;
 use App\Models\Asignacion_venta;
 use App\Models\producto;
 use App\Models\Propina;
@@ -318,11 +319,12 @@ class DataSales extends Controller
             if ($hasGiftCardsRedeemed) {
                 return response()->json(['message' => 'giftcard_redeemed'], 400);
             }
-
             if (!$sameSalon) {
                 return response()->json(['message' => 'salon_not_allowed'], 404);
             }
-            self::cancelarStock($itemSelected);
+            if(isset($itemSelected->details)){
+                self::cancelarStock($itemSelected);
+            }
             DRG::cancelarPuntos($itemSelected);
             // $this->recuperarMensajes();
             DRG::deleteRelations($itemSelected);
@@ -331,13 +333,11 @@ class DataSales extends Controller
             Log::error($th->getMessage());
         }
     }
-    private static function cancelarStock($itemSelected)
+    public static function cancelarStock($details)
     {
-        if(!isset($itemSelected->details)) return;
-        foreach ($itemSelected->details as $detail) {
+        foreach ($details as $detail) {
             if ($detail->product) {
-                $detail->product->stock_qty += $detail->quantity;
-                $detail->product->save();
+                DM::updateStock($detail->selected_item, -$detail->quantity);
             }
         }
     }

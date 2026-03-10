@@ -6,6 +6,7 @@ use App\Http\Controllers\DataProducts;
 use App\Http\Controllers\DataResourceGrid;
 use App\Http\Controllers\DataServices;
 use App\Http\Controllers\DataEmployees;
+use App\Http\Controllers\DataMaterials;
 use App\Http\Controllers\DataPayment;
 use App\Http\Controllers\DataTransactions;
 use App\Http\Controllers\DataSales;
@@ -47,6 +48,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::get('/data-products', [DataProducts::class, 'loadProducts']);
 
+    Route::put('/create-materials', [DataMaterials::class,'createMaterials']);
+
     Route::put('/update-or-create-product', [DataProducts::class,'storeProduct']);
 
     Route::get('/data-employees',[DataEmployees::class,'loadEmployees']);
@@ -61,6 +64,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/data-sale', [DataSales::class, 'loadSale']);
     Route::put('/update-details-sale', [DataSales::class, 'updateOrCreateSale']);
+    Route::delete('/delete-sale', [DataSales::class,'deleteSale']);
 
     Route::get('/load-reward-points',[DataSalon::class,'loadRewardPoints']);
     Route::get('/data-salon', [DataSalon::class, 'loadSalon']);
