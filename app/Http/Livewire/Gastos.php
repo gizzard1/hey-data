@@ -21,26 +21,26 @@ class Gastos extends Component
 {
     use WithFileUploads;
     use WithPagination;
-    public $currentDate, $currentDateEnd,$is_interval=false;
-    public $start,$currentDateC,$end,$currentDateCEnd;
+    public $currentDate, $currentDateEnd, $is_interval = false;
+    public $start, $currentDateC, $end, $currentDateCEnd;
 
-    public $editing,$metodosPago=[],$records,$gasto,$search,$action=1,$gastoSelected,$rest,$methods,$paymentMethod,$cash,$reference;
+    public $editing, $metodosPago = [], $records, $gasto, $search, $action = 1, $gastoSelected, $rest, $methods, $paymentMethod, $cash, $reference;
     public $max;
-    public $total_bruto=0, $movs=0;
-    public $brandId,$brand,$selectedFormaPago;
+    public $total_bruto = 0, $movs = 0;
+    public $brandId, $brand, $selectedFormaPago;
     protected $paginationTheme = 'bootstrap';
 
-    public $query,$proveedores=[];
-    public $gallery=[],$pictures=[],$respaldoFiles;
-    public $queryCat,$queryType,$categorias=[],$tipos=[],$category,$categoryId,$type,$typeId;
+    public $query, $proveedores = [];
+    public $gallery = [], $pictures = [], $respaldoFiles;
+    public $queryCat, $queryType, $categorias = [], $tipos = [], $category, $categoryId, $type, $typeId;
     public $importFile;
     public function removeImage($index)
     {
         array_splice($this->gallery, $index, 1);
-    }    
+    }
     public function createCat()
     {
-        if($this->queryCat!=null){
+        if ($this->queryCat != null) {
             //guardar categoría
             $newCat =  new categoria_gasto;
             $newCat->name = $this->queryCat;
@@ -53,7 +53,7 @@ class Gastos extends Component
     }
     public function createType()
     {
-        if($this->queryType!=null){
+        if ($this->queryType != null) {
             //guardar categoría
             $newCat =  new tipo_gasto;
             $newCat->name = $this->queryType;
@@ -66,51 +66,49 @@ class Gastos extends Component
     }
     public function updatedQueryCat()
     {
-        try{
-            
-            $this->categorias = categoria_gasto::where('salon_id', Auth::user()->salon->id)
-            ->where(function ($q) {
-                $q->where('name', 'like', "%{$this->queryCat}%");
-            })
-            ->orderBy('name', 'asc')
-            ->get();      
+        try {
 
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Gastos"] );
+            $this->categorias = categoria_gasto::where('salon_id', Auth::user()->salon->id)
+                ->where(function ($q) {
+                    $q->where('name', 'like', "%{$this->queryCat}%");
+                })
+                ->orderBy('name', 'asc')
+                ->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Gastos"]);
         }
     }
     public function updatedQueryType()
     {
-        try{
-            
-            $this->tipos = tipo_gasto::where('salon_id', Auth::user()->salon->id)
-            ->orWhere('salon_id',null)
-            ->where(function ($q) {
-                $q->where('name', 'like', "%{$this->queryType}%");
-            })
-            ->orderBy('name', 'asc')
-            ->get();      
+        try {
 
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Gastos"] );
+            $this->tipos = tipo_gasto::where('salon_id', Auth::user()->salon->id)
+                ->orWhere('salon_id', null)
+                ->where(function ($q) {
+                    $q->where('name', 'like', "%{$this->queryType}%");
+                })
+                ->orderBy('name', 'asc')
+                ->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Gastos"]);
         }
     }
-    public function removeFile($filename,$fromGallery)
+    public function removeFile($filename, $fromGallery)
     {
-        try{
-            if($fromGallery){
+        try {
+            if ($fromGallery) {
                 // Filtrar el arreglo para eliminar el archivo con el nombre coincidente
-                $this->gallery = array_filter($this->gallery, function($file) use ($filename) {
+                $this->gallery = array_filter($this->gallery, function ($file) use ($filename) {
                     return $file->getFilename() !== $filename;
                 });
-            }else{
+            } else {
                 // Filtrar la colección para eliminar el archivo con la ruta coincidente
                 $this->pictures = $this->pictures->filter(function ($picture) use ($filename) {
                     return $picture !== $filename;
                 });
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 115459Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 115459Gastos"]);
         }
     }
     public function filesDroped($files)
@@ -121,9 +119,9 @@ class Gastos extends Component
 
     public function mount()
     {
-        try{
+        try {
             $this->loadDefault();
-            
+
             if (session()->has('selectedDates')) {
                 $this->setDatesFromPeriod(session('selectedDates'));
             } else {
@@ -136,28 +134,27 @@ class Gastos extends Component
             } else {
                 $this->methods = new Collection;
             }
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 22109Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 22109Gastos"]);
         }
     }
-    
+
     function updatedQuery()
     {
-        try{
+        try {
             $this->proveedores = marca::where('salon_id', Auth::user()->salon->id)
-            ->where('name', '!=', 'Marca eliminada')
-            ->where(function ($q) {
-                $q->where('name', 'like', "%{$this->query}%")
-                  ->orWhere('contact_name', 'like', "%{$this->query}%")
-                  ->orWhere('rfc', 'like', "%{$this->query}%")
-                  ->orWhere('phone_number', 'like', "%{$this->query}%")
-                  ->orWhere('email', 'like', "%{$this->query}%");
-            })
-            ->orderBy('name', 'asc')
-            ->get();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Gastos"] );
+                ->where('name', '!=', 'Marca eliminada')
+                ->where(function ($q) {
+                    $q->where('name', 'like', "%{$this->query}%")
+                        ->orWhere('contact_name', 'like', "%{$this->query}%")
+                        ->orWhere('rfc', 'like', "%{$this->query}%")
+                        ->orWhere('phone_number', 'like', "%{$this->query}%")
+                        ->orWhere('email', 'like', "%{$this->query}%");
+                })
+                ->orderBy('name', 'asc')
+                ->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Gastos"]);
         }
     }
     protected $rules =
@@ -174,8 +171,13 @@ class Gastos extends Component
     protected $listeners = [
         'refresh' => '$refresh',
         'search' => 'searching',
-        'DeleteExpense' => 'Delete','setRest','datesSelected' => 'setDatesFromPeriod',
-        'prevDay','dateSelected' => 'setDate','setBrandId','enviarProveedor'=>'recibirProveedor',
+        'DeleteExpense' => 'Delete',
+        'setRest',
+        'datesSelected' => 'setDatesFromPeriod',
+        'prevDay',
+        'dateSelected' => 'setDate',
+        'setBrandId',
+        'enviarProveedor' => 'recibirProveedor',
         'importFromPdf'
     ];
     public function importFromPdf($resultados)
@@ -183,7 +185,7 @@ class Gastos extends Component
         DB::beginTransaction();
         try {
             foreach ($resultados as $resultado) {
-                if (str_contains($resultado['folio'],"Página")) continue; // Omitir páginas sin datos válidos
+                if (str_contains($resultado['folio'], "Página")) continue; // Omitir páginas sin datos válidos
                 if (strlen($resultado['folio']) != 36) continue; // Omitir folios con longitud incorrecta
                 if (gasto::where('folio_fiscal', $resultado['folio'])->exists()) continue; // Omitir gastos ya registrados con el mismo folio fiscal
                 if ($resultado['rfc_receptor'] !== Auth::user()->salon->rfc) continue; // Omitir gastos que no correspondan al RFC del salón
@@ -211,11 +213,11 @@ class Gastos extends Component
                 ]);
             }
             DB::commit();
-            $this->dispatchBrowserEvent('noty', ['msg' =>  "Gastos importados exitosamente"] );
+            $this->dispatchBrowserEvent('noty', ['msg' =>  "Gastos importados exitosamente"]);
             $this->dispatchBrowserEvent('closeImportModal');
         } catch (\Throwable $th) {
             DB::rollBack();
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Se encontró un error con el archivo. Intente de nuevo, por favor"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Se encontró un error con el archivo. Intente de nuevo, por favor"]);
         }
     }
 
@@ -253,22 +255,22 @@ class Gastos extends Component
         if ($estado) {
             switch ($estado) {
                 case 'Vigente':
-                    $this->dispatchBrowserEvent('noty', ['msg' =>  "CFDI vigente"] );
-                    $gasto->status='vigente';
+                    $this->dispatchBrowserEvent('noty', ['msg' =>  "CFDI vigente"]);
+                    $gasto->status = 'vigente';
                     $gasto->save();
-            break;
+                    break;
                 case 'Cancelado':
-                    $this->dispatchBrowserEvent('noty', ['msg' =>  "CFDI cancelado"] );
-                    $gasto->status='cancelado';
+                    $this->dispatchBrowserEvent('noty', ['msg' =>  "CFDI cancelado"]);
+                    $gasto->status = 'cancelado';
                     $gasto->save();
-            break;
+                    break;
                 default:
-                    $this->dispatchBrowserEvent('noty', ['msg' =>  "CFDI desconocido. Revise los datos"] );
-                    $gasto->status='default';
+                    $this->dispatchBrowserEvent('noty', ['msg' =>  "CFDI desconocido. Revise los datos"]);
+                    $gasto->status = 'default';
                     $gasto->save();
-        }
+            }
         } else {
-            $this->dispatchBrowserEvent('noty', ['msg' =>  "CFDI desconocido. Revise los datos"] );
+            $this->dispatchBrowserEvent('noty', ['msg' =>  "CFDI desconocido. Revise los datos"]);
         }
     }
 
@@ -280,7 +282,7 @@ class Gastos extends Component
 
     public function render()
     {
-        try{
+        try {
             //validamos que exista la sesion
             if (session()->has('methodsG')) {
                 //obtenemos los métodos de pago
@@ -290,33 +292,33 @@ class Gastos extends Component
             } else {
                 $methodsInfo = new Collection;
             }
-            return view('livewire.gastos.gastos',compact('methodsInfo'),[
+            return view('livewire.gastos.gastos', compact('methodsInfo'), [
                 'gastos' => $this->useDate()
             ]);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 54110Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 54110Gastos"]);
         }
     }
     private function calculateRest()
     {
-        try{
-            if($this->rest==$this->gasto->total){
-                foreach($this->methods as $method){
-                        $this->rest -= $method['qty'];
+        try {
+            if ($this->rest == $this->gasto->total) {
+                foreach ($this->methods as $method) {
+                    $this->rest -= $method['qty'];
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 73111Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 73111Gastos"]);
         }
     }
     public function setRest()
     {
-        try{
+        try {
             $this->rest = $this->gasto->total;
             $this->calculateRest();
             $this->dispatchBrowserEvent('modal-payment-gastos');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 85112Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 85112Gastos"]);
         }
     }
     public function setMethod($paymentMethod)
@@ -327,42 +329,41 @@ class Gastos extends Component
     }
     private function inMethods()
     {
-        try{
+        try {
             $mymethods = $this->methods;
 
             $cont = $mymethods->where('name', $this->paymentMethod)->count();
 
             return  $cont > 0 ? true : false;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 183116Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 183116Gastos"]);
         }
     }
     private function save()
     {
-        try{
+        try {
             session()->put('methodsG', $this->methods);
             session()->save();
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 195117Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 195117Gastos"]);
         }
     }
     public function searching($searchText)
     {
-        try{
+        try {
             $this->search = trim($searchText);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 231119Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 231119Gastos"]);
         }
     }
     public function Delete(gasto $gasto)
     {
-        $this -> destroy($gasto);
-        $this -> loadDefault();
+        $this->destroy($gasto);
+        $this->loadDefault();
     }
     public function Edit(gasto $gasto)
     {
-        try{
+        try {
             $this->resetValidation();
             $this->loadDefault();
             $this->gasto = $gasto;
@@ -375,8 +376,8 @@ class Gastos extends Component
             // $this->restoreMethods($gasto->metodosPago);
             $this->action = 3;
             $this->editing = true;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 243120Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 243120Gastos"]);
         }
     }
     public function cancelEdit()
@@ -387,42 +388,42 @@ class Gastos extends Component
     }
     private function destroy(gasto $gasto)
     {
-        try{
+        try {
             $this->deleteFiles($gasto->files);
 
             //eliminar gasto
             $gasto->delete();
 
             $this->dispatchBrowserEvent('stop-loader');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 278122Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 278122Gastos"]);
         }
     }
     private function deleteFiles($files)
     {
-        try{
-            foreach($files as $file) {
-                $filename = 'storage/gastos/' . $file->file; 
+        try {
+            foreach ($files as $file) {
+                $filename = 'storage/gastos/' . $file->file;
                 unlink($filename);
                 $file->delete();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 545Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 545Gastos"]);
         }
     }
     private function getTotal()
     {
-        try{
+        try {
             $total = $this->methods->sum(function ($method) {
-                if(isset($method['qty'])){
+                if (isset($method['qty'])) {
                     return $method['qty'];
-                }else{
+                } else {
                     return 0;
                 }
             });
             return $total;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 298123Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 298123Gastos"]);
         }
     }
     public function setBrandId($brandId)
@@ -481,51 +482,56 @@ class Gastos extends Component
     }
     private function compareFiles($files)
     {
-        try{
+        try {
             //gallery
             if (!empty($files)) {
-                foreach($files as $file) {
-                    $found=false;
-                    $filename = 'storage/gastos/' . $file->file; 
-                    foreach($this->pictures as $picture){
-                        if($filename == $picture){
+                foreach ($files as $file) {
+                    $found = false;
+                    $filename = 'storage/gastos/' . $file->file;
+                    foreach ($this->pictures as $picture) {
+                        if ($filename == $picture) {
                             $found = true;
                         }
                     }
-                    if(!$found){
+                    if (!$found) {
                         unlink($filename);
                         $file->delete();
-                    }else{
+                    } else {
                         $this->respaldoFiles[] = $file->id;
                     }
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 512345Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 512345Gastos"]);
         }
     }
     private function vincularFiles()
     {
-        try{
-            foreach($this->respaldoFiles as $file_id){
+        try {
+            foreach ($this->respaldoFiles as $file_id) {
                 $file = File::find($file_id);
-                if($file!=null){
+                if ($file != null) {
                     $file->model_id = $this->gasto->id;
                     $file->save();
                 }
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 14031Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 14031Gastos"]);
         }
     }
     public function Store()
     {
         $this->validate($this->rules);
-        try{
+        if (gasto::where('folio_fiscal', $this->gasto->folio_fiscal)->exists()) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "El folio fiscal ya existe en el sistema. Verifique la información."]);
+            return;
+        }
+        try {
             if (session()->has('customDate')) {
                 Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
             }
-            if($this->editing){
+
+            if ($this->editing) {
                 $oldGasto = $this->gasto;
                 //eliminar gasto
                 $this->compareFiles($this->gasto->files);
@@ -533,19 +539,19 @@ class Gastos extends Component
                 $this->gasto = $oldGasto;
             }
             //save
-            $this->gasto->user_id = Auth()->user()->id;     
-            $this->gasto->salon_id=Auth::user()->salon->id;
-            $this->gasto->marca_id=$this->brandId;
-            $this->gasto->categoria_id=$this->categoryId;
-            $this->gasto->tipo_id=$this->typeId;
-            $this->gasto->status='default';
+            $this->gasto->user_id = Auth()->user()->id;
+            $this->gasto->salon_id = Auth::user()->salon->id;
+            $this->gasto->marca_id = $this->brandId;
+            $this->gasto->categoria_id = $this->categoryId;
+            $this->gasto->tipo_id = $this->typeId;
+            $this->gasto->status = 'default';
             $this->gasto->save();
             $this->storeImages($this->gallery);
-            if($this->respaldoFiles){
+            if ($this->respaldoFiles) {
                 $this->vincularFiles();
             }
-            $gasto=$this->gasto;
-            if($this->brandId!=null && $this->gasto->folio_fiscal!=null && Auth::user()->salon->rfc!=null){
+            $gasto = $this->gasto;
+            if ($this->brandId != null && $this->gasto->folio_fiscal != null && Auth::user()->salon->rfc != null) {
                 $this->validateInvoiceWithSAT($gasto);
             }
             $this->dispatchBrowserEvent('noty', ['msg' => 'SOLICITUD PROCESADA CON ÉXITO']);
@@ -554,17 +560,17 @@ class Gastos extends Component
             if (session()->has('customDate')) {
                 Carbon::setTestNow();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 340235Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 340235Gastos"]);
         }
     }
     private function loadDefault()
     {
-        try{
+        try {
             $this->gasto = new gasto();
             $this->gasto->type = 'No acreditable';
             $this->gasto->iva = 0.16;
-            $currentDate=Carbon::now()->format('Y-m-d');
+            $currentDate = Carbon::now()->format('Y-m-d');
             $this->gasto->date = $currentDate;
             $this->editing = false;
             $this->brandId = null;
@@ -573,15 +579,15 @@ class Gastos extends Component
             $this->category = null;
             $this->typeId = null;
             $this->type = null;
-            $this->pictures=null;
-            $this->gallery=null;
-            $this->categorias=Auth::user()->salon->categoriaGastos;
-            $this->tipos = tipo_gasto::where('salon_id',Auth::user()->salon_id)->orWhere('salon_id',null)->get();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 340125Gastos"] );
+            $this->pictures = null;
+            $this->gallery = null;
+            $this->categorias = Auth::user()->salon->categoriaGastos;
+            $this->tipos = tipo_gasto::where('salon_id', Auth::user()->salon_id)->orWhere('salon_id', null)->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 340125Gastos"]);
         }
     }
-    
+
     public function setDatesFromPeriod($selectedDates)
     {
         try {
@@ -664,82 +670,82 @@ class Gastos extends Component
         $movs = $query->get();
         $totalMovs = $movs->count();
         $total = 0;
-        foreach($movs as $mov){
-            $total += $mov->total; 
+        foreach ($movs as $mov) {
+            $total += $mov->total;
         }
-        return [$totalMovs,$total];
+        return [$totalMovs, $total];
     }
-    private function useDate($wp=true)
+    private function useDate($wp = true)
     {
-        try{
+        try {
             $query = [];
-            $query =  gasto::with('categoria','tipo')
-                ->where('salon_id',Auth::user()->salon->id)
-                ->whereBetween('date', [$this->currentDateC,$this->currentDateCEnd])
+            $query =  gasto::with('categoria', 'tipo')
+                ->where('salon_id', Auth::user()->salon->id)
+                ->whereBetween('date', [$this->currentDateC, $this->currentDateCEnd])
                 ->orderBy('date', 'desc');
 
             $data = $this->recalculate(clone $query);
             $this->total_bruto = $data[1];
             $this->movs = $data[0];
 
-            if($wp){
+            if ($wp) {
                 $query = $query->paginate(6);
             }
             return $query;
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 235363Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 235363Gastos"]);
         }
     }
-    
+
     public function aplicarFiltros()
     {
-        if(isset($this->max)){
+        if (isset($this->max)) {
             $this->consultaRangos();
-        }else{
-         $this->useDate();
+        } else {
+            $this->useDate();
         }
     }
     private function consultaRangos()
     {
-        try{
+        try {
             $query = [];
-            
-            if($this->is_interval==false){
-                $query =  gasto::where('salon_id',Auth::user()->salon->id)
-                ->whereBetween('total',[$this->min ?? 0,$this->max])
-                ->whereDate('date',$this->start)
-                ->orderBy('type', 'desc')
-                ->paginate(6);
-            }else{
-                $query =  gasto::where('salon_id',Auth::user()->salon->id)
-                ->whereBetween('total',[$this->min ?? 0,$this->max])
-                ->whereBetween('date', [$this->start,$this->end])
-                ->orderBy('type', 'desc')
-                ->paginate(6);
+
+            if ($this->is_interval == false) {
+                $query =  gasto::where('salon_id', Auth::user()->salon->id)
+                    ->whereBetween('total', [$this->min ?? 0, $this->max])
+                    ->whereDate('date', $this->start)
+                    ->orderBy('type', 'desc')
+                    ->paginate(6);
+            } else {
+                $query =  gasto::where('salon_id', Auth::user()->salon->id)
+                    ->whereBetween('total', [$this->min ?? 0, $this->max])
+                    ->whereBetween('date', [$this->start, $this->end])
+                    ->orderBy('type', 'desc')
+                    ->paginate(6);
             }
             return $query;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 360366Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 360366Gastos"]);
         }
     }
 
     #función que actualiza las gráficas con la nueva fecha
     private function loadDatesWithNewPeriod()
     {
-        try{
-            $this->emit('dateUpdated-gastos', $this->currentDate,$this->currentDateEnd);
+        try {
+            $this->emit('dateUpdated-gastos', $this->currentDate, $this->currentDateEnd);
             $this->emit('reloadTom');
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 343365Gastos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 343365Gastos"]);
         }
     }
-    public function generatePdf(){
+    public function generatePdf()
+    {
         $date = $this->currentDateC;
         $date = $date->format('Y_m_d_H_i_s');
         $fileName = 'gastos_' . $date . '.pdf';
         $gastos = $this->useDate();
-        return Excel::download(new ReporteGastos($gastos,true),$fileName);
+        return Excel::download(new ReporteGastos($gastos, true), $fileName);
     }
     public function generateExcel()
     {
@@ -748,6 +754,6 @@ class Gastos extends Component
         $fileName = 'gastos_' . $date . '.xlsx';
         $gastos = $this->useDate(false);
 
-        return Excel::download(new ReporteGastos($gastos->get(),false),$fileName);
+        return Excel::download(new ReporteGastos($gastos->get(), false), $fileName);
     }
 }
