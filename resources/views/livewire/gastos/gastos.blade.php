@@ -42,8 +42,9 @@
                 </div>
                 
                 @if(Auth::user()->role=='admin')
-                <div class="botones-exportar">
-                    <button wire:click="generateExcel" class="btn-sm excel-button input-group-text">Exportar Informe</button>   
+                <div class="botones-exportar d-flex" style="column-gap: 2dvh">
+                    <button wire:click="generateExcel" class="btn excel-button input-group-text">Exportar Informe</button>   
+                    <button class="btn save input-group-text" style="color:white" data-toggle="modal" data-target="#modalImportFromPDF">Importar datos</button>   
                     <!-- <button class="button-style" wire:click="generatePdf" style="border-width: 0;color:red"><i class="las la-file-pdf la-2x"></i></button>
                     <button class="button-style" wire:click="generateExcel" style="border-width: 0;color:#68d100"><i class="las la-file-excel la-2x"></i></button> -->
                 </div>
@@ -56,9 +57,9 @@
                             <thead class="thead-primary">
                                 <tr >
                                     <th style="background-color:transparent;color:#1d3557 !important">Descripción</th>
-                                    <th style="background-color:transparent;color:#1d3557 !important">Concepto</th>
+                                    <th style="background-color:transparent;color:#1d3557 !important">Tipo de gasto</th>
                                     <th style="background-color:transparent;color:#1d3557 !important">Monto</th>
-                                    <th style="background-color:transparent;color:#1d3557 !important">Tipo</th>
+                                    <th style="background-color:transparent;color:#1d3557 !important">Clasif. fiscal</th>
                                     <th style="background-color:transparent;color:#1d3557 !important">Fecha</th>
                                     <th style="background-color:transparent;color:#1d3557 !important"></th>
                                 </tr>
@@ -67,7 +68,7 @@
                                 @forelse ($gastos as $item)
                                 <tr style="background-color:{{ $item->status =='vigente' ? '#D4E9D6' : ($item->status == 'cancelado' ? '#ff8b8b' : ($item->status == 'default' ?? ''))}}!important" wire:click="Edit({{ $item->id }})">
                                     <td><a wire:click="Edit({{ $item->id }})">{{ $item->note }}</a></td>
-                                    <td> {{ $item->note }}</td>
+                                    <td> {{ $item->tipo?->name ?? 'N/A' }}</td>
                                     <td> ${{ $item->total }} </td>
                                     <td> {{ $item->type == "Acreditable" ? 'Deducible' : 'No deducible' }} </td>
                                     <td> {{ date_format(new DateTime($item->date),'d-m-Y') }} </td>
@@ -109,6 +110,7 @@
         <livewire:marcas :action="0" />
     </div>
     @include('livewire.gastos.payment')
+    @include('livewire.gastos.import-from-pdf')
 @else
 @include('livewire.sinPermisos')
 @endif
@@ -336,6 +338,10 @@
     })  
    })
 
+    window.addEventListener('closeImportModal', () => {
+        $('#modalImportFromPDF').modal('hide');
+        document.getElementById('importFile').value = ''; // Limpiar el input
+    });
     </script>
 </div>
 

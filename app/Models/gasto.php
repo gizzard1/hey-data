@@ -11,16 +11,17 @@ class gasto extends Model
     protected $fillable = [
         'user_id',
         'type',
-        'description',
         'note',
         'payment_method',
+        'folio_fiscal',
         'total',
         'iva',
-        'date',
+        'status',
         'salon_id',
+        'marca_id',
         'categoria_id',
         'tipo_id',
-        'marca_id'
+        'date',
     ];
     public function marca()
     {

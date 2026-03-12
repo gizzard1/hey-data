@@ -11,6 +11,7 @@ use App\Models\tipo_gasto;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
@@ -32,6 +33,7 @@ class Gastos extends Component
     public $query,$proveedores=[];
     public $gallery=[],$pictures=[],$respaldoFiles;
     public $queryCat,$queryType,$categorias=[],$tipos=[],$category,$categoryId,$type,$typeId;
+    public $importFile;
     public function removeImage($index)
     {
         array_splice($this->gallery, $index, 1);
@@ -74,7 +76,7 @@ class Gastos extends Component
             ->get();      
 
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Agenda"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Gastos"] );
         }
     }
     public function updatedQueryType()
@@ -90,7 +92,7 @@ class Gastos extends Component
             ->get();      
 
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Agenda"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Gastos"] );
         }
     }
     public function removeFile($filename,$fromGallery)
@@ -121,7 +123,12 @@ class Gastos extends Component
     {
         try{
             $this->loadDefault();
-            $this->loadFecha();
+            
+            if (session()->has('selectedDates')) {
+                $this->setDatesFromPeriod(session('selectedDates'));
+            } else {
+                $this->loadFecha();
+            }
             $this->rest = $this->gasto->total;
             if (session()->has('methodsG')) {
                 $this->methods = session('methodsG');
@@ -150,7 +157,7 @@ class Gastos extends Component
             ->orderBy('name', 'asc')
             ->get();
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097CartView"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Gastos"] );
         }
     }
     protected $rules =
@@ -168,8 +175,50 @@ class Gastos extends Component
         'refresh' => '$refresh',
         'search' => 'searching',
         'DeleteExpense' => 'Delete','setRest','datesSelected' => 'setDatesFromPeriod',
-        'prevDay','dateSelected' => 'setDate','setBrandId','enviarProveedor'=>'recibirProveedor'
+        'prevDay','dateSelected' => 'setDate','setBrandId','enviarProveedor'=>'recibirProveedor',
+        'importFromPdf'
     ];
+    public function importFromPdf($resultados)
+    {
+        DB::beginTransaction();
+        try {
+            foreach ($resultados as $resultado) {
+                if (str_contains($resultado['folio'],"Página")) continue; // Omitir páginas sin datos válidos
+                if (strlen($resultado['folio']) != 36) continue; // Omitir folios con longitud incorrecta
+                if (gasto::where('folio_fiscal', $resultado['folio'])->exists()) continue; // Omitir gastos ya registrados con el mismo folio fiscal
+                if ($resultado['rfc_receptor'] !== Auth::user()->salon->rfc) continue; // Omitir gastos que no correspondan al RFC del salón
+                if ($resultado['total'] <= 0) continue; // Omitir gastos con total 0 o negativo
+                $status = strtolower($resultado['status']);
+                if ($status !== 'vigente' && $status !== 'cancelado') continue; // Omitir gastos con status desconocido
+
+                $marca = marca::firstOrCreate(
+                    ['rfc' => $resultado['rfc_emisor']],
+                    ['name' => $resultado['rfc_emisor'], 'salon_id' => Auth::user()->salon_id]
+                );
+
+                gasto::create([
+                    'user_id' => Auth::user()->id,
+                    'type' => 'Acreditable',
+                    'marca_id' => $marca->id,
+                    'note' => "Gasto importado desde PDF " . Carbon::now()->format('Y-m-d H:i:s'),
+                    'payment_method' => 'unknown',
+                    'folio_fiscal' => $resultado['folio'],
+                    'date' => Carbon::parse($resultado['fecha_emision'])->format('Y-m-d'),
+                    'total' => $resultado['total'],
+                    'iva' => '0.16',
+                    'salon_id' => Auth::user()->salon_id,
+                    'status' => $status,
+                ]);
+            }
+            DB::commit();
+            $this->dispatchBrowserEvent('noty', ['msg' =>  "Gastos importados exitosamente"] );
+            $this->dispatchBrowserEvent('closeImportModal');
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Se encontró un error con el archivo. Intente de nuevo, por favor"] );
+        }
+    }
+
     public function verificarFactura(gasto $gasto)
     {
         $this->validateInvoiceWithSAT($gasto);
@@ -276,86 +325,6 @@ class Gastos extends Component
         $this->paymentMethod = $paymentMethod;
         $this->AddMethod();
     }
-    // private function AddMethod()
-    // {
-    //     try{
-    //         if ($this->inMethods()) {
-    //             $this->updateQty();
-    //             return; // => con esta línea se agrupan los productos por nombre dentro del carrito
-    //         }
-    //         $qty=$this->cash;
-    //         $this->rest-= $this->cash;
-    //         if($this->rest < 0){
-    //             $this->dispatchBrowserEvent('noty-error', ['msg' => 'EL MÉTODO SOBREPASA LA CANTIDAD']);
-    //             $this->rest+= $this->cash;
-
-    //             return;
-    //         }
-
-    //         $uid = uniqid();
-    //         $coll = collect(
-    //             [
-    //                 'uid' => $uid,
-    //                 'name' => $this->paymentMethod,
-    //                 'qty' => floatval($qty),
-    //                 'reference' => $this->reference,
-    //             ]
-    //         );
-    //         $method = Arr::add($coll, null, null);
-    //         $this->methods->push($method);
-
-    //         $this->save();
-    //         $this->reset(['cash','reference']);
-    //     }catch(\Throwable $th){
-    //         $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 101113Gastos"] );
-    //     }
-    // }
-    // private function updateQty()
-    // {
-    //     try{
-    //         $mymethods = $this->methods; 
-    //         $oldItem = $mymethods->where('name', $this->paymentMethod)->first();
-            
-    //         $newItem  = $oldItem;
-
-    //         $newItem['qty'] += floatval($this->cash);
-            
-    //         $this->rest-= $this->cash;
-    //         if($this->rest < 0){
-    //             $this->dispatchBrowserEvent('noty-error', ['msg' => 'EL MÉTODO SOBREPASA LA CANTIDAD']);
-    //             $this->rest+= $this->cash;
-
-    //             return;
-    //         }
-    //         //eliminar el item de la coleccion / sesion
-    //         $paymentMethod=$this->paymentMethod;
-    //         $this->methods = $this->methods->reject(function ($method) use ($paymentMethod) {
-    //             return $method['name'] === $paymentMethod;
-    //         });
-
-    //         $this->methods->push(Arr::add($newItem, null, null));
-    //         $this->save();
-    //         $this->reset(['cash','reference']);
-
-    //         $this->dispatchBrowserEvent('noty', ['msg' => 'MÉTODO ACTUALIZADO']);
-    //     }catch(\Throwable $th){
-    //         $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 135114Gastos"] );
-    //     }
-    // }
-    // public function removeMethod($uid)
-    // {
-    //     try{
-    //         $this->methods = $this->methods->reject(function ($method) use ($uid) {
-    //             return $method['uid'] === $uid;
-    //         });
-    //         $this->save();
-    //         $this->rest = $this->gasto->total;
-    //         $this->calculateRest();
-
-    //     }catch(\Throwable $th){
-    //         $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 167115Gastos"] );
-    //     }
-    // }
     private function inMethods()
     {
         try{
@@ -410,21 +379,6 @@ class Gastos extends Component
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 243120Gastos"] );
         }
     }
-    // private function restoreMethods($methods)
-    // {
-    //     try{
-    //         foreach($methods as $method){
-    //             $this->cash=$method->amount;
-    //             if(isset($method->reference)){
-    //                 $this->reference=$method->reference;
-    //             }
-    //             $this->setMethod($method->Payment_method);
-    //             $this->save();
-    //         }
-    //     }catch(\Throwable $th){
-    //         $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 257121Gastos"] );
-    //     }
-    // }
     public function cancelEdit()
     {
         $this->resetValidation();
@@ -547,7 +501,7 @@ class Gastos extends Component
                 }
             }
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 512345Agenda"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 512345Gastos"] );
         }
     }
     private function vincularFiles()
@@ -561,7 +515,7 @@ class Gastos extends Component
                 }
             }
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 14031Agenda"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 14031Gastos"] );
         }
     }
     public function Store()
@@ -627,148 +581,82 @@ class Gastos extends Component
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 340125Gastos"] );
         }
     }
-    // private function clear()
-    // {
-    //     try{
-    //         $this->methods = new Collection;
-    //         $this->save();
-    //         $this->emit('refresh');
-    //     }catch(\Throwable $th){
-    //         $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 355126Gastos"] );
-    //     }
-    // }
-    private function loadFecha()
-    {
-        try{
-            $this->currentDate=Carbon::now()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->toDateString();
-            $this->currentDateC=Carbon::now();
-            $this->currentDateEnd='';
-            $this->end='';
-            $this->currentDateCEnd='';
-            $this->aplicarFiltros();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 103356InformeMovimientos"] );
-        }
-    }
-
+    
     public function setDatesFromPeriod($selectedDates)
     {
-        try{
+        try {
+            session()->put('selectedDates', $selectedDates);
+            session()->save();
+            $this->is_interval = true;
             if (count($selectedDates) >= 2) {
                 // Actualizar las fechas según la lógica que necesites
                 $currentDateC = Carbon::parse($selectedDates[0]);
-                $currentDateCEnd = Carbon::parse($selectedDates[1]);
-            
-            
-                $this->currentDateC = Carbon::parse($currentDateC);
-                $this->currentDateCEnd = Carbon::parse($currentDateCEnd);
-                $this->is_interval=true;
-                $this->currentDate=$this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-                $this->start=$this->currentDateC->toDateString();
-                $this->currentDateEnd=$this->currentDateCEnd->locale('es')->isoFormat('dddd, D MMMM YYYY');
-                $this->end=$this->currentDateCEnd->toDateString();
-                $this->aplicarFiltros();
-                $this->loadDatesWithNewPeriod();
+                $currentDateCEnd = Carbon::parse($selectedDates[1])->endOfDay();
+            } elseif (count($selectedDates) == 1) {
+                // Actualizar las fechas según la lógica que necesites
+                $currentDateC = Carbon::parse($selectedDates[0])->startOfDay();
+                $currentDateCEnd = $currentDateC->copy()->endOfDay();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 118357InformeMovimientos"] );
-        }
-    }
-    public function setDate($selectedDate)
-    {
-        try{
-            // Actualizar las fechas según la lógica que necesites
-            $currentDateC = Carbon::parse($selectedDate[0]);
             $this->currentDateC = Carbon::parse($currentDateC);
-            $this->is_interval=false;
-            $this->currentDate=$this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=$this->currentDateC->toDateString();
-            $this->currentDateEnd='';
-            $this->end='';
-            $this->currentDateCEnd='';
-            $this->aplicarFiltros();
-            $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 141358InformeMovimientos"] );
+            $this->currentDateCEnd = Carbon::parse($currentDateCEnd);
+            $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->start = $this->currentDateC->toDateString();
+            $this->currentDateEnd = $this->currentDateCEnd->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->end = $this->currentDateCEnd->toDateString();
+
+            $this->useDate();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 30127Gastos"]);
         }
     }
-    
-    #Función que establece un día anterior 
-    public function prevDay()
+    private function loadFecha()
     {
-        try{
-            $this->is_interval=false;
-            $this->currentDateC= $this->currentDateC->subDay();
-            $this->start= $this->currentDateC->toDateString();
-            $this->currentDate= $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->aplicarFiltros();
-            $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 161359InformeMovimientos"] );
+        try {
+            $this->setDatesFromPeriod([Carbon::now()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 365140Gastos"]);
         }
     }
-    #Función que retorna la fecha actual
+
     public function returnToday()
     {
-        $this->is_interval=false;
+        $this->is_interval = false;
         $this->loadFecha();
-        $this->loadDatesWithNewPeriod();
     }
-    #Función que retorna información de "ayer"
     public function returnYesterday()
     {
-        $this->loadFecha();
         $this->prevDay();
     }
-    
     public function setWeek()
     {
-        try{
-            $this->is_interval=true;
-            $this->currentDate=Carbon::now()->startOfWeek()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->startOfWeek()->toDateString();
-            $this->currentDateC=Carbon::now()->startOfWeek();
-            $this->currentDateEnd=Carbon::now()->endOfWeek()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->end=Carbon::now()->endOfWeek()->toDateString();
-            $this->currentDateCEnd=Carbon::now()->endOfWeek();
-            $this->aplicarFiltros();
-            $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 188360InformeMovimientos"] );
+        try {
+            $this->setDatesFromPeriod([Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 379141Gastos"]);
         }
     }
     public function setMonth()
     {
-        try{
-            $this->is_interval=true;
-            $this->currentDate=Carbon::now()->startOfMonth()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->startOfMonth()->toDateString();
-            $this->currentDateC=Carbon::now()->startOfMonth();
-            $this->currentDateEnd=Carbon::now()->endOfMonth()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $end=Carbon::now()->endOfMonth()->addDay();
-            $this->end = $end->toDateString();
-            $this->currentDateCEnd=Carbon::now()->endOfMonth();
-            $this->aplicarFiltros();
-            $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 204361InformeMovimientos"] );
+        try {
+            $this->setDatesFromPeriod([Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 395142Gastos"]);
         }
     }
     public function setYear()
     {
-        try{
-            $this->is_interval=true;
-            $this->currentDate=Carbon::now()->startOfYear()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->startOfYear()->toDateString();
-            $this->currentDateC=Carbon::now()->startOfYear();
-            $this->currentDateEnd=Carbon::now()->endOfYear()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->end=Carbon::now()->endOfYear()->toDateString();
-            $this->currentDateCEnd=Carbon::now()->endOfYear();
-            $this->aplicarFiltros();
-            $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 221362InformeMovimientos"] );
+        try {
+            $this->setDatesFromPeriod([Carbon::now()->startOfYear(), Carbon::now()->endOfYear()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 411143Gastos"]);
+        }
+    }
+    public function setDate($selectedDate)
+    {
+        try {
+            $this->setDatesFromPeriod([Carbon::parse($selectedDate[0])]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 53128Gastos"]);
         }
     }
     private function recalculate($query)
@@ -785,17 +673,10 @@ class Gastos extends Component
     {
         try{
             $query = [];
-            if($this->is_interval==false){
-                $query =  gasto::with('categoria')
-                ->where('salon_id',Auth::user()->salon->id)
-                ->whereDate('date',$this->currentDateC)
-                ->orderBy('type', 'desc');
-            }else{
-                $query =  gasto::with('categoria')
+            $query =  gasto::with('categoria','tipo')
                 ->where('salon_id',Auth::user()->salon->id)
                 ->whereBetween('date', [$this->currentDateC,$this->currentDateCEnd])
-                ->orderBy('type', 'desc');
-            }
+                ->orderBy('date', 'desc');
 
             $data = $this->recalculate(clone $query);
             $this->total_bruto = $data[1];
@@ -807,7 +688,7 @@ class Gastos extends Component
             return $query;
             
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 235363InformeMovimientos"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 235363Gastos"] );
         }
     }
     
@@ -839,7 +720,7 @@ class Gastos extends Component
             }
             return $query;
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 360366InformeMovimientos"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 360366Gastos"] );
         }
     }
 
@@ -850,7 +731,7 @@ class Gastos extends Component
             $this->emit('dateUpdated-gastos', $this->currentDate,$this->currentDateEnd);
             $this->emit('reloadTom');
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 343365InformeMovimientos"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 343365Gastos"] );
         }
     }
     public function generatePdf(){
