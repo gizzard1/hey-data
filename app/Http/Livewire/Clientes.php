@@ -589,29 +589,22 @@ class Clientes extends Component
                             }
                         } elseif ($filtro['type'] == 'inactivo') {
                             $query->where(function ($query) use ($fecha_inicio, $fecha_fin, $is_interval) {
-                                if ($is_interval) {
+                                $query->when($is_interval, function ($query) use ($fecha_inicio, $fecha_fin) {
                                     $query->whereDoesntHave('citas', function ($q) use ($fecha_inicio, $fecha_fin) {
+                                        $q->whereBetween('start', [
+                                            Carbon::parse($fecha_inicio)->startOfDay(),
+                                            Carbon::parse($fecha_fin)->endOfDay()
+                                        ]);
+                                    })->whereDoesntHave('compras', function ($q) use ($fecha_inicio, $fecha_fin) {
                                         $q->whereBetween('created_at', [
                                             Carbon::parse($fecha_inicio)->startOfDay(),
                                             Carbon::parse($fecha_fin)->endOfDay()
                                         ]);
                                     });
-                                } else {
-                                    $query->whereDoesntHave('citas');
-                                }
-                            })->orWhere(function ($query) use ($fecha_inicio, $fecha_fin, $is_interval) {
-                                if ($is_interval) {
-                                    $query->whereDoesntHave('compras', function ($q) use ($fecha_inicio, $fecha_fin) {
-                                        $q->whereBetween('created_at', [
-                                            Carbon::parse($fecha_inicio)->startOfDay(),
-                                            Carbon::parse($fecha_fin)->endOfDay()
-                                        ]);
-                                    });
-                                } else {
-                                    $query->whereDoesntHave('compras');
-                                }
+                                }, function ($query) {
+                                    $query->whereDoesntHave('citas')->whereDoesntHave('compras');
+                                });
                             });
-                            $query->where('salon_id', Auth::user()->salon->id);
                         } elseif ($filtro['type'] == 'birth_date') {
                             if ($is_interval) {
                                 // Extraer mes y día de las fechas de inicio y fin
@@ -1920,7 +1913,6 @@ class Clientes extends Component
 
     public function returnToday()
     {
-        $this->is_interval = false;
         $this->loadFecha();
     }
     public function returnYesterday()
