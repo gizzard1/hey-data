@@ -143,6 +143,8 @@ class DataCustomers extends Controller
             $salon_id = $request->user()->salon_id;
             $cliente = $request->input('cliente');
 
+            $cliente['genero'] = isset($cliente['genero']) && $cliente['genero'] !== "Otro" ? $cliente['genero'] : "noBinario";
+
             $newClient = cliente::updateOrCreate(
                 [
                     'id' => $cliente['id'] ?? null
