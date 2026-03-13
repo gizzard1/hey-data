@@ -66,6 +66,7 @@ class DataSales extends Controller
                         'total' => $total_date,
                         'disccount' => $discount,
                         'items' => $total_items,
+                        'customer_id' => $sale['customer_id'],
                     ]
                 );
 
