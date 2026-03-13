@@ -323,7 +323,7 @@ class DataSales extends Controller
                 return response()->json(['message' => 'salon_not_allowed'], 404);
             }
             if(isset($itemSelected->details)){
-                self::cancelarStock($itemSelected);
+                self::cancelarStock($itemSelected->details);
             }
             DRG::cancelarPuntos($itemSelected);
             // $this->recuperarMensajes();
