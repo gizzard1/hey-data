@@ -25,7 +25,12 @@ class MisGanancias extends Component
     {
         $this->empleado = Auth::user()->empleado ?? null;
         $this->activateCheckers();
-        $this->loadFecha();
+        
+        if (session()->has('selectedDates')) {
+            $this->setDatesFromPeriod(session('selectedDates'));
+        } else {
+            $this->loadFecha();
+        }
     }
 
     protected $listeners = ['refresh' => '$refresh',
@@ -55,135 +60,88 @@ class MisGanancias extends Component
     private function loadFecha()
     {
         try{
-            $this->currentDate=Carbon::now()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->toDateString();
-            $this->currentDateC=Carbon::now();
-            $this->currentDateEnd='';
-            $this->end='';
-            $this->currentDateCEnd='';
-            $this->useDate();
+            $this->setDatesFromPeriod([Carbon::now()]);
         }catch(\Throwable $th){
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 57369MisGanancias"] );
-        }
-    }
-
-    public function setDatesFromPeriod($selectedDates)
-    {
-        try{
-            if (count($selectedDates) >= 2) {
-                // Actualizar las fechas según la lógica que necesites
-                $currentDateC = Carbon::parse($selectedDates[0]);
-                $currentDateCEnd = Carbon::parse($selectedDates[1]);
-            
-            
-                $this->currentDateC = Carbon::parse($currentDateC);
-                $this->currentDateCEnd = Carbon::parse($currentDateCEnd);
-                $this->is_interval=true;
-                $this->currentDate=$this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-                $this->start=$this->currentDateC->toDateString();
-                $this->currentDateEnd=$this->currentDateCEnd->locale('es')->isoFormat('dddd, D MMMM YYYY');
-                $this->end=$this->currentDateCEnd->toDateString();
-                $this->useDate();
-                $this->loadDatesWithNewPeriod();
-            }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 72369MisGanancias"] );
-        }
-    }
-    public function setDate($selectedDate)
-    {
-        try{
-            // Actualizar las fechas según la lógica que necesites
-            $currentDateC = Carbon::parse($selectedDate[0]);
-            $this->currentDateC = Carbon::parse($currentDateC);
-            $this->is_interval=false;
-            $this->currentDate=$this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=$this->currentDateC->toDateString();
-            $this->currentDateEnd='';
-            $this->end='';
-            $this->currentDateCEnd='';
-            $this->useDate();
-            $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 95369MisGanancias"] );
         }
     }
     
     #Función que establece un día anterior 
     public function prevDay()
     {
-        try{
-            $this->is_interval=false;
-            $this->currentDateC= $this->currentDateC->subDay();
-            $this->start= $this->currentDateC->toDateString();
-            $this->currentDate= $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->useDate();
-            $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 115369MisGanancias"] );
+        try {
+            $this->setDatesFromPeriod([Carbon::now()->subDay()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 84130Informe"]);
         }
     }
-    #Función que retorna la fecha actual
-    public function returnToday()
+    public function setDatesFromPeriod($selectedDates)
     {
-        $this->is_interval=false;
-        $this->loadFecha();
-        $this->loadDatesWithNewPeriod();
-    }
-    #Función que retorna información de "ayer"
-    public function returnYesterday()
-    {
-        $this->loadFecha();
-        $this->prevDay();
-    }
-    
-    public function setWeek()
-    {
-        try{
-            $this->is_interval=true;
-            $this->currentDate=Carbon::now()->startOfWeek()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->startOfWeek()->toDateString();
-            $this->currentDateC=Carbon::now()->startOfWeek();
-            $this->currentDateEnd=Carbon::now()->endOfWeek()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->end=Carbon::now()->endOfWeek()->toDateString();
-            $this->currentDateCEnd=Carbon::now()->endOfWeek();
+        try {
+            session()->put('selectedDates', $selectedDates);
+            session()->save();
+            $this->is_interval = true;
+            if (count($selectedDates) >= 2) {
+                // Actualizar las fechas según la lógica que necesites
+                $currentDateC = Carbon::parse($selectedDates[0]);
+                $currentDateCEnd = Carbon::parse($selectedDates[1])->endOfDay();
+            } elseif (count($selectedDates) == 1) {
+                // Actualizar las fechas según la lógica que necesites
+                $currentDateC = Carbon::parse($selectedDates[0])->startOfDay();
+                $currentDateCEnd = $currentDateC->copy()->endOfDay();
+            }
+            $this->currentDateC = Carbon::parse($currentDateC);
+            $this->currentDateCEnd = Carbon::parse($currentDateCEnd);
+            $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->start = $this->currentDateC->toDateString();
+            $this->currentDateEnd = $this->currentDateCEnd->locale('es')->isoFormat('dddd, D MMMM YYYY');
+            $this->end = $this->currentDateCEnd->toDateString();
+
             $this->useDate();
             $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 142369MisGanancias"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 30127MisGanancias"]);
+        }
+    }
+    public function returnToday()
+    {
+        $this->is_interval = false;
+        $this->loadFecha();
+    }
+    public function returnYesterday()
+    {
+        $this->prevDay();
+    }
+    public function setWeek()
+    {
+        try {
+            $this->setDatesFromPeriod([Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 379141MisGanancias"]);
         }
     }
     public function setMonth()
     {
-        try{
-            $this->is_interval=true;
-            $this->currentDate=Carbon::now()->startOfMonth()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->startOfMonth()->toDateString();
-            $this->currentDateC=Carbon::now()->startOfMonth();
-            $this->currentDateEnd=Carbon::now()->endOfMonth()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $end=Carbon::now()->endOfMonth()->addDay();
-            $this->end = $end->toDateString();
-            $this->currentDateCEnd=Carbon::now()->endOfMonth();
-            $this->useDate();
-            $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 158369MisGanancias"] );
+        try {
+            $this->setDatesFromPeriod([Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 395142MisGanancias"]);
         }
     }
     public function setYear()
     {
-        try{
-            $this->is_interval=true;
-            $this->currentDate=Carbon::now()->startOfYear()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->start=Carbon::now()->startOfYear()->toDateString();
-            $this->currentDateC=Carbon::now()->startOfYear();
-            $this->currentDateEnd=Carbon::now()->endOfYear()->locale('es')->isoFormat('dddd, D MMMM YYYY');
-            $this->end=Carbon::now()->endOfYear()->toDateString();
-            $this->currentDateCEnd=Carbon::now()->endOfYear();
-            $this->useDate();
-            $this->loadDatesWithNewPeriod();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 175369MisGanancias"] );
+        try {
+            $this->setDatesFromPeriod([Carbon::now()->startOfYear(), Carbon::now()->endOfYear()]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 411143MisGanancias"]);
+        }
+    }
+    public function setDate($selectedDate)
+    {
+        try {
+            $this->setDatesFromPeriod([Carbon::parse($selectedDate[0])]);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 53128MisGanancias"]);
         }
     }
     #función que actualiza las gráficas con la nueva fecha
@@ -203,57 +161,34 @@ class MisGanancias extends Component
             $ingresosVentas = [];
             $propinas = [];
             $totalComissions = 0;
-            if($this->is_interval==false){
-                if($this->citasFilter){
-                    $ingresosCitas = $this->empleado->asignacionesServicios()
-                        ->with('date.customer','servicio')
-                        ->whereDate('start',$this->start)
-                        ->orderBy('start', 'desc')
-                        ->get();
-                }
-                if($this->ventasFilter){
-                    $ingresosVentas = $this->empleado->asignacionesProductos()
-                        ->with('product','cita.customer','sale.customer')
-                        ->whereDate('created_at',$this->start)
-                        ->orderBy('created_at', 'desc')
-                        ->get();
-                }
-                if($this->propinasFilter){
-                    $propinas = $this->empleado->propinas()
-                        ->with('cita.customer','venta.customer')
-                        ->whereDate('created_at',$this->start)
-                        ->orderBy('created_at', 'desc')
-                        ->get();
-                }
-            }else{
-                if($this->ventasFilter){
-                    $ingresosVentas = $this->empleado->asignacionesProductos()
-                        ->with('product','cita.customer','sale.customer')
-                        ->whereBetween('created_at', [$this->start,$this->end])
-                        ->orderBy('created_at', 'desc')
-                        ->get();
-                }
-                if($this->citasFilter){
-                    $ingresosCitas = $this->empleado->asignacionesServicios()
-                        ->with('date.customer','servicio')
-                        ->whereBetween('start',[$this->start,$this->end])
-                        ->orderBy('start', 'desc')
-                        ->get();
-                }
-                if($this->propinasFilter){
-                    $propinas = $this->empleado->propinas()
-                        ->with('cita.customer','venta.customer')
-                        ->whereBetween('created_at',[$this->start,$this->end])
-                        ->orderBy('created_at', 'desc')
-                        ->get();
-                }
+            if($this->ventasFilter){
+                $ingresosVentas = $this->empleado->asignacionesProductos()
+                    ->with('product','cita.customer','sale.customer')
+                    ->whereBetween('created_at', [$this->currentDateC,$this->currentDateCEnd])
+                    ->where('comission','>',0)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+            }
+            if($this->citasFilter){
+                $ingresosCitas = $this->empleado->asignacionesServicios()
+                    ->with('date.customer','servicio')
+                    ->whereBetween('start',[$this->currentDateC,$this->currentDateCEnd])
+                    ->where('comission','>',0)
+                    ->orderBy('start', 'desc')
+                    ->get();
+            }
+            if($this->propinasFilter){
+                $propinas = $this->empleado->propinas()
+                    ->with('cita.customer','venta.customer')
+                    ->whereBetween('created_at',[$this->currentDateC,$this->currentDateCEnd])
+                    ->where('amount','>',0)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
             }
 
             $totalComissions = $this->recalculate($ingresosCitas,1);
             $totalComissions += $this->recalculate($ingresosVentas,1);
-
             $totalPropinas = $this->recalculate($propinas,0);
-
             
             $info =[
                 'ingresosCitas' => $ingresosCitas,

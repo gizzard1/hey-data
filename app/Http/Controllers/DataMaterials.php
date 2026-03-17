@@ -13,12 +13,15 @@ class DataMaterials extends Controller
     public static function createMaterials(Request $request)
     {
         $detalles = $request->input('details', []);
+        $created_at = null;
         DB::beginTransaction();
         try {
             foreach ($detalles['materiales'] as $material) {
                 $material['salon_id'] = $request->user()->salon_id;
                 $material['user_id'] = $request->user()->id;
-                self::updateMaterial((array)$material);
+                if ($detalles['date']['customer']) $material['customer'] = $detalles['date']['customer'];
+                if (isset($material['created_at']) && $material['created_at']) $created_at = self::getCreatedAtMaterial($material['id']);
+                self::updateMaterial((array)$material,$created_at);
             }
             DB::commit();
             return response()->json(['message' => 'ok'], 200);
@@ -28,7 +31,16 @@ class DataMaterials extends Controller
             return response()->json(['message' => 'error'], 500);
         }
     }
-    public static function updateMaterial($material)
+    private static function getCreatedAtMaterial($material_id)
+    {
+        try {
+            return Material::find($material_id)->created_at;
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+            return null;
+        }
+    }
+    public static function updateMaterial($material,$created_at = null)
     {
         try {
             // Guardar la cantidad de material para materiales existentes
@@ -43,10 +55,15 @@ class DataMaterials extends Controller
                     'sale_price' => $material['sale_price'] ?? 0,
                     'salon_id' => $material['salon_id'] ?? null,
                     'user_id' => $material['user_id'] ?? null,
-                    'empleado_id' => isset($material['empleado']) ? $material['empleado']['id'] : null,
-                    'cliente_id' => isset($material['customer']) ? $material['customer']['id'] : null,
+                    'empleado_id' => isset($material['empleado']) && $material['empleado'] !== null ? $material['empleado']['id'] : null,
+                    'cliente_id' => isset($material['customer']) && $material['customer'] !== null ? $material['customer']['id'] : null,
                 ]
             );
+
+            if ($created_at) {
+                $new_mat->created_at = $created_at;
+                $new_mat->save();
+            }
 
             self::updateStock($material['producto']['id'], $material['qty'] - $qty_before_update);
             return $new_mat->id;

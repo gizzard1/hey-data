@@ -692,7 +692,7 @@ class Agenda extends Component
             if ($isAdmin) {
                 return view($this->vista, ['agregarEmpleados' => $agregarEmpleados, 'citas' => $this->useDate(), 'propinas' => $this->propinas, 'type' => $this->type, 'itemSelected' => $this->itemSelected, 'methods' => $this->methods, 'totalCart' => $this->totalCart, 'taxCart' => $this->taxCart, 'subtotalCart' => $this->subtotalCart, 'generated_points' => $this->generated_points, 'items' => $this->items, 'times' => $times, 'salonTimes' => $salonTimes, 'pp_cart' => $this->pp_cart, 'categoriasCliente' => $this->listCategories, 'total_disccount' => $this->total_disccount, 'restante' => $this->rest, 'isAdmin' => $isAdmin]);
             } else {
-                return view('livewire.calendar.resource-hour-grid-employees', ['citas' => $this->useDate(), 'propinas' => $this->propinas, 'times' => $times]);
+                return view('livewire.calendar.resource-hour-grid-employees', ['citas' => $this->useDate(), 'propinas' => $this->propinas, 'times' => $salonTimes]);
             }
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 88354Agenda"]);
