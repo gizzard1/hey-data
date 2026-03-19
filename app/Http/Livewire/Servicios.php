@@ -401,6 +401,7 @@ class Servicios extends Component
     public function searching($searchText)
     {
         $this->search = trim($searchText);
+        $this->selectedItems = [];
     }
 
     public function Add(){
