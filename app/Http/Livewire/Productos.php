@@ -45,7 +45,7 @@ class Productos extends Component
         'product.name' => "required|min:3|max:60",
         'product.sku' => "nullable|max:25",
         'product.intern_sku' => "nullable|max:25",
-        'product.description' => "nullable|max:500",
+        'product.description' => "nullable|max:1000",
         'product.type_product' => "required|in:simple,variable",
         'product.unit_type' => "required|in:Unidad,Mililitro,Ampolleta,Artículo,Onza,Gramo,Envase",
         'product.status' => "required|in:publish,pending,draft",
