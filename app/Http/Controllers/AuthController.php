@@ -27,7 +27,8 @@ class AuthController extends Controller
             }
 
             return response()->json([
-                'token' => $user->createToken($request->device_name)->plainTextToken
+                'token' => $user->createToken($request->device_name)->plainTextToken,
+                'role' => $user->role,
             ]);
         }catch(\Throwable $th){
             Log::error($th->getMessage());
