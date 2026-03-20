@@ -12,26 +12,26 @@ use Livewire\WithPagination;
 class Pendientes extends Component
 {
     use WithPagination;
-    public $transacciones=[],$type;
+    public $transacciones = [], $type;
 
     protected $paginationTheme = 'bootstrap';
 
 
     protected $listeners = ['refresh' => '$refresh'];
 
-    public $billed=false,$no_payed=true,$no_billed=false;
+    public $billed = false, $no_payed = true, $no_billed = false;
 
     public function mount()
     {
-        $responses = $this->recuperarSesion(['billed','no_payed','no_billed']);
-        if(!in_array('ok',$responses)){
+        $responses = $this->recuperarSesion(['billed', 'no_payed', 'no_billed']);
+        if (!in_array('ok', $responses)) {
             $this->selectFilters(false, false, true);
         }
     }
     private function recuperarSesion($keys)
     {
         $responses = [];
-        foreach($keys as $key){
+        foreach ($keys as $key) {
             if (session()->has($key)) {
                 $this->{$key} = session($key);
                 $responses[] = 'ok';
@@ -61,17 +61,17 @@ class Pendientes extends Component
 
     public function cobrar($mov_id)
     {
-        if($this->type===1){
-            return redirect()->route('ventas',['venta_id' => $mov_id]);
-        }elseif($this->type===0){
-            return redirect()->route('citas',['action'=>2,'pestaña'=>1,'cita_id'=>$mov_id]);
+        if ($this->type === 1) {
+            return redirect()->route('ventas', ['venta_id' => $mov_id]);
+        } elseif ($this->type === 0) {
+            return redirect()->route('citas', ['action' => 2, 'pestaña' => 1, 'cita_id' => $mov_id]);
         }
     }
     public function render()
     {
         $this->transacciones = $this->getDataMov($this->type);
         $this->transacciones = $this->setPendingQty($this->transacciones);
-        return view('livewire.pendientes.pendientes',['transacciones' => $this->transacciones]);
+        return view('livewire.pendientes.pendientes', ['transacciones' => $this->transacciones]);
     }
     private function getDataMov($type)
     {
@@ -80,99 +80,101 @@ class Pendientes extends Component
         $dataNoBilled = new Collection;
         $futureData = new Collection;
         $sid = Auth::user()->salon_id;
-        $modelQuery = $type ? venta::select('id','created_at','disccount','total','updated_at','status','billing','customer_id','user_id')
+        $modelQuery = $type ? venta::select('id', 'created_at', 'disccount', 'total', 'updated_at', 'status', 'billing', 'customer_id', 'user_id', 'salon_id')
             ->with([
-                'metodosPago' => function($q) {
-                    $q->select('payment_method_id','venta_id','id','amount');
+                'metodosPago' => function ($q) {
+                    $q->select('payment_method_id', 'venta_id', 'id', 'amount');
                 },
-                'customer' => function($q) {
-                    $q->select('first_name','id','last_name');
+                'customer' => function ($q) {
+                    $q->select('first_name', 'id', 'last_name');
                 },
-        ]) : cita::select('id','created_at','disccount','total','updated_at','status','billing','customer_id','user_id')
+            ]) : cita::select('id', 'created_at', 'disccount', 'total', 'updated_at', 'status', 'billing', 'customer_id', 'user_id', 'salon_id')
             ->with([
-                'metodosPago' => function($q) {
-                    $q->select('payment_method_id','cita_id','id','amount');
+                'metodosPago' => function ($q) {
+                    $q->select('payment_method_id', 'cita_id', 'id', 'amount');
                 },
-                'customer' => function($q) {
-                    $q->select('first_name','id','last_name');
+                'customer' => function ($q) {
+                    $q->select('first_name', 'id', 'last_name');
                 },
             ]);
-        if($this->billed){
-            $dataBilled = $this->getDataBilled(clone $modelQuery,$sid);
+        if ($this->billed) {
+            $dataBilled = $this->getDataBilled(clone $modelQuery, $sid);
         }
-        if($this->no_payed && $this->no_billed && $this->type == 0){
-            $futureData = $this->getFutureData(clone $modelQuery,$sid);
-            return [$dataBilled,$dataNoBilled,$dataNoPayed,$futureData];
+        if ($this->no_payed && $this->no_billed && $this->type == 0) {
+            $futureData = $this->getFutureData(clone $modelQuery, $sid);
+            return [$dataBilled, $dataNoBilled, $dataNoPayed, $futureData];
         }
-        if($this->no_payed){
-            $dataNoPayed = $this->getDataNoPayed(clone $modelQuery,$sid);
+        if ($this->no_payed) {
+            $dataNoPayed = $this->getDataNoPayed(clone $modelQuery, $sid);
         }
-        if($this->no_billed){
-            $dataNoBilled = $this->getDataNoBilled(clone $modelQuery,$sid);
+        if ($this->no_billed) {
+            $dataNoBilled = $this->getDataNoBilled(clone $modelQuery, $sid);
         }
-        return [$dataBilled,$dataNoBilled,$dataNoPayed];
+        return [$dataBilled, $dataNoBilled, $dataNoPayed];
     }
-    private function getDataBilled($modelName,$salon_id)
+    private function getDataBilled($modelName, $salon_id)
     {
         return $modelName
-            ->where('salon_id',$salon_id)
-            ->where('billing',2)
+            ->where('salon_id', $salon_id)
+            ->where('billing', 2)
             ->orderBy('created_at', 'desc')
             ->get();
     }
-    private function getDataNoBilled($modelName,$salon_id)
+    private function getDataNoBilled($modelName, $salon_id)
     {
         return $modelName
-            ->where('salon_id',$salon_id)
-            ->where('billing',1)
+            ->where('salon_id', $salon_id)
+            ->where('billing', 1)
             ->orderBy('created_at', 'desc')
             ->get();
     }
-    private function getDataNoPayed($modelName,$salon_id)
+    private function getDataNoPayed($modelName, $salon_id)
     {
         return $modelName
-            ->where('salon_id',$salon_id)
-            ->where('status','Pendiente')
-            ->orWhere('status','Agendada')
+            ->where('salon_id', $salon_id)
+            ->where(function ($query) {
+                $query->where('status', 'Pendiente')
+                    ->orWhere('status', 'Agendada');
+            })
             ->orderBy('created_at', 'desc')
             ->get();
     }
-    private function getFutureData($modelName,$salon_id)
+    private function getFutureData($modelName, $salon_id)
     {
         return $modelName
-            ->where('salon_id',$salon_id)
-            ->where('start','>',now())
-            ->where('status','!=','Cancelada')
+            ->where('salon_id', $salon_id)
+            ->where('start', '>', now())
+            ->where('status', '!=', 'Cancelada')
             ->orderBy('created_at', 'desc')
             ->get();
     }
     private function setPendingQty($transacciones)
     {
-        foreach($transacciones as $movimientos){
-            foreach($movimientos as $movimiento){
-                $data = $this->totalMethods($movimiento->metodosPago,$movimiento->total-$movimiento->disccount);
-                $movimiento->pendiente = $data ['restante'];
-                $movimiento->recibido = $data ['recibido'];
+        foreach ($transacciones as $movimientos) {
+            foreach ($movimientos as $movimiento) {
+                $data = $this->totalMethods($movimiento->metodosPago, $movimiento->total - $movimiento->disccount);
+                $movimiento->pendiente = $data['restante'];
+                $movimiento->recibido = $data['recibido'];
             }
         }
         return $transacciones;
     }
-    
-    private function totalMethods($methods,$restante)
+
+    private function totalMethods($methods, $restante)
     {
-        try{
+        try {
             $recibido = 0;
-            foreach($methods as $method){
-                if($method->payment_method_id!==4){
+            foreach ($methods as $method) {
+                if ($method->payment_method_id !== 4) {
                     $recibido += $method->amount;
                 }
             }
             return [
-                'restante' => $restante-$recibido,
+                'restante' => $restante - $recibido,
                 'recibido' => $recibido
             ];
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1082369InformeMovimientos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1082369InformeMovimientos"]);
         }
-    }    
+    }
 }
