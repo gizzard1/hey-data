@@ -967,7 +967,9 @@ class Agenda extends Component
     private function loadEmpleados()
     {
         try {
-            $this->empleados = Empleado::where('salon_id', Auth::user()->salon_id)->where('visible', 1)->get();
+            $this->empleados = Empleado::where('salon_id', Auth::user()->salon_id)->when(Auth::user()->role === 'estilista', function ($query) {
+                $query->where('id', Auth::user()->empleado->id);
+            })->where('visible', 1)->get();
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 95355Agenda"]);
         }
@@ -1158,10 +1160,10 @@ class Agenda extends Component
             $citas = [];
             $bloqueos = [];
             $currentDate = $this->currentDateC->format('Y-m-d'); // Obtiene la fecha del día de $currentDateC
+            $salon_id = Auth::user()->salon_id;
 
             foreach ($this->empleados as $empleado) {
                 if ($empleado->is_active) {
-                    $salon_id = Auth::user()->salon_id;
 
                     $citaPorEmpleado = Asignacion_servicio::with('date.customer.categorias', 'date.etiquetas')
                         ->whereHas('empleado', function ($query) use ($salon_id) {
