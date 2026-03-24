@@ -377,7 +377,7 @@ class DataResourceGrid extends Controller
             Log::error($th->getMessage());
         }
     }
-    private static function getEmployees($salon_id)
+    private static function getEmployees($salon_id, $role)
     {
         try {
             return Empleado::select(
@@ -386,6 +386,9 @@ class DataResourceGrid extends Controller
                 DB::raw("color_preset as color")
             )
                 ->where('salon_id', $salon_id)
+                ->when($role === 'estilista', function ($query) {
+                    $query->where('id', auth()->user()->empleado->id);
+                })
                 ->get();
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
@@ -395,7 +398,8 @@ class DataResourceGrid extends Controller
     {
         try {
             $salon_id = $request->user()->salon_id;
-            $empleados = self::getEmployees($salon_id);
+            $role = $request->user()->role;
+            $empleados = self::getEmployees($salon_id, $role);
             return ['workers' => $empleados];
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
