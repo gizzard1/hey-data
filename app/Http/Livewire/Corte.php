@@ -86,6 +86,9 @@ class Corte extends Component
         try{
             $total_methods = 0;
             foreach($metodos as $metodo){
+                if ($metodo->amount == 0) {
+                    continue; // Saltar métodos de pago con cantidad cero
+                }
                 $qty=$metodo->amount-$metodo->change;
                 $total_methods+=$qty;
                 if($isPending){
@@ -212,11 +215,7 @@ class Corte extends Component
         try{
             $now = Carbon::now()->format('Y-m-d H:i:s');
             $salon_id = Auth::user()->salon_id;
-            $apertura = caja_apertura::whereHas('user', function ($query) use ($salon_id) {
-                $query->where('salon_id', $salon_id);
-            })
-            ->latest('id')
-            ->first();
+            $apertura = $this->getLatestOpening();
             $aperturaTime = $apertura->created_at->format('Y-m-d H:i:s');
             $this->caja_chica = $apertura->caja_chica;
             $gastos = gasto::where('salon_id',$salon_id)
@@ -381,12 +380,7 @@ class Corte extends Component
             $corte->caja_chica_real = $this->caja_chica_real;
             $corte->gastos = $this->gastos_qty;
             $corte->save();
-            $salon_id = Auth::user()->salon_id;
-            $apertura = caja_apertura::whereHas('user', function ($query) use ($salon_id) {
-                $query->where('salon_id', $salon_id);
-            })
-            ->latest('id')
-            ->first();
+            $apertura = $this->getLatestOpening();
             $apertura->caja_corte_id = $corte->id;
             $apertura->save();
         }catch(\Throwable $th){
@@ -396,15 +390,23 @@ class Corte extends Component
     {
         $this->clearCorte();
     }
-    private function verificarApertura()
+    private function getLatestOpening()
     {
         try{
             $salon_id = Auth::user()->salon_id;
-            $apertura = caja_apertura::whereHas('user', function ($query) use ($salon_id) {
+            return caja_apertura::whereHas('user', function ($query) use ($salon_id) {
                 $query->where('salon_id', $salon_id);
             })
             ->latest('id')
             ->first();
+        }catch(\Throwable $th){
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 9655Cortes"] );
+        }
+    }
+    private function verificarApertura()
+    {
+        try{
+            $apertura = $this->getLatestOpening();
             if ($apertura!=null && $apertura->caja_corte_id==null) {
                 $this->isOpened = true;
             } else {
