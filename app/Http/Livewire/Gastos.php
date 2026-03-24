@@ -522,7 +522,7 @@ class Gastos extends Component
     public function Store()
     {
         $this->validate($this->rules);
-        if (gasto::where('folio_fiscal', $this->gasto->folio_fiscal)->exists()) {
+        if ($this->gasto->type == 'Acreditable' && gasto::where('folio_fiscal', $this->gasto->folio_fiscal)->exists()) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "El folio fiscal ya existe en el sistema. Verifique la información."]);
             return;
         }
@@ -679,9 +679,20 @@ class Gastos extends Component
     {
         try {
             $query = [];
-            $query =  gasto::with('categoria', 'tipo')
+            $search = trim($this->search);
+            $query = gasto::with('categoria', 'tipo')
                 ->where('salon_id', Auth::user()->salon->id)
-                ->whereBetween('date', [$this->currentDateC, $this->currentDateCEnd])
+                ->when($this->search, function ($q) use ($search) {
+                    $q->where(function ($query) use ($search) {
+                        $query->where('note', 'like', "%{$search}%")
+                            ->orWhere('folio_fiscal', 'like', "%{$search}%")
+                            ->orWhereHas('marca', function ($marcaQuery) use ($search) {
+                                $marcaQuery->where('name', 'like', "%{$search}%");
+                            });
+                    });
+                }, function ($q) {
+                    $q->whereBetween('date', [$this->currentDateC, $this->currentDateCEnd]);
+                })
                 ->orderBy('date', 'desc');
 
             $data = $this->recalculate(clone $query);
