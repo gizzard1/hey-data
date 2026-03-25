@@ -1,8 +1,8 @@
 
 <tr>
-    <td class="service-title">{{ $item['name'] }}</td>
+    <td class="service-title scroll-text">{{ $item['name'] }}</td>
     <td>
-        <input list="times-start" name="time-start" type="time" value="{{ $item['start'] }}" class="time-input" wire:change.prevent="$emit('changeStartDuration','{{ $item['id'] }}', $event.target.value)">
+        <input list="times-start" name="time-start" type="time" value="{{ $item['start'] }}" class="time-input scroll-text" wire:change.prevent="$emit('changeStartDuration','{{ $item['id'] }}', $event.target.value)">
         <datalist id="times-start">
             @foreach($times as $time)
                 <option value="{{ $time }}">{{ $time }}</option>
@@ -10,7 +10,7 @@
         </datalist>
     </td>
     <td>
-        <input list="times-end" name="time-end" type="time" value="{{ $item['end'] }}" class="time-input" wire:change.prevent="$emit('changeEndDuration','{{ $item['id'] }}', $event.target.value)">
+        <input list="times-end" name="time-end" type="time" value="{{ $item['end'] }}" class="time-input scroll-text" wire:change.prevent="$emit('changeEndDuration','{{ $item['id'] }}', $event.target.value)">
         <datalist id="times-end">
             @foreach($times as $time)
                 <option value="{{ $time }}">{{ $time }}</option>
@@ -18,7 +18,7 @@
         </datalist>
     </td>
     <td>
-        <select wire:change.prevent="$emit('changeEmpleado','servicio','{{ $item['id'] }}', $event.target.value)" class="service-title employees-title employee-selector">
+        <select wire:change.prevent="$emit('changeEmpleado','servicio','{{ $item['id'] }}', $event.target.value)" class="service-title hide-text employees-title employee-selector">
             @if(!isset($item['vendedor']))
                 <option value="">Seleccione un empleado</option>
             @endif

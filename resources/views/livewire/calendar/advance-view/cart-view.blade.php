@@ -32,13 +32,13 @@
                     <th class="service-title">Servicio</th>
                     <th>Inicio</th>
                     <th>Finaliza</th>
-                    <th class="service-title employees-title">Personal</th>
+                    <th class="service-title hide-text employees-title">Personal</th>
                     <th>Desc.</th>
                     <th>Precio
                         <a data-toggle="popover" data-trigger="hover" data-content="Activa la casilla para elegir este precio como base para calcular la comisión de este servicio." style="
                             color: #858585;
                             font-size: smaller;">?</a></th>
-                    <th class="service-title unit-price-title">Precio unitario
+                    <th class="service-title hide-text unit-price-title">Precio unitario
                         <a data-toggle="popover" data-trigger="hover" data-content="Activa la casilla para elegir este precio como base para calcular la comisión de este servicio. Nota: este precio es actualizado cuando se modifica el descuento de este servicio." style="
                             color: #858585;
                             font-size: smaller;">?</a></th>

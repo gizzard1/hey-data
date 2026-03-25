@@ -1,38 +1,57 @@
 <div>
-    <div class="card" >
-        <div class="card-header" >
-            <div class="float-right" x-data="{ open: false }" @click.away="open = false">
-                <div style="display:flex">
-                    <!-- Input de búsqueda enlazado dinámicamente con wire:model -->
-                    <input style="width:30rem" wire:model="query" @focus="open=true" @click="open = true"" type="text" class="form-control step-input" autocomplete="off" placeholder="Escriba el nombre del producto"> 
-                    
-                    <!-- Icono de búsqueda -->
-                    <div class="input-group-append">
-                        <i style="background-color: white;" class="input-group-text">
-                            <i class="las la-user-alt"></i>
-                        </i>
-                    </div>
-                </div>
+    <div class="mb-2 searching-container">
+        <div x-data="{ open: false }" @click.away="open = false">
+            <div style="display:flex">
+                <!-- Input de búsqueda enlazado dinámicamente con wire:model -->
+                <input wire:model="query" @focus="open=true" @click="open = true" type="text" class="form-control" autocomplete="off" placeholder="Escriba el nombre del producto" style="width: 30rem;"> 
                 
-                <!-- Desplegable de resultados -->
-                <div>
-                    <ul x-show="open" class="list-group float-right" style="width: 30rem; position: absolute; z-index:1; max-height: 300px; overflow-y: auto;">
-                    @foreach ($productos as $index => $item)
-                        <li wire:click="$emit('add-product', {{ $item->id }})" @click="open=false;" class="list-group-item list-group-item-action" style="cursor:pointer; color:#6E6E6E">{{ $item->name }}</li>
-                    @endforeach 
-                    </ul>
+                <!-- Icono de búsqueda -->
+                <div class="input-group-append">
+                    <i style="background-color: white;" class="input-group-text">
+                        <i class="flaticon-381-search-2"></i>
+                    </i>
                 </div>
             </div>
+            <!-- Desplegable de resultados -->
+            <div>
+                <ul x-show="open" class="list-group float-right searching-results">
+                @foreach ($productos as $index => $item)
+                    <li wire:click="$emit('add-product', {{ $item->id }})" @click="open=false;" class="list-group-item list-group-item-action" style="cursor:pointer; color:#6E6E6E">{{ $item->name }}</li>
+                @endforeach 
+                </ul>
+            </div>
         </div>
-        <div class="card-body p-1" id="cart-products">
-            @if(isset($cartInfo)!==null)
-                @include('livewire.ventas.cartProducts')
-            @endif
-        </div>
-        
     </div>
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th class="service-title scroll-text">Producto</th>
+                <th class="service-title hide-text employees-title">Personal</th>
+                <th>Piezas</th>
+                <th>Descuento</th>
+                <th>Precio
+                    <a data-toggle="popover" data-trigger="hover" data-content="Activa la casilla para elegir este precio como base para calcular la comisión de este servicio." style="
+                        color: #858585;
+                        font-size: smaller;">?</a></th>
+                <th class="service-title hide-text unit-price-title">Precio unitario
+                    <a data-toggle="popover" data-trigger="hover" data-content="Activa la casilla para elegir este precio como base para calcular la comisión de este servicio. Nota: este precio es actualizado cuando se modifica el descuento de este servicio." style="
+                        color: #858585;
+                        font-size: smaller;">?</a></th>
+                <th>Subtotal</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($cartInfo as $item)
+                @include('livewire.calendar.advance-view.cartProducts')
+            @empty
+                <tr>
+                    <td colspan="8" class="text-center">AGREGA PRODUCTOS</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
 </div>
-
 
 @section('content')
     <livewire:search />

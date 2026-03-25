@@ -95,9 +95,22 @@
 
     .service-title {
         max-width: 22dvh;
+    }
+
+    .hide-text {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .scroll-text {
+        white-space: nowrap;
+        overflow-x: auto;
+        text-overflow: clip;
+    }
+
+    .scroll-text::-webkit-scrollbar {
+        height: 2px;
     }
 
     .unit-price-title {

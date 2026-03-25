@@ -12,7 +12,7 @@
         <option value="Porcentaje" checked>%</option>
     </select>
     {{-- Select para elegir método de pago recibida --}}
-    <select name="payment" class="service-title employees-title employee-selector" wire:change="$emit('cambioDataMethods','{{ $propina['uid'] }}',$event.target.value,3,'propinas')">
+    <select name="payment" class="service-title hide-text employees-title employee-selector" wire:change="$emit('cambioDataMethods','{{ $propina['uid'] }}',$event.target.value,3,'propinas')">
         <option style="text-align: center;" value="1" {{ $propina['paymentMethod'] == "1" ? 'selected' : '' }}>Efectivo</option>
         <option style="text-align: center;" value="2" {{ $propina['paymentMethod'] == "2" ? 'selected' : '' }}>Tarjeta</option>
         <option style="text-align: center;" value="3" {{ $propina['paymentMethod'] == "3" ? 'selected' : '' }}>MSI</option>
@@ -22,7 +22,7 @@
     </select>
     <input type="text" class="form-control qty qty-payment-2"  value="${{ $propina['amount'] }}" wire:change="$emit('cambioDataMethods','{{ $propina['uid'] }}',$event.target.value,1,'propinas')">
     <!-- Select para elegir empleado que percibe el ingreso -->
-    <select wire:change="$emit('cambioDataMethods','{{ $propina['uid'] }}',$event.target.value,4,'propinas')" class="service-title employees-title employee-selector employee-selector-2">
+    <select wire:change="$emit('cambioDataMethods','{{ $propina['uid'] }}',$event.target.value,4,'propinas')" class="service-title hide-text employees-title employee-selector employee-selector-2">
         @if(!isset($propina['empleado']))
             <option value="">Seleccione un empleado</option>
         @endif

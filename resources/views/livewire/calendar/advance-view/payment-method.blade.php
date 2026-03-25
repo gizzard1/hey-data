@@ -7,7 +7,7 @@
         <input type="text" class="form-control qty qty-payment" value="${{ number_format($method['amount'],2,'.',',') }}" disabled>
     @else
         <input type="button" wire:click.prevent="$emit('removeItem', '{{ $method['uid'] }}' , 'method' )" value="x" class="remove-tag p-1">
-        <select class="service-title employees-title employee-selector" wire:change="$emit('cambioDataMethods','{{ $method['uid'] }}',$event.target.value,3,'metodos')" {{ $method['paymentMethod'] == 99999 ? 'disabled' : '' }}>
+        <select class="service-title hide-text employees-title employee-selector" wire:change="$emit('cambioDataMethods','{{ $method['uid'] }}',$event.target.value,3,'metodos')" {{ $method['paymentMethod'] == 99999 ? 'disabled' : '' }}>
             <option style="text-align: center;" value="1" {{ $method['paymentMethod'] == "1" ? 'selected' : '' }}>Efectivo</option>
             <option style="text-align: center;" value="2" {{ $method['paymentMethod'] == "2" ? 'selected' : '' }}>Tarjeta</option>
             <option style="text-align: center;" value="3" {{ $method['paymentMethod'] == "3" ? 'selected' : '' }}>MSI</option>
