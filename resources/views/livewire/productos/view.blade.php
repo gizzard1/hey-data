@@ -1,3 +1,4 @@
+@if($productSelected !=null)
 <div id="modalViewProduct" class="modal fade" role="dialog">
     <div class="modal-dialog">
         <!-- Contenido del modal-->
@@ -7,7 +8,6 @@
                 <h4 class="modal-title">Información del producto</h4>
             </div>
             <div class="modal-body">
-                @if($productSelected !=null)
 
                 <div class="col">
                     <div >
@@ -50,11 +50,12 @@
                     </div>
                 </div>
 
-                @endif
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-sm" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-sm" data-dismiss="modal" wire:click.prevent="Edit('{{ $productSelected->id }}')" data-toggle="modal" data-target="#modalCreateForm">Editar</button>
             </div>
         </div>
     </div>
 </div>
+@endif

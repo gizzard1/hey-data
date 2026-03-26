@@ -1,13 +1,6 @@
 <div class="float-right dropdown">
-    <button id="orderBy" class="btn btn-sm input-group-text dropdown-toggle"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Ordenar por</button>
-    <div class="dropdown-menu" style="transform: translate3d(-40%, 34px, 0px);padding:1rem" aria-labelledby="orderBy">
-        <li class="orderByMenu">
-            <a wire:click.prevent="orderByMostOrLessSelled('desc')">Más vendidos</a>
-            <a wire:click.prevent="orderByMostOrLessSelled('asc')">Menos vendidos</a>
-            <a wire:click.prevent="orderByMostOrLessSelled('noSales')">Sin ventas</a>
-        </li>
-
-    </div>
+    <button id="orderBy" class="btn btn-sm input-group-text dropdown-toggle"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Ordenar</button>
+    @include('livewire.servicios.header.ordenamientoProductos')
 </div>
 @if(count($selectedItems)>0)
     <div class="dropdown">

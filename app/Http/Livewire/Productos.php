@@ -39,7 +39,7 @@ class Productos extends Component
     public $calificacion,$listCategoriesCust;
 
     public $orderByMostOrLessSelled=null;
-    
+    public $orderBy = 'name', $direction = 'asc';
 
     protected $rules =    [
         'product.name' => "required|min:3|max:60",
@@ -68,7 +68,7 @@ class Productos extends Component
             if(!$this->validateSuscription()){
                 return redirect()->route('suscripcion');
             }
-            $this->search=$search;
+            $this->search=trim($search);
             $this->pestaña=$pestaña??1;
             $this->loadDefault();
             $this->cat = null;
@@ -243,6 +243,7 @@ class Productos extends Component
         $this->product->unit_type = 'Unidad';
         $this->product->iva = 0.16;
         $this->product->brand_id = null;
+        $this->product->gross_price = 0;
         $this->productSelected = null;
         $this->categoriesList = null;
         $this->gallery=[];
@@ -327,9 +328,9 @@ class Productos extends Component
         try{
             $visibility = $this->orderByMostOrLessSelled === 'archives' ? 'hide' : 'visible';
             $query = producto::with('marca','categorias','asignaciones')
-                ->where('visibility',$visibility)
-                ->where('salon_id', Auth::user()->salon->id)
-                ->where('name','!=','Producto eliminado');
+                ->where('productos.visibility',$visibility)
+                ->where('productos.salon_id', Auth::user()->salon->id)
+                ->where('productos.name','!=','Producto eliminado');
 
             // Si hay una categoría, filtrarla usando whereHas
             if ($this->cat != null) {
@@ -342,31 +343,38 @@ class Productos extends Component
             // Si hay búsqueda, agregar las condiciones
             if (!empty($this->search)) {
                 $query->where(function ($q) {
-                    $q->where('name', 'like', "%{$this->search}%")
-                    ->orWhere('sku', 'like', "%{$this->search}%")
-                    ->orWhere('description', 'like', "%{$this->search}%");
+                    $q->where('productos.name', 'like', "%{$this->search}%")
+                    ->orWhere('productos.sku', 'like', "%{$this->search}%")
+                    ->orWhere('productos.description', 'like', "%{$this->search}%");
                 });
+            }
+
+            // Ordenar por más o menos vendidos
+            if($this->orderByMostOrLessSelled && $this->orderByMostOrLessSelled !== 'archives'){ 
+                if($this->orderByMostOrLessSelled=='noSales'){
+                    $query = $query->withSum('asignaciones', 'quantity')
+                        ->havingRaw('asignaciones_sum_quantity IS NULL');
+                }else{
+                    $query = $query->withSum('asignaciones', 'quantity')
+                        ->having('asignaciones_sum_quantity', '>', 0)
+                        ->orderBy('asignaciones_sum_quantity',$this->orderByMostOrLessSelled);
+                }
+            }else{
+                if ($this->orderBy == "marca.name") {
+                    $query = $query->join('marcas', 'productos.brand_id', '=', 'marcas.id')
+                        ->select('productos.*', 'marcas.name as marca_name')
+                        ->orderBy('marca_name', $this->direction);
+                } else {
+                    $query = $query->orderBy($this->orderBy, $this->direction);
+                }
             }
 
             // Si $wP es verdadero, paginar y contar los registros
             if ($wP) {
-                if($this->orderByMostOrLessSelled && $this->orderByMostOrLessSelled !== 'archives'){ 
-                    if($this->orderByMostOrLessSelled=='noSales'){
-                        $query = $query->withSum('asignaciones', 'quantity')
-                            ->havingRaw('asignaciones_sum_quantity IS NULL')
-                            ->paginate(8);
-                    }else{
-                        $query = $query->withSum('asignaciones', 'quantity')
-                            ->having('asignaciones_sum_quantity', '>', 0)
-                            ->orderBy('asignaciones_sum_quantity',$this->orderByMostOrLessSelled)
-                            ->paginate(8);
-                    }
-                }else{
-                    $query = $query->orderBy('name', 'asc')->paginate(8);   
-                }
-                $this->records = $query->total(); // Cambia total() por count() si es necesario
+                $query = $query->paginate(8);
+                $this->records = $query->total();
+            // Si no hay paginación, obtener todos los resultados sin paginar
             } else {
-                // Si no hay paginación, obtener todos los resultados
                 $query = $query->get();
             }
             return $query;
@@ -374,11 +382,18 @@ class Productos extends Component
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 94234Productos"] );
         } 
     }
+    public function orderBy($by, $direction)
+    {
+        $this->orderBy = $by;
+        $this->direction = $direction;
+        $this->orderByMostOrLessSelled = null;
+        $this->selectedItems = [];
+        $this->resetPage();
+    }
 
     public function searching($searchText)
     {
         $this->search = trim($searchText);
-        $this->selectedItems = [];
     }
 
     public function Add($fromCompras=0){
@@ -402,13 +417,12 @@ class Productos extends Component
         $this->dispatchBrowserEvent('noty',['msg'=>'SOLICITUD PROCESADA CON ÉXITO']);
     }
 
-    public function Edit(){
+    public function Edit($id=null){
         try{
             $this->loadDefault();
-            $product = producto::find($this->selectedItems[0]);
+            $product = producto::find($id ?? $this->selectedItems[0]);
             $this->categoriesList = implode(", ", $product->categorias->pluck('name')->toArray());
             $this->pictures = $product->photos;
-            $this->action = 2;
             $this->resetValidation();
             $this->product = $product;
             $this->dispatchBrowserEvent('createProduct');
