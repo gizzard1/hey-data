@@ -1,6 +1,6 @@
 
 <tr>
-    <td class="service-title scroll-text">{{ $item['name'] }}</td>
+    <td class="service-title scroll-text" title="{{ $item['name'] }}">{{ $item['name'] }}</td>
     <td>
         <input list="times-start" name="time-start" type="time" value="{{ $item['start'] }}" class="time-input scroll-text" wire:change.prevent="$emit('changeStartDuration','{{ $item['id'] }}', $event.target.value)">
         <datalist id="times-start">

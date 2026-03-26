@@ -2,7 +2,7 @@
     @if($item['pid']==99999)
     <td ><a wire:click.prevent="editarCupon('{{ $item['id'] }}')">{{ $item['name'] }}</a></td>
     @else
-        <td class="service-title scroll-text">{{ $item['name'] }}</td>
+        <td class="service-title scroll-text" title="{{ $item['name'] }}">{{ $item['name'] }}</td>
     @endif
     <td>
         <select wire:change="updateEmpleado('{{ $item['id'] }}', $event.target.value)"  class="service-title hide-text employees-title employee-selector">
