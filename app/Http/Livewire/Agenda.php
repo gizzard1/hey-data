@@ -575,9 +575,7 @@ class Agenda extends Component
     public function StoreReview()
     {
         try {
-            if (session()->has('customDate')) {
-                Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
-            }
+            $this->setCustomDate(Carbon::createFromFormat('Y-m-d', session('customDate')));
 
             $listCategories = $this->listCategoriesIds;
 
@@ -594,9 +592,7 @@ class Agenda extends Component
             $this->cancelarCaptura();
             $this->dispatchBrowserEvent('cerrarReview');
             $this->clearSession(['cust']);
-            if (session()->has('customDate')) {
-                Carbon::setTestNow();
-            }
+            $this->setCustomDate();
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1662351Agenda"]);
         }
@@ -2659,9 +2655,7 @@ class Agenda extends Component
     {
         try {
 
-            if (session()->has('customDate')) {
-                Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
-            }
+            $this->setCustomDate(Carbon::createFromFormat('Y-m-d', session('customDate')));
 
             $cart = session('cartS');
             if ($editing) {
@@ -2689,9 +2683,7 @@ class Agenda extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => "SOLICITUD PROCESADA CON ÉXITO"]);
             $this->dispatchBrowserEvent('cerrarBlockMenuForm');
 
-            if (session()->has('customDate')) {
-                Carbon::setTestNow();
-            }
+            $this->setCustomDate();
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1144369Agenda"]);
         }
@@ -2705,9 +2697,7 @@ class Agenda extends Component
             ]);
         }
         try {
-            if (session()->has('customDate')) {
-                Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
-            }
+            $this->setCustomDate(Carbon::createFromFormat('Y-m-d', session('customDate')));
 
             session()->put('cust', $this->customer);
             session()->save();
@@ -2966,9 +2956,7 @@ class Agenda extends Component
             $this->clear();
             $this->cancelarCaptura();
 
-            if (session()->has('customDate')) {
-                Carbon::setTestNow();
-            }
+            $this->setCustomDate();
 
             if ($this->vista === 'livewire.calendar.edit') {
                 $this->dispatchBrowserEvent('returnCustomersView');
@@ -3001,9 +2989,7 @@ class Agenda extends Component
             $this->clear();
             $this->cancelarCaptura();
 
-            if (session()->has('customDate')) {
-                Carbon::setTestNow();
-            }
+            $this->setCustomDate();
 
             if ($this->vista === 'livewire.calendar.edit') {
                 $this->dispatchBrowserEvent('returnCustomersView');
@@ -3734,5 +3720,12 @@ class Agenda extends Component
     {
         session()->put('rfcSelected', $rfcid);
         session()->save();
+    }
+    
+    public static function setCustomDate($date=null)
+    {
+        if (session()->has('customDate') && Auth::user()->salon->simulador) {
+            Carbon::setTestNow($date);
+        }
     }
 }

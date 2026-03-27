@@ -20,6 +20,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Http\Controllers\DataResourceGrid as DRG;
 use App\Http\Controllers\DataSales as DS;
+use App\Http\Livewire\Agenda;
 
 class Payment extends Component
 {
@@ -304,7 +305,7 @@ class Payment extends Component
                 $cust->sexo !== null && $cust->procedencia_id !== null;
             return $response;
         } catch (\Throwable $th) {
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 22314Agenda"]);
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 22314Payment"]);
         }
     }
     public function setReward()
@@ -893,10 +894,7 @@ class Payment extends Component
             ]);
         }
         try {
-            if (session()->has('customDate')) {
-                Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
-            }
-
+            Agenda::setCustomDate(Carbon::createFromFormat('Y-m-d', session('customDate')));
             session()->put('cust', $this->customer);
             session()->save();
 
@@ -1116,9 +1114,7 @@ class Payment extends Component
                 return redirect()->route('productos');
             }
             // $this->enviarWa();
-            if (session()->has('customDate')) {
-                Carbon::setTestNow();
-            }
+            Agenda::setCustomDate();
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "537263Payment"]);
         }
@@ -1140,7 +1136,7 @@ class Payment extends Component
                 Carbon::setTestNow();
             }
         } catch (\Throwable $th) {
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 123429Agenda"]);
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 123429Payment"]);
         }
     }
     private function setMethods($payment, $method, $isMethod = false)
@@ -1218,7 +1214,7 @@ class Payment extends Component
                 return $item['disccount_price'] ? $item['disccount_price'] : $item['sale_price'];
             }
         } catch (\Throwable $th) {
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 138312369Agenda"]);
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 138312369Payment"]);
         }
     }
     private function calcularComision($item)
