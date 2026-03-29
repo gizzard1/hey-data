@@ -894,7 +894,7 @@ class Payment extends Component
             ]);
         }
         try {
-            Agenda::setCustomDate(Carbon::createFromFormat('Y-m-d', session('customDate')));
+            Agenda::setCustomDate(Carbon::parse(session('customDate')));
             session()->put('cust', $this->customer);
             session()->save();
 

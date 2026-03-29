@@ -575,7 +575,7 @@ class Agenda extends Component
     public function StoreReview()
     {
         try {
-            $this->setCustomDate(Carbon::createFromFormat('Y-m-d', session('customDate')));
+            $this->setCustomDate(Carbon::parse(session('customDate')));
 
             $listCategories = $this->listCategoriesIds;
 
@@ -2655,27 +2655,22 @@ class Agenda extends Component
     {
         try {
 
-            $this->setCustomDate(Carbon::createFromFormat('Y-m-d', session('customDate')));
+            $this->setCustomDate(Carbon::parse(session('customDate')));
 
             $cart = session('cartS');
-            if ($editing) {
-                bloqueo::find($this->asignacion_id)->update([
-                    'start' => carbon::parse($cart[0]['start'])->format('Y-m-d H:i:s') ?? $this->start_date_DB,
-                    'end' => carbon::parse($cart[0]['end'])->format('Y-m-d H:i:s') ?? $this->end_date_DB,
-                    'description' => $this->description,
-                    'color' => $cart[0]['color'] ?? '#E2BBB4',
-                    'empleado_id' => $cart[0]['vendedor'],
-                ]);
-            } else {
-                bloqueo::create([
-                    'start' => $this->start_date_DB,
-                    'end' => $this->end_date_DB,
+            // Separar $cart[0]['start'] por : para obtener solo la hora
+            $startTime = explode(':', $cart[0]['start']);
+            bloqueo::updateOrCreate(
+                ['id' => $editing ? $this->asignacion_id : null],
+                [
+                    'start' => $this->currentDateC->setTime($startTime[0], $startTime[1])->format('Y-m-d H:i:s'),
+                    'end' => $this->currentDateC->copy()->addMinutes($cart[0]['duration'])->format('Y-m-d H:i:s'),
                     'description' => $this->description,
                     'salon_id' => Auth::user()->salon_id,
                     'color' => $cart[0]['color'] ?? '#E2BBB4',
                     'empleado_id' => $cart[0]['vendedor'],
-                ]);
-            }
+                ]
+            );
 
             $this->clear();
             $this->cancelarCaptura();
@@ -2697,7 +2692,7 @@ class Agenda extends Component
             ]);
         }
         try {
-            $this->setCustomDate(Carbon::createFromFormat('Y-m-d', session('customDate')));
+            $this->setCustomDate(Carbon::parse(session('customDate')));
 
             session()->put('cust', $this->customer);
             session()->save();
