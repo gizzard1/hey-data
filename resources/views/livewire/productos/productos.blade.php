@@ -64,6 +64,7 @@
     @include('livewire.servicios.modals.changeReward')
     @include('livewire.clientes.categories')
     <livewire:categoria-productos :configuration="0"/>
+    @include('livewire.productos.modals.mergeItems')
 
     @push('my-scripts')
         @include('livewire.productos.js')

@@ -17,14 +17,14 @@
                     </svg> Editar</ul></a>
                 @endif
 
-                <!-- @if(count($selectedItems)==2)
-                <a data-toggle="modal" data-target="#modalMergeCust" wire:click.prevent="startMerge"><ul><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-merge" width="25" height="25" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                @if(count($selectedItems)>=2 && count($selectedItems)<4)
+                <a data-toggle="modal" data-target="#modalMerge" wire:click.prevent="startMerge"><ul><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-merge" width="25" height="25" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                     <path d="M8 7l4 -4l4 4" />
                     <path d="M12 3v5.394a6.737 6.737 0 0 1 -3 5.606a6.737 6.737 0 0 0 -3 5.606v1.394" />
                     <path d="M12 3v5.394a6.737 6.737 0 0 0 3 5.606a6.737 6.737 0 0 1 3 5.606v1.394" />
-                    </svg>Unir Servicios</ul></a>
-                @endif -->
+                    </svg>Unir</ul></a>
+                @endif
                 <a onclick="confirmDelete()"><ul><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="25" height="25" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                     <path d="M4 7l16 0" />

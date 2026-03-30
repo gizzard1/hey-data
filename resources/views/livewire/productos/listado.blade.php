@@ -27,7 +27,7 @@
                     @if($orderByMostOrLessSelled && ($orderByMostOrLessSelled==='asc' || $orderByMostOrLessSelled === 'desc'))
                         <th style="background-color:transparent;color:#9D1466 !important">Ventas</th>
                     @endif
-                    <th style="background-color:transparent;color:#9D1466 !important">Precio venta</th>
+                    <th style="background-color:transparent;color:#9D1466 !important">Precio público</th>
                     <th style="background-color:transparent;color:#9D1466 !important">Precio descuento</th>
                     <th style="background-color:transparent;color:#9D1466 !important">Costo</th>
                     <th style="background-color:transparent;color:#9D1466 !important">Stock</th>
