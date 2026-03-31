@@ -712,6 +712,9 @@ class Servicios extends Component
         $this->validate($this->rules);
         DB::beginTransaction();
         try{
+            if ($this->service->brand_id == '') {
+                $this->service->brand_id = null;
+            }
             // Guardar el servicio principal
             $this->service->save();
             $sid = $this->service->id;

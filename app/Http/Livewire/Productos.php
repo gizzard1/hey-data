@@ -803,6 +803,9 @@ class Productos extends Component
         $this->validate($this->rules);
         DB::beginTransaction();
         try {
+            if ($this->product->brand_id == '') {
+                $this->product->brand_id = null;
+            }
             // Guardar el producto principal
             $this->product->save();
             $pid = $this->product->id;

@@ -86,7 +86,7 @@
                                             @foreach($mergeItems as $item)
                                                 <td>
                                                     <input class="form-check-input" type="radio" name="brand_id" wire:model.defer="product.brand_id" value="{{ $item->brand_id ?? $item['brand_id'] }}" id="brand_id{{$item->id ?? $item['id']}}">
-                                                    <label class="form-check-label" for="brand_id{{$item->id ?? $item['id']}}">{{ $item->marca?->name ?? $item['marca']['name'] }}</label>
+                                                    <label class="form-check-label" for="brand_id{{$item->id ?? $item['id']}}">{{ $item->marca?->name ?? isset($item['marca']) ? $item['marca']['name'] : "Sin marca" }}</label>
                                                 </td>
                                             @endforeach
                                         </tr>
