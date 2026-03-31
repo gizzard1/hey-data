@@ -40,7 +40,7 @@
                                         <tr>
                                             <td style="text-transform: capitalize;">Servicio</td>
                                             <td>{{ $asignacion->servicio->name }}</td>
-                                            <td> {{ $asignacion->date->customer->first_name }} {{ $asignacion->date->customer->last_name }}</td>
+                                            <td> {{ $asignacion->date->customer?->first_name }} {{ $asignacion->date->customer?->last_name }}</td>
                                             <td> ${{ number_format($asignacion->final_price,2,'.',',') }}</td>
                                             <td> ${{ number_format($asignacion->comission,2,'.',',') }} </td>
                                             <td> {{ date_format(new DateTime($asignacion->created_at),'d-m-Y') }} </td>
@@ -51,9 +51,9 @@
                                             <td style="text-transform: capitalize;">Producto</td>
                                             <td>{{ $asignacion->product->name }}</td>
                                             @if(isset($asignacion->cita))
-                                            <td> {{ $asignacion->cita->customer->first_name }} {{ $asignacion->cita->customer->last_name }}</td>
+                                            <td> {{ $asignacion->cita->customer?->first_name }} {{ $asignacion->cita->customer?->last_name }}</td>
                                             @elseif(isset($asignacion->sale))
-                                            <td> {{ $asignacion->sale->customer->first_name }} {{ $asignacion->sale->customer->last_name }}</td>
+                                            <td> {{ $asignacion->sale->customer?->first_name }} {{ $asignacion->sale->customer?->last_name }}</td>
                                             @endif
                                             <td> ${{ number_format($asignacion->final_price,2,'.',',') }}</td>
                                             <td> ${{ number_format($asignacion->comission,2,'.',',') }} </td>
@@ -65,10 +65,10 @@
                                             <td style="text-transform: capitalize;">Propina</td>
                                             <td>{{ $propina->metodoPago?->Payment_method }}</td>
                                             @if(isset($propina->venta))
-                                            <td> {{ $propina->venta->customer->first_name }} {{ $propina->venta->customer->last_name }}</td>
+                                            <td> {{ $propina->venta->customer?->first_name }} {{ $propina->venta->customer?->last_name }}</td>
                                             <td> ${{ number_format($propina->venta->final_price,2,'.',',') }} </td>
                                             @elseif(isset($propina->cita))
-                                            <td> {{ $propina->cita->customer->first_name }} {{ $propina->cita->customer->last_name }}</td>
+                                            <td> {{ $propina->cita->customer?->first_name }} {{ $propina->cita->customer?->last_name }}</td>
                                             <td> ${{ number_format($propina->cita->final_price,2,'.',',') }} </td>
                                             @endif
                                             <td> ${{ number_format($propina->amount,2,'.',',') }} </td>
