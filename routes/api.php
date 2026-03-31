@@ -6,6 +6,7 @@ use App\Http\Controllers\DataProducts;
 use App\Http\Controllers\DataResourceGrid;
 use App\Http\Controllers\DataServices;
 use App\Http\Controllers\DataEmployees;
+use App\Http\Controllers\DataIncomes;
 use App\Http\Controllers\DataMaterials;
 use App\Http\Controllers\DataPayment;
 use App\Http\Controllers\DataTransactions;
@@ -53,6 +54,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/update-or-create-product', [DataProducts::class,'storeProduct']);
 
     Route::get('/data-employees',[DataEmployees::class,'loadEmployees']);
+
+    Route::get('/data-incomes',[DataIncomes::class,'loadIncomes']);
 
     Route::put('/is-unique-employee-email',[DataEmployees::class,'isUniqueEmployeeEmail']);
     Route::put('/update-or-create-employee',[DataEmployees::class,'updateOrCreateEmployee']);

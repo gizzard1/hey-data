@@ -37,12 +37,6 @@
                                 <tbody >
                                     @if(isset($dataGanancias))
                                     @foreach($dataGanancias['ingresosCitas'] as $asignacion)
-                                        @php
-                                            $final_price = 0;
-                                            $priceOrDiscount = $asignacion->disccount_price && $asignacion->disccount_price > 0 ? $asignacion->disccount_price : $asignacion->current_price;
-                                            $totalPrice = $priceOrDiscount * ($asignacion->quantity ?? 1);
-                                            $final_price = $asignacion->discount_qty ? ($asignacion->discount_type == "Porcentaje" ? $totalPrice - ($totalPrice * ($asignacion->discount_qty / 100)) : $totalPrice - $asignacion->discount_qty) : $totalPrice;
-                                        @endphp
                                         <tr>
                                             <td style="text-transform: capitalize;">Servicio</td>
                                             <td>{{ $asignacion->servicio->name }}</td>
@@ -53,22 +47,15 @@
                                         </tr>
                                     @endforeach
                                     @foreach($dataGanancias['ingresosVentas'] as $asignacion)
-                                        @php
-                                            $final_price = 0;
-                                            $priceOrDiscount = $asignacion->disccount_price && $asignacion->disccount_price > 0 ? $asignacion->disccount_price : $asignacion->current_price;
-                                            $totalPrice = $priceOrDiscount * ($asignacion->quantity ?? 1);
-                                            $final_price = $asignacion->discount_qty ? ($asignacion->discount_type == "Porcentaje" ? $totalPrice - ($totalPrice * ($asignacion->discount_qty / 100)) : $totalPrice - $asignacion->discount_qty) : $totalPrice;
-                                        @endphp
                                         <tr>
                                             <td style="text-transform: capitalize;">Producto</td>
                                             <td>{{ $asignacion->product->name }}</td>
                                             @if(isset($asignacion->cita))
                                             <td> {{ $asignacion->cita->customer->first_name }} {{ $asignacion->cita->customer->last_name }}</td>
-                                            <td> ${{ number_format($final_price,2,'.',',') }}</td>
                                             @elseif(isset($asignacion->sale))
                                             <td> {{ $asignacion->sale->customer->first_name }} {{ $asignacion->sale->customer->last_name }}</td>
-                                            <td> ${{ number_format($final_price,2,'.',',') }}</td>
                                             @endif
+                                            <td> ${{ number_format($asignacion->final_price,2,'.',',') }}</td>
                                             <td> ${{ number_format($asignacion->comission,2,'.',',') }} </td>
                                             <td> {{ date_format(new DateTime($asignacion->created_at),'d-m-Y') }} </td>
                                         </tr>
@@ -76,13 +63,13 @@
                                     @foreach($dataGanancias['propinas'] as $propina)
                                         <tr>
                                             <td style="text-transform: capitalize;">Propina</td>
-                                            <td>{{ $propina->Payment_method }}</td>
+                                            <td>{{ $propina->metodoPago?->Payment_method }}</td>
                                             @if(isset($propina->venta))
                                             <td> {{ $propina->venta->customer->first_name }} {{ $propina->venta->customer->last_name }}</td>
-                                            <td> ${{ number_format($propina->venta->total - $propina->venta->disccount,2,'.',',') }} </td>
+                                            <td> ${{ number_format($propina->venta->final_price,2,'.',',') }} </td>
                                             @elseif(isset($propina->cita))
                                             <td> {{ $propina->cita->customer->first_name }} {{ $propina->cita->customer->last_name }}</td>
-                                            <td> ${{ number_format($propina->cita->total - $propina->cita->disccount,2,'.',',') }} </td>
+                                            <td> ${{ number_format($propina->cita->final_price,2,'.',',') }} </td>
                                             @endif
                                             <td> ${{ number_format($propina->amount,2,'.',',') }} </td>
                                             <td> {{ date_format(new DateTime($propina->created_at),'d-m-Y') }} </td>
@@ -131,3 +118,13 @@
 </div>
 @include('livewire.informes.js-movimientos')
 @include('livewire.informes.js-flatpickr')
+<style>
+    td, th{
+        max-width: 20dvh;
+        white-space: nowrap;
+        overflow: auto;
+    }
+    ::-webkit-scrollbar {
+        height: 2px;
+    }
+</style>

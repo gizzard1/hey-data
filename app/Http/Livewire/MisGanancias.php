@@ -12,11 +12,11 @@ class MisGanancias extends Component
 {
     use WithPagination;
     public $empleado;
-    public $currentDate, $currentDateEnd,$is_interval=false;
-    public $start,$currentDateC,$end,$currentDateCEnd;
+    public $currentDate, $currentDateEnd, $is_interval = false;
+    public $start, $currentDateC, $end, $currentDateCEnd;
 
-    public $citasFilter,$ventasFilter,$propinasFilter;
-    public $total=0;
+    public $citasFilter, $ventasFilter, $propinasFilter;
+    public $total = 0;
     private $dataGanancias;
     private $salon_id;
     protected $paginationTheme = 'bootstrap';
@@ -25,7 +25,7 @@ class MisGanancias extends Component
     {
         $this->empleado = Auth::user()->empleado ?? null;
         $this->activateCheckers();
-        
+
         if (session()->has('selectedDates')) {
             $this->setDatesFromPeriod(session('selectedDates'));
         } else {
@@ -33,9 +33,11 @@ class MisGanancias extends Component
         }
     }
 
-    protected $listeners = ['refresh' => '$refresh',
+    protected $listeners = [
+        'refresh' => '$refresh',
         'datesSelected' => 'setDatesFromPeriod',
-        'prevDay','dateSelected' => 'setDate'
+        'prevDay',
+        'dateSelected' => 'setDate'
     ];
 
     public function aplicarFiltros()
@@ -44,28 +46,28 @@ class MisGanancias extends Component
     }
     private function activateCheckers()
     {
-        try{
-            $this->ventasFilter=true;
-            $this->citasFilter=true;
-            $this->propinasFilter=true;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 42369MisGanancias"] );
+        try {
+            $this->ventasFilter = true;
+            $this->citasFilter = true;
+            $this->propinasFilter = true;
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 42369MisGanancias"]);
         }
     }
     public function render()
     {
-        return view('livewire.mis-ganancias',['dataGanancias' => $this->dataGanancias]);
+        return view('livewire.mis-ganancias', ['dataGanancias' => $this->dataGanancias]);
     }
-    
+
     private function loadFecha()
     {
-        try{
+        try {
             $this->setDatesFromPeriod([Carbon::now()]);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 57369MisGanancias"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 57369MisGanancias"]);
         }
     }
-    
+
     #Función que establece un día anterior 
     public function prevDay()
     {
@@ -147,50 +149,35 @@ class MisGanancias extends Component
     #función que actualiza las gráficas con la nueva fecha
     private function loadDatesWithNewPeriod()
     {
-        try{
-            $this->emit('dateUpdated-movimientos', $this->currentDate,$this->currentDateEnd);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 192369MisGanancias"] );
+        try {
+            $this->emit('dateUpdated-movimientos', $this->currentDate, $this->currentDateEnd);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 192369MisGanancias"]);
         }
     }
     private function useDate()
     {
-        try{
+        try {
             $this->clear();
             $ingresosCitas = [];
             $ingresosVentas = [];
             $propinas = [];
             $totalComissions = 0;
-            if($this->ventasFilter){
-                $ingresosVentas = $this->empleado->asignacionesProductos()
-                    ->with('product','cita.customer','sale.customer')
-                    ->whereBetween('created_at', [$this->currentDateC,$this->currentDateCEnd])
-                    ->where('comission','>',0)
-                    ->orderBy('created_at', 'desc')
-                    ->get();
+            if ($this->ventasFilter) {
+                $ingresosVentas = $this->empleado->salesIncomesBetweenDates($this->currentDateC, $this->currentDateCEnd)->get();
             }
-            if($this->citasFilter){
-                $ingresosCitas = $this->empleado->asignacionesServicios()
-                    ->with('date.customer','servicio')
-                    ->whereBetween('start',[$this->currentDateC,$this->currentDateCEnd])
-                    ->where('comission','>',0)
-                    ->orderBy('start', 'desc')
-                    ->get();
+            if ($this->citasFilter) {
+                $ingresosCitas = $this->empleado->servicesIncomesBetweenDates($this->currentDateC, $this->currentDateCEnd)->get();
             }
-            if($this->propinasFilter){
-                $propinas = $this->empleado->propinas()
-                    ->with('cita.customer','venta.customer')
-                    ->whereBetween('created_at',[$this->currentDateC,$this->currentDateCEnd])
-                    ->where('amount','>',0)
-                    ->orderBy('created_at', 'desc')
-                    ->get();
+            if ($this->propinasFilter) {
+                $propinas = $this->empleado->tipsIncomesBetweenDates($this->currentDateC, $this->currentDateCEnd)->get();
             }
 
-            $totalComissions = $this->recalculate($ingresosCitas,1);
-            $totalComissions += $this->recalculate($ingresosVentas,1);
-            $totalPropinas = $this->recalculate($propinas,0);
-            
-            $info =[
+            $totalComissions = $this->recalculate($ingresosCitas, 1);
+            $totalComissions += $this->recalculate($ingresosVentas, 1);
+            $totalPropinas = $this->recalculate($propinas, 0);
+
+            $info = [
                 'ingresosCitas' => $ingresosCitas,
                 'ingresosVentas' => $ingresosVentas,
                 'propinas' => $propinas,
@@ -200,26 +187,26 @@ class MisGanancias extends Component
             ];
 
             $this->dataGanancias = $info;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 200369MisGanancias"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 200369MisGanancias"]);
         }
     }
-    private function recalculate($info,$type)
+    private function recalculate($info, $type)
     {
-        try{
-            $balance = 0 ;
-            foreach($info as $item){
-                if($type){
-                    $balance+=$item->comission;
+        try {
+            $balance = 0;
+            foreach ($info as $item) {
+                if ($type) {
+                    $balance += $item->comission;
                     $this->total += $item->comission;
-                }else{
-                    $balance+=$item->amount;
+                } else {
+                    $balance += $item->amount;
                     $this->total += $item->amount;
                 }
             }
             return $balance;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 274369MisGanancias"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 274369MisGanancias"]);
         }
     }
     private function clear()

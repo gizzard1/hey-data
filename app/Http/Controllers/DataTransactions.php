@@ -36,10 +36,7 @@ class DataTransactions extends Controller
             ]);
             $filter_type = $filters['dateFilter'];
             if ($filter_type === 'custom') {
-                $start = $request->input('start_date');
-                $start = Carbon::parse($start)->startOfDay();
-                $end = $request->input('end_date');
-                $end = Carbon::parse($end)->endOfDay();
+                [$start, $end] = self::setCustomDate($request);
             } else {
                 [$start, $end] = self::getDateRange($filter_type);
             }
@@ -84,6 +81,14 @@ class DataTransactions extends Controller
             return response()->json(['error' => 'error loading transactions'], 200);
         }
     }
+    public static function setCustomDate($request)
+    {
+        $start = $request->input('start_date');
+        $start = Carbon::parse($start)->startOfDay();
+        $end = $request->input('end_date');
+        $end = Carbon::parse($end)->endOfDay();
+        return [$start, $end];
+    }
     private static function castBoolean($value)
     {
         if (is_string($value)) {
@@ -91,7 +96,7 @@ class DataTransactions extends Controller
         }
         return (bool)$value;
     }
-    private static function getDateRange($filter_type)
+    public static function getDateRange($filter_type)
     {
         $today = now()->startOfDay();
         switch ($filter_type) {

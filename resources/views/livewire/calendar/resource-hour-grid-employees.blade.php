@@ -2,7 +2,6 @@
     <div class="card" style="font-size: small; min-height: 2rem;">
         <div class="row">
             <div class="col-12" style="height: fit-content;">
-            
                 <div style="width: 100%; margin: 0; padding: 0;">
                     <div style="padding: 1rem;">
                         <div style="transform: translate(0%,-7%);">
@@ -10,434 +9,413 @@
                                 <button class="button-style mr-0" wire:click="prevDay()"><</button>
                                 <button class="button-style ml-0" wire:click="nextDay()">></button>      
                                 <button id="hoy" class="button-style wider float-right" wire:click="loadFecha()">Hoy</button>                  
-                                
-                <div wire:model="currentDateC" id="flatResource" class="flatpickrInd" wire:change.prevent="dateSelected">
-                <h5 class="center mt-2 ml-4 mr-4 float-right " id="flatResource" style="color:#9D1466;justify-content: space-between;transform: translate(10px, 10px);" >{{ $currentDate }}</h5>
-                </div>
-
-
+                                <div wire:model="currentDateC" id="flatResource" class="flatpickrInd" wire:change.prevent="dateSelected">
+                                    <h5 class="center mt-2 ml-4 mr-4 float-right " id="flatResource" style="justify-content: space-between;transform: translate(10px, 10px);" >{{ $currentDate }}</h5>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="table-responsive calendar-resource" id="agenda">
-                        <table class="table-scroll table tick-borders" style="min-width: -webkit-fill-available">
-                            <thead style="width: 100%;display:table-header;border-top: 2px solid #f5f5f5;">
-                                <tr class="text-center" >
-                                    <th width="70"></th>
-                                    @foreach($empleados as $empleado)
-                                    @if($empleado->is_active)
-                                        <th style="font-weight:300;height:auto;cursor:default" class="casilla1 sticky-top">{{ $empleado->first_name }} {{ $empleado->last_name }}</th>
+                    
+                    
+                    <!-- AGENDA STARTS -->
+
+                    <div style="display: none;">
+
+                    <!-- Cargar eventos -->
+                    @foreach($empleados as $empleado)
+                        @if($empleado->is_active==1)
+                            @if(isset($citas))
+                                @foreach($citas[$empleado->id] as $cita)
+                                    @if(isset($cita['start']))
+                                        <div class="evento" data-id="{{ $cita->id }}" data-start="{{ $cita['start']->format('H:i') }}" data-duration="{{$cita['duration']}}" data-type-event="cita" value="{{ $cita->id }}" id="evento-{{ $cita->id }}" data-type_date="{{ $cita->type_date ?? 0 }}" data-employee="{{ $empleado->id }}" data-toggle="popover" data-trigger="hover" data-content="
+                                        
+                                        <div class='icons-data-popover'>
+                                            <svg
+                                            xmlns='http://www.w3.org/2000/svg'
+                                            width='32'
+                                            height='32'
+                                            viewBox='0 0 24 24'
+                                            fill='none'
+                                            stroke='#000000'
+                                            stroke-width='1'
+                                            stroke-linecap='round'
+                                            stroke-linejoin='round'
+                                            >
+                                            <path d='M12 13m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0' />
+                                            <path d='M12 10l0 3l2 0' />
+                                            <path d='M7 4l-2.75 2' />
+                                            <path d='M17 4l2.75 2' />
+                                            </svg>
+                                            {{ Carbon\Carbon::parse($cita['start'])->format('H:i') }}-{{ Carbon\Carbon::parse($cita['end'])->format('H:i') }} hrs.
+                                        </div>
+                                        <hr>
+                                        <div class='icons-data-popover'>
+                                            <svg
+                                            xmlns='http://www.w3.org/2000/svg'
+                                            width='32'
+                                            height='32'
+                                            viewBox='0 0 24 24'
+                                            fill='none'
+                                            stroke='#000000'
+                                            stroke-width='1'
+                                            stroke-linecap='round'
+                                            stroke-linejoin='round'
+                                            >
+                                            <path d='M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0' />
+                                            <path d='M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2' />
+                                            </svg>
+
+                                            {{ isset($cita->date->customer) ? $cita->date->customer->first_name : 'Cliente eliminado' }} {{ isset($cita->date->customer) ? $cita->date->customer->last_name : '' }}
+                                        </div>
+                                        <br>
+                                        {!! $cita->categorias_cliente ? $cita->categorias_cliente . '<br>' : '' !!}
+                                        <hr>
+                                        <div class='icons-data-popover'>
+                                            <svg
+                                            xmlns='http://www.w3.org/2000/svg'
+                                            width='32'
+                                            height='32'
+                                            viewBox='0 0 24 24'
+                                            fill='none'
+                                            stroke='#000000'
+                                            stroke-width='1'
+                                            stroke-linecap='round'
+                                            stroke-linejoin='round'
+                                            >
+                                            <path d='M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2' />
+                                            <path d='M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z' />
+                                            <path d='M9 14h.01' />
+                                            <path d='M9 17h.01' />
+                                            <path d='M12 16l1 1l3 -3' />
+                                            </svg>
+                                            {!! $cita->title !!}
+                                        </div>
+                                        <br>
+                                        {!! $cita->date->description ? "<hr>
+                                        <div class='icons-data-popover'>
+                                        <svg
+                                        xmlns='http://www.w3.org/2000/svg'
+                                        width='64'
+                                        height='64'
+                                        viewBox='0 0 24 24'
+                                        fill='none'
+                                        stroke='#000000'
+                                        stroke-width='1'
+                                        stroke-linecap='round'
+                                        stroke-linejoin='round'
+                                        >
+                                        <path d='M13 20l7 -7' />
+                                        <path d='M13 20v-6a1 1 0 0 1 1 -1h6v-7a2 2 0 0 0 -2 -2h-12a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7' />
+                                        </svg>" . $cita->date->description . '</div>' : '' !!}
+                                        <hr>
+                                        
+                                        @foreach ($cita->tags as $tag)
+                                            <span class='badge' style='background-color: {{ $tag->color }}; color: white;'>
+                                                {{ $tag->name }}
+                                            </span><br>
+                                        @endforeach
+                                            <span class='float-right'>
+                                                Total: ${{ $cita->date->total }}
+                                            </span><br>">
+                                            <div class="horario-evento" id="header-{{$cita->id}}" style="background-color:{{ $cita->date->status == 'Pagada' ? '#63686C' : ($cita->date->status=='Cancelada' ? '#e63946':$cita->color) }};">{{ Carbon\Carbon::parse($cita['start'])->format('H:i') }} - {{ Carbon\Carbon::parse($cita['end'])->format('H:i') }}</div>
+                                            <div class="description detalles">
+                                                <div>
+                                                    @if($cita->date->status==='Cancelada')
+                                                        <strong style="color:#e63946;">Cita cancelada</strong>
+                                                        <span>{{ $cita->date->motivoCancelacion }}</span>
+                                                        <br>
+                                                    @endif
+                                                    <span class="customer-name">
+                                                        {{ isset($cita->date->customer) ? $cita->date->customer->first_name : 'Cliente eliminado' }}
+                                                    </span>
+                                                </div>
+                                                <div class="tags">
+                                                    @foreach($cita->tags as $tag)
+                                                        <div class='badge bg-{{ $tag->color }} text-white' style="background-color: {{ $tag->color }};">{{ $tag->name }}</div>
+                                                    @endforeach
+                                                </div>
+                                                @if($cita->date->description!==null)
+                                                <div>
+                                                    {{ $cita->date->description }}
+                                                </div>
+                                                @endif
+                                                <div>
+                                                    {!! $cita->title !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @include('livewire.calendar.dropdown.color')
                                     @endif
-                                    @endforeach
-                                </tr>
-                            </thead>
-                            <tbody style="width: auto;text-align-last: center;">
-                                @foreach($horas as $hora)
-                                <tr data-hour="{{ $hora }}">
-                                    <td width="70" class="float-left sticky-left">{{ $hora }}</td>
-                                    @foreach($empleados as $empleado)
-                                        @if($empleado->is_active==1)
-                                            <td wire:ignore.self class="casilla trigger"  data-hora="{{ $hora }}"  id="casilla" value="('{{ $hora }}', '{{ $empleado->id }}')" >
-                                                @if(isset($citas))
-                                                    @foreach($citas[$empleado->id] as $cita)
-                                                        @if(isset($cita['start']))
-                                                            <!-- Acceder a la propiedad start del array -->
-                                                            @php
-                                                                $startTime = $cita['start'];
-
-                                                                $horario = explode(":",$hora);
-
-                                                                // Extract the time components from currentDateC
-                                                                $hour = $horario[0];
-                                                                $minute = $horario[1];
-                                                                $compareTime = $currentDateC->setTime($hour, $minute, '00');
-
-                                                                $compareTime = Carbon\Carbon::parse($compareTime);
-                                                                // Calculate the interval range
-                                                                $intervalStart = $compareTime->copy()->subMinutes(7.5);
-                                                                $intervalEnd = $compareTime->copy()->addMinutes(7.5);
-
-                                                            @endphp
-
-                                                            @if($startTime->between($intervalStart, $intervalEnd))
-                                                                <div class="evento" id="evento-{{ $cita->id }}" data-duration="{{$cita['duration']}}" value="{{ $cita->id }}" draggable="true" 
-                                                                title="Horario: {{ Carbon\Carbon::parse($cita['start'])->format('H:i') }}-{{ Carbon\Carbon::parse($cita['end'])->format('H:i') }}"
-                                                                data-toggle="popover" 
-                                                                data-trigger="hover" 
-                                                                data-content="{!! $cita->date->status==='Cancelada' ? 'Motivo de Cancelación: ' . $cita->date->motivoCancelacion . '<br>' : '' !!} {{ isset($cita->date->customer) ? $cita->date->customer->first_name : 'Cliente eliminado' }} {{ isset($cita->date->customer) ? $cita->date->customer->last_name : '' }}<br>Servicio: {{ $cita->title }}<br>{!! $cita->categorias_cliente ? 'Descripción del cliente: ' . $cita->categorias_cliente . '<br>' : '' !!}{!! $cita->date->description ? 'Recordatorio: ' . $cita->date->description . '<br>' : '' !!}Precio de la cita: ${{ $cita->date->total }}">
-                                                                    <div class="event-header" style="background-color:{{ ($cita->date->status === 'Pendiente' && $cita->selected ? '#ff9900' : ($cita->date->status === 'Pagada' && $cita->selected ? '#278d46' : ($cita->date->status === 'Agendada' || ($cita->date->status == 'Pagada' && !$cita->selected) || $cita->date->status == 'Confirmada' ? '#1d3557' : ($cita->date->status === 'Cancelada' ? '#e63946' : '#868E96')))
-                                                                    ) }};">
-                                                                        {{ Carbon\Carbon::parse($cita['start'])->format('H:i') }}-{{ Carbon\Carbon::parse($cita['end'])->format('H:i') }}
-                                                                    </div>    
-                                                                
-                                                                    <div class="description">
-                                                                        <div>
-                                                                            {{ isset($cita->date->customer) ? $cita->date->customer->first_name : 'Cliente eliminado' }}
-                                                                        </div>
-                                                                        @if($cita->date->description!==null)
-                                                                        <div>
-                                                                            {{ $cita->date->description }}
-                                                                        </div>
-                                                                        @endif
-                                                                        <div>
-                                                                            {{ $cita->title }}
-                                                                        </div>
-                                                                    </div>
-
-                                                                </div>
-                                                            @endif
+                                @endforeach
+                            @endif
+                            @if(isset($bloqueos))
+                                @foreach($bloqueos[$empleado->id] as $cita)
+                                    @if(isset($cita['start']))
+                                        <div class="evento" data-id="{{ $cita->id }}" data-start="{{ $cita['start']->format('H:i') }}" data-duration="{{$cita['duration']}}" data-type-event="bloqueo" value="{{ $cita->id }}" id="evento-{{ $cita->id }}" data-employee="{{ $empleado->id }}" data-toggle="popover" data-trigger="hover" data-content="
+                                        <div class='icons-data-popover'>
+                                            <svg
+                                            xmlns='http://www.w3.org/2000/svg'
+                                            width='32'
+                                            height='32'
+                                            viewBox='0 0 24 24'
+                                            fill='none'
+                                            stroke='#000000'
+                                            stroke-width='1'
+                                            stroke-linecap='round'
+                                            stroke-linejoin='round'
+                                            >
+                                            <path d='M12 13m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0' />
+                                            <path d='M12 10l0 3l2 0' />
+                                            <path d='M7 4l-2.75 2' />
+                                            <path d='M17 4l2.75 2' />
+                                            </svg>
+                                            {{ Carbon\Carbon::parse($cita['start'])->format('H:i') }}-{{ Carbon\Carbon::parse($cita['end'])->format('H:i') }}
+                                        </div>
+                                        <hr>
+                                        <div class='icons-data-popover'>
+                                            <svg
+                                            xmlns='http://www.w3.org/2000/svg'
+                                            width='32'
+                                            height='32'
+                                            viewBox='0 0 24 24'
+                                            fill='none'
+                                            stroke='#000000'
+                                            stroke-width='1'
+                                            stroke-linecap='round'
+                                            stroke-linejoin='round'
+                                            >
+                                            <path d='M12 3c7.2 0 9 1.8 9 9s-1.8 9 -9 9s-9 -1.8 -9 -9s1.8 -9 9 -9z' />
+                                            <path d='M8 11m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v3a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z' />
+                                            <path d='M10 11v-2a2 2 0 1 1 4 0v2' />
+                                            </svg>
+                                            {!! $cita->title != '' ? $cita->title : 'Sin motivo' !!}
+                                        </div>">
+                                            <div class="horario-evento" id="header-{{$cita->id}}" style="background-color:{{ $cita->color }};">{{ Carbon\Carbon::parse($cita['start'])->format('H:i') }} - {{ Carbon\Carbon::parse($cita['end'])->format('H:i') }}</div>
+                                            <div class="description detalles">
+                                                <div>
+                                                    Bloqueo: {!! $cita->title != '' ? $cita->title : 'Sin motivo' !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            @endif
+                        @endif
+                    @endforeach
+                    </div>
+                     
+                    <!-- Cargar vista del calendario -->
+                    <div class="vista-empleados-tiempos">
+                        <div class="calendario">
+                            <div class="tabla-calendario"  id="agenda">
+                                <div class="vista table-responsive">
+                                    <table>
+                                        <thead style="display:table-header">
+                                            <tr class="text-center" >
+                                                <th class="sticky-left"></th>
+                                                @if($empleados!=null)
+                                                    @foreach($empleados as $empleado)
+                                                        @if($empleado->is_active)
+                                                            <th class="sticky-top" style="font-weight:300;font-size:medium;height:auto;cursor:default">{{ $empleado->first_name }} {{ $empleado->last_name }}</th>
                                                         @endif
                                                     @endforeach
                                                 @endif
-                                            </td>
-                                        @endif
-                                    @endforeach
-                                </tr>
-                                @php
-                                if (!function_exists('renderTimeSlotRow')) {
-                                    function renderTimeSlotRow($displayHora, $empleados, $citas) {
-                                        $output = '<tr>';
-                                            $output .= '<td width="70"></td>';
-                                                foreach ($empleados as $empleado) {
-                                                    if($empleado->is_active){
-                                                        $output .= '<td wire:ignore.self data-hora="' . $displayHora . '" class="casilla trigger" id="casilla" value="(\'' . $displayHora . '\', \'' . $empleado->id . '\')">';
-                                                        if(isset($citas)){
-                                            
-                                                            foreach ($citas[$empleado->id] as $cita) {
-                                                                $startTime = $cita['start'];
-
-                                                                $horario = explode(":",$displayHora);
-
-                                                                // Extract the time components from currentDateC
-                                                                $hour = $horario[0];
-                                                                $minute = $horario[1];
-                                                                $compareTime = $cita['start']->copy()->setTime($hour, $minute, '00');
-
-                                                                $compareTime = Carbon\Carbon::parse($compareTime);
-                                                                // Calculate the interval range
-                                                                $intervalStart = $compareTime->copy()->subMinutes(7.5);
-                                                                $intervalEnd = $compareTime->copy()->addMinutes(7.5);
-
-                                                                if($startTime->between($intervalStart, $intervalEnd)){
-                                                                    $output .= '<div class="evento"';
-                                                                    $output .= 'data-duration="' . $cita['duration'] . '" title="Horario: ' . Carbon\Carbon::parse($cita['start'])->format('H:i') . '-' . Carbon\Carbon::parse($cita['end'])->format('H:i') . '"';
-                                                                    $output .= ' data-toggle="popover" data-trigger="hover"';
-                                                                    $output .= ' data-content="';
-
-                                                                    if ($cita->date->status === 'Cancelada') {
-                                                                        $output .= 'Motivo de Cancelación: ' . htmlspecialchars($cita->date->motivoCancelacion, ENT_QUOTES, 'UTF-8') . '<br>';
-                                                                    }
-
-                                                                    if (isset($cita->date->customer)) {
-                                                                        $firstName = htmlspecialchars($cita->date->customer->first_name, ENT_QUOTES, 'UTF-8');
-                                                                        $lastName = htmlspecialchars($cita->date->customer->last_name, ENT_QUOTES, 'UTF-8');
-                                                                        $output .= "{$firstName} {$lastName}<br>";
-                                                                    } else {
-                                                                        $output .= 'Cliente eliminado<br>';
-                                                                    }
-
-
-                                                                    $output .= 'Servicio: ' . htmlspecialchars($cita->title, ENT_QUOTES, 'UTF-8') . '<br>';
-
-                                                                    if ($cita->categorias_cliente) {
-                                                                        $output .= 'Descripción del cliente: ' . htmlspecialchars($cita->categorias_cliente, ENT_QUOTES, 'UTF-8') . '<br>';
-                                                                    }
-                                                                    if ($cita->date->description) {
-                                                                        $output .= 'Recordatorio: ' . htmlspecialchars($cita->date->description, ENT_QUOTES, 'UTF-8') . '<br>';
-                                                                    }
-
-                                                                    $output .= 'Precio de la cita: $' . htmlspecialchars($cita->date->total, ENT_QUOTES, 'UTF-8');
-                                                                    $output .= '">';
-
-                                                                    $output .= '<div class="event-header" style="background-color:' . 
-                                                                        ($cita->date->status === 'Pendiente' && $cita->selected ? '#ff9900' : 
-                                                                        ($cita->date->status === 'Pagada' && $cita->selected ? '#278d46' : 
-                                                                        ($cita->date->status === 'Agendada' || 
-                                                                        ($cita->date->status == 'Pagada' && !$cita->selected) || 
-                                                                        $cita->date->status == 'Confirmada' ? '#1d3557' : 
-                                                                        ($cita->date->status === 'Cancelada' ? '#e63946' : '#868E96')))) . 
-                                                                        ';">';
-                                                                    $output .= Carbon\Carbon::parse($cita['start'])->format('H:i') . '-' . Carbon\Carbon::parse($cita['end'])->format('H:i');
-                                                                    $output .= '</div>';
-                                                                    $output .= '<div class="description" data-duration="' . $cita['duration'] . '">';
-                                                                    $output .= '<div>';
-                                                                    if(isset($cita->date->customer)){
-                                                                        $output .= $cita->date->customer->first_name;
-                                                                    }else{
-                                                                        'Cliente eliminado';
-                                                                    }
-                                                                    $output .= '</div>';
-                                                                    if($cita->date->description!==null){
-                                                                        $output .= '<div>' . $cita->date->description . '</div>';
-                                                                    }
-                                                                    $output .= '<div>' . $cita->title . '</div>';
-                                                                    $output .= '</div>';
-                                                                    $output .= '<div class="resize-handle"></div>';
-                                                                    $output .= '</div>';
-                                                                }
-                                                            }
-                                                        }
-                                                    $output .= '</td>';
-                                            
-                                                    }
-                                                }
-                                                $output .= '</tr>';
-                                                return $output;
-                                    }
-                                }
-                                @endphp
-
-                                {!! renderTimeSlotRow(str_replace(':00', ':15', $hora), $empleados, $citas) !!}
-                                {!! renderTimeSlotRow(str_replace(':00', ':30', $hora), $empleados, $citas) !!}
-                                {!! renderTimeSlotRow(str_replace(':00', ':45', $hora), $empleados, $citas) !!}
-                                @endforeach
-                            </tbody>
-
-                        </table>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($times as $hora)
+                                                <tr style="background-color:{{ in_array($hora,$times) ? '' : '#E9EAEC' }};border-top:{{ \Carbon\Carbon::parse($hora)->format('i') != '00' ? '' : '2px solid #e5e5e5' }}">
+                                                    <td class="sticky-left cell-hour">{{ \Carbon\Carbon::parse($hora)->format('i') != '00' ? '' : $hora}}</td>
+                                                    @if($empleados!=null)
+                                                        @foreach($empleados as $empleado)
+                                                            @if($empleado->is_active)
+                                                                <td class="casilla trigger cell  {{ in_array($hora, $times) ? 'hora-disponible' : '' }}" value="('{{ $hora }}', '{{ $empleado->id }}')" data-hour="{{ $hora }}" data-employee="{{ $empleado->id }}"  id="casilla">
+                                                                </td>
+                                                                </div>
+                                                            @endif
+                                                        @endforeach
+                                                    @endif
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- AGENDA ENDS -->
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-/* Estilo eventos */
-.trigger {
-    cursor: pointer;
-}
-.col-3 {
-    flex: 0 0 23% !important;
-    max-width: 23% !important;
-}
-.col-9 {
-    flex: 0 0 77% !important;
-    max-width: 77% !important;
-}
-
-.ventana-emergente {
-    position: relative;
-    top: 50%; /* Coloca la ventana-emergente justo debajo del trigger */
-    left: 110%;
-    border: 1px solid #BFADA1;
-    width: auto; /* Ancho completo */
-    height: auto; /* Ancho completo */
-    background-color: #fff; /* Color de fondo */
-    transform: translate(-110%, -50%); /* Desplaza un poco a la izquierda cuando se muestra */
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
-    z-index: 2500; /* Asegúrate de que la ventana-emergente esté sobre otros elementos */
-    opacity: 0;
-}
-/* .trigger:hover .ventana-emergente {
-    opacity: 1; /* La ventana-emergente se muestra al pasar el mouse por encima del contenedor
-    left: 110%;
-} */
-.evento{
-    width: 10rem;
-    padding: 0;
-    text-align: center;
-    margin: -2px 0 0 4px;
-    cursor: pointer;
-    overflow: hidden;
-    position: absolute;
-    display: flex; /* Usar flexbox */
-    flex-direction: column; /* Alinear verticalmente */
-    justify-content: space-between; /* Espaciar el contenido */
-}
-.event-header{
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    z-index: 1000;
-    color:white;
-    border-color: #BFADA1;
-    border-width: 1px;
-    border-style: solid;
- 
-    flex-shrink: 0; /* Evitar que el header se reduzca */
-}
-.description{
-    background-color: #f5f5f5;
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
-    z-index: 1000;
-    overflow: hidden;
-    border-color: #BFADA1;
-    border-width: 1px;
-    border-style: solid;
-
-    flex-grow: 1; /* Permitir que la descripción ocupe el espacio restante */
-}
-/* formato tabla */
-.table-responsive {
-    height:40rem;
-    margin: auto;
-    padding: 0;
-    margin-bottom: 2rem;
-    transform: translate(0%,-3%);
-}
-.table-responsive tbody{
-    height: 35rem;
-    overflow-y: auto;
-}
-.table-responsive tbody td{
-    border-left:2px solid;
-    border-left:2px solid;
-}
-.table-responsive tbody td,
-.table-responsive thead > tr > th{
-    border-bottom-width: 0;
-    height: 1rem;
-    margin:0;
-    border-left: 2px solid #f5f5f5;
-    padding: 0;
-    font-size:small;
-}
-.casilla1 , .casilla{
-    height: 1.5rem;
-    min-width: 12rem;
-    text-overflow: ellipsis;
-}
-.casilla1{
-    height: 5px;
-}
-.employee-tags{
-    padding: 1rem 0;
-    justify-content: center;
-}
-/* .casilla:hover {
-    background-color: #f5f5f5; /* Color de fondo un poco más claro que el original
-    cursor:pointer;
-} */
-.casilla:hover::before {
-    content: attr(data-hora); /* Usar el valor del atributo data-hora */
-    position:fixed;
-    background-color: #f5f5f5;
-    color: black;
-    font-size: 10px;
-    transform: translate(0, -45%);
-}
-.table {
-    border-bottom: 2px solid #f5f5f5; /* Borde azul para la parte inferior de la tabla */
-    max-width: min-content;
-}
-tbody tr[data-hour]:not([data-hour=""]) {
-    border-top: 4px solid #f5f5f5; /* Borde azul más grueso */
-}
-/* Estilos generales para los botones */
-.button-style {
-    margin-top:13px;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 4px;
-    background-color: transparent;
-    border: 1px solid #ccc;
-    cursor: pointer; /* Cambia el cursor al pasar sobre el botón */
-    transition: background-color 0.3s ease; /* Transición suave para el cambio de color */
-}
-
-/* Estilo al pasar el cursor sobre el botón */
-.button-style:hover {
-    background-color:#1d3557;
-    color:#f1f1f1;
-}
-
-.button-style:active{
-    border-color: transparent;
-}
-
-.popover-header{
-    text-align: center;
-    font-weight: 600;
-    color: #1d3557;
-}
-.popover {
-    border-width: 1px !important;
-    border-color:#BFADA1 !important;
-}
-
-/* Estilos específicos para algunos botones */
-.button-style.wider {
-    width: 3rem;
-}
-
-.button-style.widest {
-    width: 6rem;
-}
-.nextEmpl:hover{
-    background-color:#E2BBB4 !important;
-    color:#f1f1f1;
-}
-.sticky-left {
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background-color: white;
-}
-.sticky-top {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background-color: white;
-}
-
-.resize-handle {
-    width: 100%;
-    height: 5px;
-    background-color: transparent;
-    position: relative;
-    bottom: 0;
-    cursor: s-resize;
-}
-
-</style>
+@include('livewire.calendar.resource-styles')
 
 @push('my-scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-        initializePopper()
-        initializeFlatpckr()
-        applyEventHeights()
-})
-
-function applyEventHeights() {
-    const eventos = document.querySelectorAll('.evento');
-
-    eventos.forEach(evento => {
-        const duration = parseInt(evento.getAttribute('data-duration'), 10); // Obtén la duración en minutos
-        const casillaHeightRem = getCasillaHeight(); // Obtener la altura de la casilla en rem
-        const numberOfCasillas = Math.ceil(duration / 15); // Cada 15 minutos es una casilla
-
-        // Calcula la altura en rem
-        const newHeightInRem = numberOfCasillas * casillaHeightRem;
-
-        // Aplica la nueva altura a .evento
-        evento.style.height = `${newHeightInRem}rem`; // Establece la altura en rem
+function abrirBlockMenuForm() {
+    $('#modalBlockForm').modal('show')
+}
+window.addEventListener('abrirBlockMenuForm', event => {
+    abrirBlockMenuForm()
+});
+function cerrarBlockMenuForm() {
+    $('#modalBlockForm').modal('hide')
+}
+window.addEventListener('cerrarBlockMenuForm', event => {
+    cerrarBlockMenuForm()
+});
+function closeAllOptionsMenus() {
+    const allOptionsMenus = document.querySelectorAll('.options-menu');
+    allOptionsMenus.forEach(menu => {
+        menu.classList.remove('options-menu-wrapped');
+        menu.style.display = 'none';
     });
 }
 
-function getCasillaHeight() {
-    const width = screen.width;
+function toggleDropdown(event, trigger) {
+    event.preventDefault(); // Previene el comportamiento predeterminado
+    event.stopPropagation(); // Detiene la propagación del evento
 
-    // Define la altura de la casilla en rem en función del ancho de la pantalla
-    if (width >= 768) {
-        return 1; // Altura en rem para desktop (ajustado)
-    } else { // Para ancho menor a 768 px (móvil)
-        return 2; // Altura en rem para móviles (ajustado)
+    // Encuentra el menú dropdown asociado
+    const dropdownMenu = trigger.nextElementSibling; // Selecciona el siguiente elemento hermano (el menú)
+    
+    if (dropdownMenu.classList.contains('show')) {
+        dropdownMenu.classList.remove('show');
+    } else {
+        dropdownMenu.classList.add('show');
     }
 }
 
+let isResizing = false;
+let isDragging = false;
+let eventoActual;
+document.addEventListener('DOMContentLoaded', function(){
+
+    $('#modalEmpl').modal('show')
+    initializeFlatpckr();
+    initializePopper()
+    
+    detectOverlaps()
+    positionEvents();
+
+    destroyPopover();
+    horarioDisponible();
+})
+
+document.addEventListener('keydown', function(event) {
+    // Comprobar si el elemento activo es un input o textarea
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+        return; // No hacer nada si se está escribiendo en un input
+    }
+    destroyPopover()
+    switch(event.key) {
+
+        // Detectar atajo, por ejemplo: Ctrl + K
+        case 'n':
+            event.preventDefault();
+            Livewire.emit('teclaC');  // Emitir evento de Livewire
+            break;
+        case "ArrowLeft":
+            event.preventDefault();
+            Livewire.emit('teclaLeft');  // Emitir evento de Livewire
+            break;
+        case "ArrowRight":
+            event.preventDefault();
+            Livewire.emit('teclaRight');  // Emitir evento de Livewire
+            break;
+        case "ArrowUp":
+            event.preventDefault();
+            Livewire.emit('teclaUp');  // Emitir evento de Livewire
+            break;
+        case "ArrowDown":
+            event.preventDefault();
+            Livewire.emit('teclaDown');  // Emitir evento de Livewire
+            break;
+        case 't':
+            event.preventDefault();
+            Livewire.emit('teclaT');  // Emitir evento de Livewire
+            break;
+        case 'Escape':
+            document.getElementById('closeNewDate').click();
+            break;
+        case 'f':
+            document.getElementById('flatCalendar').click();
+            break;
+        case '1':
+            changeTo(1)
+            break;
+        case '2':
+            changeTo(2)
+            break;
+        case '3':
+            changeTo(5)
+            break;
+        case '4':
+            changeTo(6)
+            break;
+    }
+    destroyPopover()
+});
+
+//cerrar modal de agregar cliente
+window.addEventListener('close-popover', event => {
+    destroyPopover()
+})
+
+function destroyPopoverClass()
+{
+    destroyPopover()
+}
+
+function destroyPopover()
+{
+    var popoverElements = document.querySelectorAll('.popover');
+    popoverElements.forEach(function(element) {
+        element.remove();
+    });
+}
+
+function updateBackgroundColor(citaId, colorValue) {
+    // Encontrar el contenedor .event-header asociado con este id
+    const eventHeader = document.getElementById(`header-${citaId}`);
+    
+    // Si encontramos el contenedor, actualizamos el color de fondo
+    if (eventHeader) {
+        eventHeader.style.backgroundColor = colorValue;
+    }
+}
 
 document.addEventListener('livewire:load', function () {
+    Livewire.on('recargarFlat', function () {
+        initializeFlatpckr()
+        
+        detectOverlaps()
+        positionEvents();
+
+        destroyPopover();
+        horarioDisponible();
+    })
     Livewire.on('reloadDragg',function(){
         initializePopper()
-        initializeFlatpckr()
-        applyEventHeights()
+        
+        detectOverlaps()
+        positionEvents();
+
+        destroyPopover();
+        horarioDisponible();
     })
 })
 
+
+
 function initializePopper(){
     $('[data-toggle="popover"]').popover({
-        html: true
+        html: true,
+        sanitize:false,
+        fallbackPlacements: ['left', 'right'],
     });
 }
 
@@ -492,6 +470,244 @@ function initializeFlatpckr(){
             }
         },
     })
+}
+
+function positionEvents() {
+    const eventos = document.querySelectorAll('.evento');
+
+    // Función para redondear una hora al cuarto de hora más cercano
+    function roundToQuarterHour(time) {
+        const [hour, minute] = time.split(':').map(Number); // Divide en horas y minutos
+        const roundedMinute = Math.round(minute / 15) * 15; // Redondea al múltiplo de 15 más cercano
+
+        // Ajustar las horas si el redondeo supera los 60 minutos
+        const finalHour = roundedMinute === 60 ? hour + 1 : hour;
+        const finalMinute = roundedMinute === 60 ? 0 : roundedMinute;
+
+        // Asegurar el formato HH:mm
+        const paddedHour = String(finalHour).padStart(2, '0');
+        const paddedMinute = String(finalMinute).padStart(2, '0');
+        return `${paddedHour}:${paddedMinute}`;
+    }
+
+    eventos.forEach(evento => {
+      const start = evento.dataset.start; 
+      const duration = evento.dataset.duration; 
+      const employee = evento.dataset.employee;
+
+    // Redondear la hora al cuarto de hora más cercano
+    const roundedStart = roundToQuarterHour(start);
+
+      // Buscar la celda de inicio basada en data-hour y data-employee
+      const matchingCell = document.querySelector(
+        `.cell[data-hour="${roundedStart}"][data-employee="${employee}"]`
+      );
+
+      if (matchingCell) {
+        // Posicionar el evento dentro de la celda
+        matchingCell.appendChild(evento);
+        
+        // Mostrar el menú correspondiente al área clicada
+        const menuId = evento.dataset.id;
+        const dropdown = document.getElementById('menu'+menuId);
+
+        matchingCell.appendChild(dropdown);
+
+        // Ajustar altura y top relativo a la celda
+        const height = (duration/15)*16;
+        if(duration<27){
+          evento.style.display = 'flex';
+        }else{
+          evento.style.display = 'inline-block';
+        }
+        evento.style.height = `${height}px`;
+        evento.style.position = 'absolute'; // Importante para permitir posicionamiento relativo
+        evento.style.width = '90%'; // Para que ocupe todo el ancho de la celda
+      } else {
+        console.warn(`No se encontró celda para el evento: ${start} - ${employee}`);
+      }
+    });
+
+    detectOverlaps();
+  }
+  
+// Función auxiliar para calcular el horario de fin
+function calculateEndTime(start, duration) {
+    const [hours, minutes] = start.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + duration;
+
+    const endHours = Math.floor(totalMinutes / 60);
+    const endMinutes = totalMinutes % 60;
+
+    // Retorna el horario en formato "HH:MM"
+    return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+}
+
+function detectOverlaps() {
+    const appointments = Array.from(document.querySelectorAll('.evento'));
+
+    // Limpiar clases y estilos previos (incluye propiedades !important inline)
+    appointments.forEach(app => {
+        app.classList.remove('overlap', 'left');
+        app.style.removeProperty('width');
+        app.style.removeProperty('left');
+        app.style.removeProperty('z-index');
+    });
+
+    // Agrupar por empleado
+    const byEmployee = {};
+    appointments.forEach(app => {
+        const emp = app.dataset.employee || 'no-emp';
+        if (!byEmployee[emp]) byEmployee[emp] = [];
+        byEmployee[emp].push(app);
+    });
+
+    // Convierte "HH:mm" o "HH:mm:ss" a segundos totales
+    const timeToSeconds = (timeStr) => {
+        if (!timeStr) return NaN;
+        const parts = String(timeStr).trim().split(':').map(p => parseInt(p, 10) || 0);
+        const h = parts[0] || 0;
+        const m = parts[1] || 0;
+        const s = parts[2] || 0;
+        return h * 3600 + m * 60 + s;
+    };
+
+    // Convierte a minutos (redondeando al minuto más cercano)
+    const toMinutes = (timeStr) => Math.round(timeToSeconds(timeStr) / 60);
+
+    const durMinutes = d => {
+        if (d === undefined || d === null) return 0;
+        const f = parseFloat(String(d).trim());
+        if (Number.isNaN(f)) return 0;
+        return Math.round(f);
+    };
+
+    const endFor = app => {
+        const startMin = toMinutes(app.dataset.start);
+        const duration = durMinutes(app.dataset.duration);
+        return startMin + duration;
+    };
+
+    // Procesar por empleado
+    Object.values(byEmployee).forEach(list => {
+        // Ordenar por inicio
+        list.sort((a, b) => {
+            const sa = toMinutes(a.dataset.start) || 0;
+            const sb = toMinutes(b.dataset.start) || 0;
+            return sa - sb;
+        });
+
+        let group = [];
+        let currentEnd = -1;
+
+        const flushGroup = () => {
+            if (group.length <= 1) {
+                const a = group[0];
+                a.style.setProperty('width', '90%', 'important');
+
+                group = [];
+                return;
+            }
+
+            if (group.length === 2) {
+                const a = group[0], b = group[1];
+                const da = durMinutes(a.dataset.duration), db = durMinutes(b.dataset.duration);
+                const shorter = da <= db ? a : b;
+
+                // Aplicar estilos inline con prioridad para sobreescribir CSS (.evento.overlap !important)
+                a.classList.add('overlap');
+
+                a.style.setProperty('width', '90%', 'important');
+                a.style.setProperty('left', '0%', 'important');
+                a.style.setProperty('z-index', '100', 'important');
+
+                b.style.setProperty('width', '45%', 'important');
+                b.style.setProperty('left', '45%', 'important');
+                b.style.setProperty('z-index', '101', 'important');
+
+                // La más corta recibe también 'left' (la clase no afectará el left porque inline !important tiene precedencia)
+                shorter.classList.add('left');
+            } else {
+                // Más de dos citas -> repartir ancho y espacio equidistante
+                const n = group.length;
+                const widthPercent = 90 / n;
+                group.forEach((evt, idx) => {
+                    evt.classList.remove('overlap', 'left');
+                    evt.style.setProperty('width', `${widthPercent}%`, 'important');
+                    evt.style.setProperty('left', `${idx * widthPercent}%`, 'important');
+                    evt.style.setProperty('z-index', `${100 + idx}`, 'important');
+                });
+            }
+
+            group = [];
+        };
+
+        // Construir grupos por solapamiento (start < currentEnd => solapa; start === currentEnd NO solapa)
+        for (let i = 0; i < list.length; i++) {
+            const app = list[i];
+            const start = toMinutes(app.dataset.start);
+            const end = endFor(app);
+
+            if (Number.isNaN(start) || Number.isNaN(end)) {
+                continue;
+            }
+
+            if (group.length === 0) {
+                group.push(app);
+                currentEnd = end;
+            } else {
+                // Si empieza estrictamente antes del final actual => solapamiento
+                // start === currentEnd se considera adyacente (NO solapa)
+                if (start < currentEnd) {
+                    group.push(app);
+                    currentEnd = Math.max(currentEnd, end);
+                } else {
+                    // No solapan -> procesar grupo previo y empezar nuevo
+                    flushGroup();
+                    group.push(app);
+                    currentEnd = end;
+                }
+            }
+        }
+
+        // Procesar último grupo restante
+        flushGroup();
+    });
+}
+
+function parseTime(start, end) {
+  const toMinutes = (time) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+  };
+
+  const startMinutes = toMinutes(start);
+  const endMinutes = toMinutes(end);
+
+  // Validar que el tiempo de fin no sea menor que el tiempo de inicio
+  if (endMinutes < startMinutes) {
+      console.error(`Error: El tiempo de fin (${end}) no puede ser menor que el de inicio (${start}).`);
+  }
+
+  return [startMinutes, endMinutes];
+}
+
+function horarioDisponible(){
+    // Selecciona el tbody con scroll
+    const tbody = document.querySelector('.table-responsive');
+
+    // Busca la primera celda disponible
+    const firstAvailableCell = tbody.querySelector('.hora-disponible');
+
+    if (tbody && firstAvailableCell) {
+        // Calcula la posición de la celda disponible relativa al tbody
+        const offsetTop = firstAvailableCell.offsetTop - tbody.offsetTop;
+
+        // Ajusta el scroll interno del tbody, sumando un margen adicional (por ejemplo, el tamaño de 6 celdas)
+        const cellHeight = firstAvailableCell.offsetHeight; // Altura de una celda
+        tbody.scrollTop = offsetTop - (-5.5 * cellHeight); // Ajusta hacia arriba
+    }
+
 }
 </script>
 @endpush

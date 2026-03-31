@@ -225,10 +225,13 @@
 
     .money-icon {
         border: 2px solid;
-        width: 5dvh;
+        width: 6dvh;
+        height: 6dvh;
         border-radius: 50%;
         margin-right: 2dvh;
-        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     .percent-qty-tip {
