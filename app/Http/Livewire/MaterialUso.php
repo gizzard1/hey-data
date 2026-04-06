@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Http\Livewire\Agenda;
 
 class MaterialUso extends Component
 {
@@ -71,7 +72,7 @@ class MaterialUso extends Component
         try{
             $this->search = trim($searchText);
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5853Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5853MaterialUso"] );
         }
     }
     public function loadProducts()
@@ -96,7 +97,7 @@ class MaterialUso extends Component
 
             
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 766369InformeMovimientos"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 766369MaterialUso"] );
         }
 
     }
@@ -114,7 +115,7 @@ class MaterialUso extends Component
                 $this->cart[$key] = $newItem;
             }
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 811369InformeMovimientos"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 811369MaterialUso"] );
         }
     }
     private function setOldItem($item_id,$uid)
@@ -130,7 +131,7 @@ class MaterialUso extends Component
             return $oldItem;
             
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 787369InformeMovimientos"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 787369MaterialUso"] );
         }
     }
 
@@ -164,7 +165,7 @@ class MaterialUso extends Component
             // Restablece el valor de búsqueda después de agregar el producto
             $this->search = '';
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 7054Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 7054MaterialUso"] );
         }
     }
     protected $listeners = [
@@ -214,7 +215,7 @@ class MaterialUso extends Component
             session()->forget('cartMaterials');
             $this->clearCliente();
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 68379Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 68379MaterialUso"] );
         }
     }
     // Función que muestra el listado de productos cuando se consulta en una cita.
@@ -367,7 +368,17 @@ class MaterialUso extends Component
             }
 
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 40068Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 40068MaterialUso"] );
+        }
+    }
+    private function sellersInCart()
+    {
+        try{
+            $mycart = $this->cart;
+            $withoutSeller = $mycart->whereNull('vendedor')->count();
+            return $withoutSeller > 0 ? false : true;
+        } catch(\Throwable $th){
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369MaterialUso"] );
         }
     }
     public function updateQty($uid, $cant = 1, $product_id = null)
@@ -392,7 +403,7 @@ class MaterialUso extends Component
             $this->desvincularElementoAnterior($product_id,$uid,$newItem);
             $this->save();
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41369Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41369MaterialUso"] );
         }
     }
 
@@ -427,7 +438,7 @@ class MaterialUso extends Component
             $this->cart->push($itemCart);
             $this->save();
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 32966Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 32966MaterialUso"] );
         }
     }
     function save()
@@ -436,7 +447,7 @@ class MaterialUso extends Component
             session()->put('cartMaterials', $this->cart);
             session()->save();
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 38967Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 38967MaterialUso"] );
         }
     }
     public function removeItemCart($id)
@@ -448,20 +459,23 @@ class MaterialUso extends Component
 
             $this->save();
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065MaterialUso"] );
         }
     }
     public function Store()
     {
         try{
-            if (session()->has('customDate')) {
-                Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
-            }
+            Agenda::setCustomDate(Carbon::parse(session('customDate')));
 
             $user = Auth::user();
             $salon_id = $user->salon->id;
             if (count($this->cart)<=0) {
-                $this->dispatchBrowserEvent('noty-error', ['msg' => 'NO HAY PRODUCTOS AGREGADOS']);
+                $this->dispatchBrowserEvent('noty-error', ['msg' => 'NO HAY MATERIALES AGREGADOS']);
+                return;
+            }
+
+            if (!$this->sellersInCart()) {
+                $this->dispatchBrowserEvent('noty-error', ['msg' => 'ASIGNA UN EMPLEADO A TODOS LOS MATERIALES']);
                 return;
             }
 
@@ -482,11 +496,9 @@ class MaterialUso extends Component
 
             $this->dispatchBrowserEvent('noty', ['msg' => "SOLICITUD PROCESADA CON ÉXITO"]);
             $this->clear();
-            if (session()->has('customDate')) {
-                Carbon::setTestNow();
-            }
+            Agenda::setCustomDate();
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065MaterialUso"] );
         }
     }
     private function ajustarStock($item)
@@ -496,7 +508,7 @@ class MaterialUso extends Component
             $product->stock_qty -= $item['qty'];
             $product->save();
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369InformeMovimientos"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369MaterialUso"] );
         }
     }
 }
