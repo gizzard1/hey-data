@@ -15,13 +15,18 @@
         background-color: transparent;
         border-color: transparent;
         text-align: center;
-        max-width: 14dvh;
+        max-width: 20dvh;
     }
 
     .qty {
         width: 12dvh;
         background-color: transparent;
         border-color: transparent;
+    }
+
+    input.form-control.text-center.qty {
+        padding: 0;
+        width: 10dvh;
     }
 
     .pzs {
@@ -34,7 +39,18 @@
     }
 
     .discount-input {
-        max-width: 9dvh;
+        max-width: 4dvh;
+    }
+
+    input.form-control.text-center.qty.discount-input {
+        padding: 0;
+        text-align: center;
+    }
+
+    select.form-control.no-arrow.bg-white.qty.discount.select-discount {
+        padding-left: 0;
+        padding-right: 0;
+        text-align: center;
     }
 
     .select-discount {
@@ -174,7 +190,11 @@
 
     .prices {
         justify-content: center;
-        column-gap: 1rem;
+        column-gap: 1dvh;
+    }
+
+    input[type="time"]::-webkit-calendar-picker-indicator {
+        margin-left: -1dvh;
     }
 
     .searching-container {
