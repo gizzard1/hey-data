@@ -95,13 +95,17 @@
                                             <td style="text-transform: capitalize;">Propinas</td>
                                             <td> ${{ number_format($dataGanancias['totalPropinas'],2,'.',',') }} </td>
                                         </tr>
+                                        <tr class="text-danger">
+                                            <td style="text-transform: capitalize;">IVA</td>
+                                            <td> -${{ number_format(($dataGanancias['totalPropinas']*0.16),2,'.',',') }} </td>
+                                        </tr>
                                         <tr>
                                             <td style="text-transform: capitalize;">Comisiones</td>
                                             <td> ${{ number_format($dataGanancias['totalComissions'],2,'.',',') }} </td>
                                         </tr>
-                                        <tr>
+                                        <tr class="text-success">
                                             <td style="text-transform: capitalize;">Total</td>
-                                            <td> ${{ number_format($dataGanancias['total'],2,'.',',') }} </td>
+                                            <td> ${{ number_format(($dataGanancias['total']-$dataGanancias['totalPropinas']*0.16),2,'.',',') }} </td>
                                         </tr>
                                     @endif
                                 </tbody>
