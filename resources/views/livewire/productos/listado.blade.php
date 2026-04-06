@@ -23,7 +23,7 @@
                             type="checkbox" 
                             id="select-all">
                     </th>
-                    <th style="background-color:transparent;color:#9D1466 !important; width:3rem">Nombre</th>
+                    <th class="text-large" style="background-color:transparent;color:#9D1466 !important; width:3rem">Nombre</th>
                     @if($orderByMostOrLessSelled && ($orderByMostOrLessSelled==='asc' || $orderByMostOrLessSelled === 'desc'))
                         <th style="background-color:transparent;color:#9D1466 !important">Ventas</th>
                     @endif
@@ -32,8 +32,8 @@
                     <th style="background-color:transparent;color:#9D1466 !important">Costo</th>
                     <th style="background-color:transparent;color:#9D1466 !important">Stock</th>
                     <th style="background-color:transparent;color:#9D1466 !important" class="ult-ver">Stock mínimo</th>
-                    <th style="background-color:transparent;color:#9D1466 !important">Categorías</th>
-                    <th style="background-color:transparent;color:#9D1466 !important">Marca</th>
+                    <th class="text-large" style="background-color:transparent;color:#9D1466 !important">Categorías</th>
+                    <th style="background-color:transparent;color:#9D1466 !important">Proveedor</th>
                 </tr>
             </thead>
             <tbody>
@@ -47,7 +47,7 @@
                             @checked(in_array($item['id'], $selectedItems)) 
                             @click.stop>
                     </td>
-                    <td class="text-left"><a wire:click.prevent="viewProduct({{ $item->id }})">{{$item->name}}</a>
+                    <td class="text-left text-large"><a wire:click.prevent="viewProduct({{ $item->id }})">{{$item->name}}</a>
                     </td>
 
                     @if(isset($item->asignaciones_sum_quantity))
@@ -58,7 +58,7 @@
                     <td>${{$item->cost }} </td>
                     <td style="color:{{ $item->stock_qty<$item->min_stock ? 'red' : '' }}">{{$item->stock_qty }}</td>
                     <td class="ult-ver">{{$item->min_stock ? $item->min_stock : '-' }}</td>
-                    <td>
+                    <td class="text-large">
                         <small> {{ $item->categorias->count() > 0 ? implode(", ", $item->categorias->pluck('name')->toArray()) : '-'}}</small>
                     </td>
                     <td>{{ $item->marca?->name }}</td>
@@ -136,12 +136,4 @@
         </div>
     </div>
 </div>
-
-<style>
-.ts-control {
-    padding: 0px !important;
-    border-style: none;
-    border-width: 0px !important;
-    background-color: #0E0803
-}
-</style>
+@include('livewire.servicios.list-styles')

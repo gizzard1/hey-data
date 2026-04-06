@@ -29,14 +29,14 @@
                                             type="checkbox" 
                                             id="select-all">
                                     </th>
-                                    <th class="text-left" style="background-color:transparent;color:#9D1466 !important">Nombre</th>
+                                    <th class="text-left text-large" style="background-color:transparent;color:#9D1466 !important">Nombre</th>
                                     @if($orderByMostOrLessSelled)
                                         <th style="background-color:transparent;color:#9D1466 !important">Ventas</th>
                                     @endif
                                     <th style="background-color:transparent;color:#9D1466 !important">Precio público</th>
                                     <th style="background-color:transparent;color:#9D1466 !important">Precio descuento</th>
-                                    <th style="background-color:transparent;color:#9D1466 !important" class="ult-ver">Categorías</th>
-                                    <th style="background-color:transparent;color:#9D1466 !important">Duración</th>
+                                    <th style="background-color:transparent;color:#9D1466 !important" class="ult-ver text-large">Categorías</th>
+                                    <th style="background-color:transparent;color:#9D1466 !important" class="ult-ver">Proveedor</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -50,17 +50,17 @@
                                             @checked(in_array($item['id'], $selectedItems)) 
                                             @click.stop>
                                     </td>
-                                    <td class="text-left"><a wire:click.prevent="viewService({{ $item->id }})">{{$item->name}}</a>
+                                    <td class="text-left text-large"><a wire:click.prevent="viewService({{ $item->id }})">({{ $item->duration ? $item->duration . ' min.' : 'Sin duración' }}) {{$item->name}}</a>
                                     </td>
                                     @if(isset($item->asignaciones_sum_quantity))
                                     <td>{{$item->asignaciones_sum_quantity }} </td>
                                     @endif
                                     <td>${{$item->gross_price }} </td>
                                     <td>${{$item->disccount_price }} </td>
-                                    <td class="ult-ver">
+                                    <td class="ult-ver text-large">
                                         <small> {{$item->categorias->count() ? implode(", ", $item->categorias->pluck('name')->toArray()) : '-'}}</small>
                                     </td>
-                                    <td>{{ $item->duration ? $item->duration . ' min.' : 'Sin duración' }}</td>
+                                    <td>{{ $item->marca?->name }}</td>
                                 </tr>
                                 @empty
                                 <tr>
@@ -95,6 +95,7 @@
 
     
     {{-- card form --}}
+    @include('livewire.servicios.list-styles')
     @include('livewire.servicios.modals.form')
     @include('livewire.servicios.modals.changeReward')
     @include('livewire.servicios.view')
@@ -106,14 +107,6 @@
     @include('livewire.servicios.js')
     @endpush
 
-    <style>
-        .ts-control {
-            padding: 0px !important;
-            border-style: none;
-            border-width: 0px !important;
-            background-color: #0E0803
-        }
-    </style>
 </div>
 
 

@@ -30,6 +30,7 @@ class Servicios extends Component
     public $selectedItems = [], $cat;
     private $servicios;
     public $orderByMostOrLessSelled = null;
+    public $orderBy = 'name', $direction = 'asc';
     protected $rules =    [
         'service.name' => [
             'required',
@@ -329,10 +330,10 @@ class Servicios extends Component
     {
         try {
             $visibility = $this->orderByMostOrLessSelled === 'archives' ? 'hide' : 'visible';
-            $query = servicio::with('categorias', 'asignaciones')
-                ->where('visibility', $visibility)
-                ->where('salon_id', Auth::user()->salon->id)
-                ->where('name', '!=', 'Servicio eliminado');
+            $query = servicio::with('marca','categorias', 'asignaciones')
+                ->where('servicios.visibility', $visibility)
+                ->where('servicios.salon_id', Auth::user()->salon->id)
+                ->where('servicios.name', '!=', 'Servicio eliminado');
 
             // Si hay una categoría, filtrarla usando whereHas
             if ($this->cat != null) {
@@ -345,49 +346,63 @@ class Servicios extends Component
             // Si hay búsqueda, agregar las condiciones
             if (!empty($this->search)) {
                 $query->where(function ($q) {
-                    $q->where('name', 'like', "%{$this->search}%")
-                        ->orWhere('description', 'like', "%{$this->search}%");
+                    $q->where('servicios.name', 'like', "%{$this->search}%")
+                        ->orWhere('servicios.description', 'like', "%{$this->search}%");
                 });
+            }
+
+            // Ordenar por más o menos vendidos
+            if ($this->orderByMostOrLessSelled && $this->orderByMostOrLessSelled !== 'archives') {
+
+                if ($this->orderByMostOrLessSelled == 'noSales') {
+                    $query = $query->withCount([
+                        'asignaciones as asignaciones_sum_quantity' => function ($query) {
+                            $query->selectRaw('COUNT(DISTINCT CONCAT(cita_id, "-", customer_id))')
+                                ->join('citas', 'asignacion_servicios.cita_id', '=', 'citas.id');
+                        }
+                    ])->havingRaw('COALESCE(asignaciones_sum_quantity, 0) = 0');
+                } else {
+                    $query = $query->selectRaw("servicios.*, 
+                                        (SELECT COUNT(*) 
+                                        FROM (SELECT DISTINCT asignacion_servicios.cita_id, asignacion_servicios.selected_service 
+                                            FROM asignacion_servicios 
+                                            JOIN citas ON asignacion_servicios.cita_id = citas.id 
+                                            WHERE citas.status IN ('Pagada', 'Pendiente') 
+                                            AND asignacion_servicios.selected_service = servicios.id) AS ventas_unicas) 
+                                        AS asignaciones_sum_quantity")
+                        ->having('asignaciones_sum_quantity', '>', 0)
+                        ->orderBy('asignaciones_sum_quantity', $this->orderByMostOrLessSelled);
+                }
+            } else {
+                if ($this->orderBy == "marca.name") {
+                    $query = $query->join('marcas', 'servicios.brand_id', '=', 'marcas.id')
+                        ->select('servicios.*')
+                        ->orderBy('marcas.name', $this->direction);
+                } else {
+                    $query = $query->orderBy($this->orderBy, $this->direction);
+                }
             }
 
             // Si $wP es verdadero, paginar y contar los registros
             if ($wP) {
-                if ($this->orderByMostOrLessSelled && $this->orderByMostOrLessSelled !== 'archives') {
-
-                    if ($this->orderByMostOrLessSelled == 'noSales') {
-
-                        $query = $query->withCount([
-                            'asignaciones as asignaciones_sum_quantity' => function ($query) {
-                                $query->selectRaw('COUNT(DISTINCT CONCAT(cita_id, "-", customer_id))')
-                                    ->join('citas', 'asignacion_servicios.cita_id', '=', 'citas.id');
-                            }
-                        ])->havingRaw('COALESCE(asignaciones_sum_quantity, 0) = 0')
-                            ->paginate(8);
-                    } else {
-                        $query = $query->selectRaw("servicios.*, 
-                                            (SELECT COUNT(*) 
-                                            FROM (SELECT DISTINCT asignacion_servicios.cita_id, asignacion_servicios.selected_service 
-                                                FROM asignacion_servicios 
-                                                JOIN citas ON asignacion_servicios.cita_id = citas.id 
-                                                WHERE citas.status IN ('Pagada', 'Pendiente') 
-                                                AND asignacion_servicios.selected_service = servicios.id) AS ventas_unicas) 
-                                            AS asignaciones_sum_quantity")
-                            ->having('asignaciones_sum_quantity', '>', 0)
-                            ->orderBy('asignaciones_sum_quantity', $this->orderByMostOrLessSelled)
-                            ->paginate(8);
-                    }
-                } else {
-                    $query = $query->orderBy('name', 'asc')->paginate(8);
-                }
-                $this->records = $query->total(); // Cambia total() por count() si es necesario
-            } else {
+                $query = $query->paginate(8);
+                $this->records = $query->total();
                 // Si no hay paginación, obtener todos los resultados
+            } else {
                 $query = $query->get();
             }
             return $query;
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 119244Servicioss"]);
         }
+    }
+    public function orderBy($by, $direction)
+    {
+        $this->orderBy = $by;
+        $this->direction = $direction;
+        $this->orderByMostOrLessSelled = null;
+        $this->selectedItems = [];
+        $this->resetPage();
     }
 
     public function exportar()
@@ -448,15 +463,15 @@ class Servicios extends Component
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 115459Agenda"]);
         }
     }
-    public function Edit()
+    public function Edit($id = null)
     {
         try {
             $this->loadDefault();
-            $service = servicio::find($this->selectedItems[0]);
+            $service = servicio::find($id ?? $this->selectedItems[0]);
             $this->categoriesList = implode(", ", $service->categorias->pluck('name')->toArray());
             $this->pictures = $service->photos;
-            $this->editing = true;
             $this->resetValidation();
+            $this->editing = true;
             $this->service = $service;
 
             // $materials = Material::where('servicio_id',$this->service->id)->get();

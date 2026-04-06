@@ -44,7 +44,7 @@
                         <p><strong>Precio descuento:</strong> ${{ $productSelected->disccount_price }}</p>
                         <p><strong>Precio compra:</strong> ${{ $productSelected->cost }}</p>
                         <p><strong>Tipo:</strong> {{ ucfirst($productSelected->type_product) }}</p>
-                        <p><strong>Marca:</strong> {{ $productSelected->marca ? $productSelected->marca->name : 'Sin marca' }}</p>
+                        <p><strong>Proveedor:</strong> {{ $productSelected->marca ? $productSelected->marca->name : 'Sin proveedor' }}</p>
                         <p><strong>Stock mínimo:</strong> {{ $productSelected->min_stock }}</p>
                         <p><strong>Categoría(s):</strong> {{implode(", ", $productSelected->categorias->pluck('name')->toArray())}}</p>
                     </div>

@@ -1,3 +1,4 @@
+@if($serviceSelected !=null)
 <div id="modalViewService" class="modal fade" role="dialog">
     <div class="modal-dialog">
         <!-- Contenido del modal-->
@@ -45,7 +46,7 @@
                         <p><strong>Precio descuento:</strong> ${{ $serviceSelected->disccount_price }}</p>
                         <p><strong>IVA:</strong> {{ floatval($serviceSelected->iva ?? 0)*100 }}% </p>
                         <p><strong>Categoría:</strong> {{implode(", ", $serviceSelected->categorias->pluck('name')->toArray())}}</p>
-                        <p><strong>Marca:</strong> {{ $serviceSelected->marca ? $serviceSelected->marca->name : 'Sin marca' }}</p>
+                        <p><strong>Proveedor:</strong> {{ $serviceSelected->marca ? $serviceSelected->marca->name : 'Sin proveedor' }}</p>
                     </div>
                 </div>
 
@@ -53,7 +54,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-dark" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-sm" data-dismiss="modal" wire:click.prevent="Edit('{{ $serviceSelected->id }}')" data-toggle="modal" data-target="#modalCreateForm">Editar</button>
             </div>
         </div>
     </div>
 </div>
+@endif
