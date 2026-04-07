@@ -19,6 +19,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Http\Controllers\DataResourceGrid as DRG;
 
 class Informe extends Component
 {
@@ -447,8 +448,7 @@ class Informe extends Component
                 ])
                 ->whereIn('cita_id', $collIds['citaIds'] ?? [])
                 ->whereBetween('created_at', [$this->currentDateC, $this->currentDateCEnd])
-                ->get()
-                ->groupBy('cita_id');
+                ->get();
 
 
             $ventaPropinas = Propina::select('venta_id', 'cita_id', 'amount', 'payment_method_id', 'created_at')
@@ -459,8 +459,7 @@ class Informe extends Component
                 ])
                 ->whereIn('venta_id', $collIds['ventaIds'] ?? [])
                 ->whereBetween('created_at', [$this->currentDateC, $this->currentDateCEnd])
-                ->get()
-                ->groupBy('venta_id');
+                ->get();
 
             $this->nextDates = $citas->clone()
                 ->where('start', '>=', $this->currentDateC)
@@ -474,10 +473,12 @@ class Informe extends Component
             $ventas_actual = $ventas->clone()->whereBetween('created_at', [$this->currentDateC, $this->currentDateCEnd])->get();
             $citas_actual = $citas->clone()->whereBetween('start', [$this->currentDateC, $this->currentDateCEnd])->get();
 
-            $response = $this->acumularMetodos(0, 1, $metodos_citas);
-            $response = $this->acumularMetodos($response, 0, $metodos_ventas);
-            $totalTips = $this->acumularPropinas($citas_actual, 0, $citaPropinas);
-            $this->totalTips = $this->acumularPropinas($ventas_actual, $totalTips, $ventaPropinas);
+            $response = $this->acumularMetodos(0, 'servicio', $metodos_citas);
+            $response = $this->acumularMetodos($response, 'producto', $metodos_ventas);
+            $response = $this->acumularMetodos($response, 'propina', $citaPropinas);
+            $response = $this->acumularMetodos($response, 'propina', $ventaPropinas);
+            $totalTips = $this->acumularPropinas(0, $citaPropinas);
+            $this->totalTips = $this->acumularPropinas($totalTips, $ventaPropinas);
             $this->acumularTransacciones($citas_actual, 1);
             $this->acumularTransacciones($ventas_actual, 0);
             $this->ingresoTotal = $this->total_s + $this->total_v;
@@ -699,12 +700,11 @@ class Informe extends Component
                     return $item->id === $asignacion->empleado_id;
                 });
 
-                if ($index !== false) {
+                if ($index !== false || $index === 0) {
 
                     //Se  obtiene el valor total
-                    $qty = $asignacion->disccount_price > 0 ? $asignacion->disccount_price : $asignacion->current_price;
-                    $priceOutOfDiscount = $asignacion->discount_qty > 0 ? ($asignacion->discount_type == 'percentage' ? $qty - (($qty * $asignacion->discount_qty * $asignacion->quantity) / 100) : $qty - $asignacion->discount_qty) : $qty;
-
+                    $priceOutOfDiscount = DRG::determinatePriceOutOfDiscounts($asignacion);
+                    
                     $dataEmpleados[$index]['total_v'] += $priceOutOfDiscount;
                     $this->total_ventas += $priceOutOfDiscount;
                     $qty_bruto = $priceOutOfDiscount;
@@ -727,13 +727,12 @@ class Informe extends Component
             if (count($items_vc) > 0) {
                 foreach ($items_vc as $asignacion) {
                     $index = $empleados->search(function ($item) use ($asignacion) {
-                        return $item->id === $asignacion->empleado_id;
+                        return $item->id == $asignacion->empleado_id;
                     });
-
-                    if ($index != false) {
+                    
+                    if ($index != false || $index === 0) {
                         //Se  obtiene el valor total
-                        $qty = $asignacion->disccount_price > 0 ? $asignacion->disccount_price : $asignacion->current_price;
-                        $priceOutOfDiscount = $asignacion->discount_qty > 0 ? ($asignacion->discount_type == 'percentage' ? $qty - (($qty * $asignacion->discount_qty * $asignacion->quantity) / 100) : $qty - $asignacion->discount_qty) : $qty;
+                        $priceOutOfDiscount = DRG::determinatePriceOutOfDiscounts($asignacion);
 
                         $dataEmpleados[$index]['total_v'] += $priceOutOfDiscount;
                         $this->total_ventas += $priceOutOfDiscount;
@@ -747,13 +746,12 @@ class Informe extends Component
             foreach ($items_s as $asignacion) {
                 $customer_id = $asignacion->date->customer_id;
                 $index = $empleados->search(function ($item) use ($asignacion) {
-                    return $item->id === $asignacion->empleado_id;
+                    return $item->id == $asignacion->empleado_id;
                 });
 
-                if ($index !== false) {
+                if ($index !== false || $index === 0) {
                     // Se  obtiene el valor total
-                    $qty = $asignacion->disccount_price > 0 ? $asignacion->disccount_price : $asignacion->current_price;
-                    $priceOutOfDiscount = $asignacion->discount_qty > 0 ? ($asignacion->discount_type == 'percentage' ? $qty - (($qty * $asignacion->discount_qty) / 100) : $qty - $asignacion->discount_qty) : $qty;
+                    $priceOutOfDiscount = DRG::determinatePriceOutOfDiscounts($asignacion);
 
                     $dataEmpleados[$index]['total_d'] += $priceOutOfDiscount;
                     $this->total_servicios += $priceOutOfDiscount;
@@ -1036,8 +1034,7 @@ class Informe extends Component
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 357139Informe"]);
         }
     }
-
-    private function acumularMetodos($response, $cita, $items)
+    private function acumularMetodos($response, $type = 'servicio', $items)
     {
         try {
             if (!is_array($response)) {
@@ -1056,9 +1053,9 @@ class Informe extends Component
                     $qty = $metodo->amount - $change;
 
                     //Calcular las cantidades ya cobradas de p/s
-                    if ($cita) {
+                    if ($type === 'servicio') {
                         $this->total_s += $qty;
-                    } else {
+                    } else if ($type === 'producto') {
                         $this->total_v += $qty;
                     }
                     $pm = $metodo->metodoPago->Payment_method;
@@ -1071,6 +1068,10 @@ class Informe extends Component
                             $periodos[$key]['value'] += $qty;
                             break;
                         }
+                    }
+
+                    if ($type === 'propina') {
+                        continue; // Las propinas no se acumulan por método de pago, se manejan aparte
                     }
 
                     //Separar los ingresos por método de pago
@@ -1110,16 +1111,14 @@ class Informe extends Component
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 500273Informe"]);
         }
     }
-    private function acumularPropinas($movimientos, $totalMethods, $pagos)
+    private function acumularPropinas($totalMethods, $pagos)
     {
         try {
             if (count($pagos) > 0) {
-                foreach ($pagos as $pago) {
-                    foreach ($pago as $propina) {
-                        //Declarar el ingreso del método
-                        $qty = $propina->amount;
-                        $totalMethods += $qty;
-                    }
+                foreach ($pagos as $propina) {
+                    //Declarar el ingreso del método
+                    $qty = $propina->amount;
+                    $totalMethods += $qty;
                 }
             }
             return $totalMethods;
