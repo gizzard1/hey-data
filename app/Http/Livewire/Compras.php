@@ -19,41 +19,41 @@ class Compras extends Component
 
     use WithPagination;
 
-    public $search, $query, $queryMarcas, $empleados,$marcas=[], $productos=[];
+    public $search, $query, $queryMarcas, $empleados, $marcas = [], $productos = [];
     public $product, $productId;
-    public $folio_fiscal,$folio_interno,$comentarios,$marca_id,$marca;
+    public $folio_fiscal, $folio_interno, $comentarios, $marca_id, $marca;
     public Collection $cart;
     protected $paginationTheme = 'bootstrap';
 
     public function mount()
     {
         session()->has('cartCompras') ? $this->cart = session('cartCompras') : $this->cart = new Collection;
-        $this->empleados = Empleado::where('salon_id',Auth::user()->salon_id)->orderBy('first_name')->get();
+        $this->empleados = Empleado::where('salon_id', Auth::user()->salon_id)->orderBy('first_name')->get();
         $this->unsetMarca();
     }
 
     public function searching($searchText)
     {
-        try{
+        try {
             $this->search = trim($searchText);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5853Ventas"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5853Compras"]);
         }
     }
     public function loadProducts()
     {
         $this->cargarProductos();
     }
-    
-    private function desvincularElementoAnterior($item_id,$uid,$newItem)
+
+    private function desvincularElementoAnterior($item_id, $uid, $newItem)
     {
-        try{
-            
+        try {
+
             // Encuentra el índice o clave del elemento a reemplazar
             $key = $this->cart->search(function ($product) use ($uid, $item_id) {
                 return $product['id'] === $uid || $product['cid'] === $item_id;
             });
-            $newItem['subtotal'] = $newItem['cost']*$newItem['qty'];
+            $newItem['subtotal'] = $newItem['cost'] * $newItem['qty'];
 
             // Reemplaza el método directamente por la clave encontrada
             if ($key !== false) {
@@ -61,72 +61,70 @@ class Compras extends Component
             }
 
             $this->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 811369InformeMovimientos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 811369InformeMovimientos"]);
         }
     }
-    private function setOldItem($item_id,$uid)
+    private function setOldItem($item_id, $uid)
     {
-        try{
-            $mycart = $this->cart; 
+        try {
+            $mycart = $this->cart;
 
             if ($item_id == null) {
                 $oldItem = $mycart->where('id', $uid)->first();
             } else {
-                $oldItem = $mycart->where('cid',$item_id)->first();
+                $oldItem = $mycart->where('cid', $item_id)->first();
             }
             return $oldItem;
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 787369InformeMovimientos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 787369InformeMovimientos"]);
         }
     }
 
     private function cargarProductos()
     {
-        try{
+        try {
             $this->resetPage();
             if (!empty($this->search)) {
-                
-                $q = $this->search;
-                $product = producto::where('salon_id', Auth::user()->salon->id)
-                    ->where('visibility', 'visible')
-                    ->where('name', '!=', 'Producto eliminado')
-                    ->where(function ($qry) use ($q) {
-                        $qry->where('name', 'like', "%{$q}%")
-                        ->orWhere('description', 'like', "%{$q}%")
-                        ->orWhere('sku', "{$q}")
-                        ->orWhere('intern_sku', "{$q}");
-                    })
-                    ->orderBy('name', 'asc')
-                    ->get();
-            }else{
-                $product='';
+
+                $search = $this->search;
+
+                $query = producto::basicQuery();
+                $product = Productos::searchProduct($query, $search)->orderBy('name', 'asc')->get();
+            } else {
+                $product = '';
             }
             // Verifica si se encontró un producto
             if ($product) {
                 // Llama a la función para agregar el producto al carrito
                 $this->addProductFromCart($product);
-
             }
-        
+
             // Restablece el valor de búsqueda después de agregar el producto
             $this->search = '';
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 7054Ventas"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 7054Compras"]);
         }
     }
     protected $listeners = [
         'refresh' => '$refresh',
         'search' => 'searching',
-        'add-product' => 'addProductFromCart','newProduct',
-        'removeItemCart', 'updateQty','clear-cart' => 'clear','setProductoId',
-        'enviarProducto' => 'recibirProductoNuevo','updateCost','setMarcaId','updateIva','openBrandModal',
-        'enviarProveedor'=>'setMarcaId'
+        'add-product' => 'addProductFromCart',
+        'newProduct',
+        'removeItemCart',
+        'updateQty',
+        'clear-cart' => 'clear',
+        'setProductoId',
+        'enviarProducto' => 'recibirProductoNuevo',
+        'updateCost',
+        'setMarcaId',
+        'updateIva',
+        'openBrandModal',
+        'enviarProveedor' => 'setMarcaId'
     ];
-    
+
     public function openBrandModal()
-    {            
+    {
         $this->dispatchBrowserEvent('openBrandModal');
     }
     protected $rules =
@@ -157,39 +155,30 @@ class Compras extends Component
 
     public function clear()
     {
-        try{
+        try {
             $this->cart = new Collection;
             $this->comentarios = null;
             $this->folio_fiscal = null;
             $this->folio_interno = null;
             session()->forget('cartCompras');
             $this->unsetMarca();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 68379Ventas"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 68379Compras"]);
         }
     }
     public function updatedQuery()
     {
-        try{
-            $q = $this->query;
-            $this->productos = producto::where('salon_id', Auth::user()->salon->id)
-                ->where('visibility', 'visible')
-                ->where('name', '!=', 'Producto eliminado')
-                ->where(function ($qry) use ($q) {
-                    $qry->where('name', 'like', "%{$q}%")
-                    ->orWhere('description', 'like', "%{$q}%")
-                    ->orWhere('sku', "{$q}")
-                    ->orWhere('intern_sku', "{$q}");
-                })
-                ->orderBy('name', 'asc')
-                ->get();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097CartView"] );
+        try {
+            $search = $this->query;
+            $query = producto::basicQuery();
+            $this->productos = Productos::searchProduct($query, $search)->orderBy('name', 'asc')->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Compras"]);
         }
     }
     public function updatedQueryMarcas()
     {
-        try{
+        try {
             $salon_id = Auth::user()->salon->id;
             $this->marcas = marca::where('salon_id', $salon_id)
                 ->where('name', 'like', "%{$this->queryMarcas}%")
@@ -197,14 +186,13 @@ class Compras extends Component
                 ->orWhere('rfc', 'like', "%{$this->queryMarcas}%")
                 ->orderBy('name', 'asc')
                 ->get();
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097CartView"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097CartView"]);
         }
     }
     public function render()
     {
-        return view('livewire.compras',['productos' => $this->loadProducts(),'cartInfo' => $this->cart]);
+        return view('livewire.compras', ['productos' => $this->loadProducts(), 'cartInfo' => $this->cart]);
     }
     function addProductFromCart(producto $product)
     {
@@ -212,25 +200,25 @@ class Compras extends Component
     }
     private function inCart($product_id)
     {
-        try{
+        try {
             $mycart = $this->cart;
 
             $cont = $mycart->where('cid', $product_id)->count();
 
             return  $cont > 0 ? true : false;
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 40068Ventas"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 40068Compras"]);
         }
     }
     public function updateQty($uid, $cant = 1, $product_id = null)
     {
-        try{
+        try {
             if (!is_numeric($cant)) {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => $cant . ' NO ES UNA CANTIDAD VÁLIDA']);
                 return;
             }
 
-            $oldItem = $this->setOldItem($product_id,$uid);
+            $oldItem = $this->setOldItem($product_id, $uid);
 
             $newItem  = $oldItem;
 
@@ -238,45 +226,45 @@ class Compras extends Component
 
             $newItem['subtotal'] = $newItem['cost'] * $newItem['qty'];
 
-            $this->desvincularElementoAnterior($product_id,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41369Ventas"] );
+            $this->desvincularElementoAnterior($product_id, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41369Compras"]);
         }
     }
-    public function updateCost($uid, $cost,$product_id = null)
+    public function updateCost($uid, $cost, $product_id = null)
     {
-        try{
+        try {
 
-            $oldItem = $this->setOldItem($product_id,$uid);
+            $oldItem = $this->setOldItem($product_id, $uid);
 
             $newItem  = $oldItem;
 
             $newItem['cost'] = intval($cost);
             $newItem['subtotal'] = $newItem['cost'] * $newItem['qty'];
-            
-            $this->desvincularElementoAnterior($product_id,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41369Ventas"] );
+
+            $this->desvincularElementoAnterior($product_id, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41369Compras"]);
         }
     }
-    public function updateIva($uid, $iva,$product_id = null)
+    public function updateIva($uid, $iva, $product_id = null)
     {
-        try{
+        try {
 
-            $oldItem = $this->setOldItem($product_id,$uid);
+            $oldItem = $this->setOldItem($product_id, $uid);
 
             $newItem  = $oldItem;
 
             $newItem['iva'] = floatval($iva);
-            
-            $this->desvincularElementoAnterior($product_id,$uid,$newItem);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41369Ventas"] );
+
+            $this->desvincularElementoAnterior($product_id, $uid, $newItem);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41369Compras"]);
         }
     }
     private function AddProduct($product, $qty = 1, $iva = 0.16)
     {
-        try{
+        try {
             // validar si ya existe en el carrito
             if ($this->inCart($product->id)) {
                 $this->updateQty(null, $qty, $product->id);
@@ -295,7 +283,7 @@ class Compras extends Component
                     'cost' => floatval($product->cost),
                     'qty' => intval($qty),
                     'iva' => floatval($iva),
-                    'subtotal' => $product->cost*$qty,
+                    'subtotal' => $product->cost * $qty,
                     'unit_type' => $product->unit_type,
                 ]
             );
@@ -304,48 +292,48 @@ class Compras extends Component
             $this->save();
             $this->query = null;
             $this->productos = [];
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 32966Ventas"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 32966Compras"]);
         }
     }
     function save()
     {
-        try{
+        try {
             session()->put('cartCompras', $this->cart);
             session()->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 38967Ventas"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 38967Compras"]);
         }
     }
     public function removeItemCart($id)
     {
-        try{
+        try {
             $this->cart = $this->cart->reject(function ($product) use ($id) {
                 return $product['id'] === $id;
             });
 
             $this->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065Ventas"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065Compras"]);
         }
     }
     public function Store()
     {
         $this->validate($this->rules);
-        try{
+        try {
             if (session()->has('customDate')) {
                 Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
             }
 
             $user = Auth::user();
             $salon_id = $user->salon->id;
-            if (count($this->cart)<=0) {
+            if (count($this->cart) <= 0) {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => 'NO HAY PRODUCTOS AGREGADOS']);
                 return;
             }
 
-            if(count($this->cart)>0){
-                foreach($this->cart as $item){
+            if (count($this->cart) > 0) {
+                foreach ($this->cart as $item) {
                     $movimiento = new Entrada;
                     $movimiento->producto_id = $item['cid'];
                     $movimiento->cost = $item['cost'];
@@ -364,23 +352,23 @@ class Compras extends Component
 
             $this->dispatchBrowserEvent('noty', ['msg' => "SOLICITUD PROCESADA CON ÉXITO"]);
             $this->clear();
-            
+
             if (session()->has('customDate')) {
                 Carbon::setTestNow();
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065Ventas"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065Compras"]);
         }
     }
     private function ajustarStock($item)
     {
-        try{
+        try {
             $product = producto::find($item['cid']);
             $product->stock_qty += $item['qty'];
             $product->cost = $item['cost'];
             $product->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369InformeMovimientos"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369InformeMovimientos"]);
         }
     }
 }

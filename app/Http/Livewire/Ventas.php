@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Http\Controllers\DataResourceGrid as DRG;
+use App\Http\Livewire\Productos;
 
 class Ventas extends Component
 {
@@ -216,21 +217,12 @@ class Ventas extends Component
     function updatedQuery()
     {
         try {
-            $query = $this->query;
+            $search = $this->query;
 
-            $this->productos = producto::where('salon_id', Auth::user()->salon->id)
-                ->where('visibility', 'visible')
-                ->where('name', '!=', 'Producto eliminado')
-                ->where(function ($q) use ($query) {
-                    $q->where('name', 'like', "%{$query}%")
-                        ->orWhere('description', 'like', "%{$query}%")
-                        ->orWhere('sku', "{$query}")
-                        ->orWhere('intern_sku', "{$query}");
-                })
-                ->orderBy('name', 'asc')
-                ->get();
+            $query = producto::basicQuery();
+            $this->productos = Productos::searchProduct($query, $search)->orderBy('name', 'asc')->get();
         } catch (\Throwable $th) {
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097CartView"]);
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Ventas"]);
         }
     }
     public function render()
@@ -376,61 +368,6 @@ class Ventas extends Component
             }
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 32966Ventas"]);
-        }
-    }
-    private function getRewardPoints($excepcion, $total)
-    {
-        // Asegurar valores por defecto para evitar errores
-        $type_comission = $excepcion->type_comission ?? 'default';
-        $qty = $excepcion->qty ?? 0;
-
-        // Calcular puntos según el tipo de comisión
-        return match ($type_comission) {
-            'percent' => ($total * $qty) / 100,
-            'qty' => $qty,
-            default => 0,
-        };
-    }
-    private function calculateRewardPoints($item_id, $total)
-    {
-        try {
-
-            $item = producto::with('excepciones', 'categorias.excepciones')
-                ->find($item_id);
-
-            // Verificar si el item existe
-            if (!$item) {
-                return 0; // Retorna 0 si el item no se encuentra
-            }
-
-            // Buscar excepciones asociadas al item
-            $excepcion = $item->excepciones()
-                ->whereNotNull('programa_recompensa_id')
-                ->latest()
-                ->first();
-
-            if ($excepcion) {
-                return $this->getRewardPoints($excepcion, $total);
-            }
-
-            // Buscar categorías y excepciones asociadas a las categorías
-            $categoria = $item->categorias()->latest()->first();
-
-            if ($categoria) {
-                $excepcion = $categoria->excepciones()
-                    ->whereNotNull('programa_recompensa_id')
-                    ->latest()
-                    ->first();
-
-                if ($excepcion) {
-                    return $this->getRewardPoints($excepcion, $total);
-                }
-            }
-
-            // Si no hay excepciones ni categorías, retornar 0
-            return 0;
-        } catch (\Throwable $th) {
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 93634Ventas"]);
         }
     }
     function save()

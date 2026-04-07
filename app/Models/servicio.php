@@ -81,5 +81,10 @@ class servicio extends Model
             });
         }
     }
-
+    public function scopeBasicQuery()
+    {
+        return servicio::where('salon_id', Auth()->user()->salon->id)
+            ->where('visibility', 'visible')
+            ->where('name', '!=', 'Servicio eliminado');
+    }
 }

@@ -330,7 +330,7 @@ class Servicios extends Component
     {
         try {
             $visibility = $this->orderByMostOrLessSelled === 'archives' ? 'hide' : 'visible';
-            $query = servicio::with('marca','categorias', 'asignaciones')
+            $query = servicio::with('marca', 'categorias', 'asignaciones')
                 ->where('servicios.visibility', $visibility)
                 ->where('servicios.salon_id', Auth::user()->salon->id)
                 ->where('servicios.name', '!=', 'Servicio eliminado');
@@ -345,10 +345,7 @@ class Servicios extends Component
 
             // Si hay búsqueda, agregar las condiciones
             if (!empty($this->search)) {
-                $query->where(function ($q) {
-                    $q->where('servicios.name', 'like', "%{$this->search}%")
-                        ->orWhere('servicios.description', 'like', "%{$this->search}%");
-                });
+                $query = $this->searchService($query, $this->search);
             }
 
             // Ordenar por más o menos vendidos
@@ -395,6 +392,33 @@ class Servicios extends Component
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 119244Servicioss"]);
         }
+    }
+    public static function searchService($query, $search)
+    {
+
+        $terms = collect(preg_split('/\s+/', trim($search)))
+            ->filter(fn($term) => strlen($term) >= 2)   // ignorar palabras de 1 carácter
+            ->unique();
+
+        if ($terms->isNotEmpty()) {
+            $query->where(function ($q) use ($terms) {
+                foreach ($terms as $index => $term) {
+                    // escapamos comodines para evitar comportamientos raros
+                    $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $term) . '%';
+                    $method = $index === 0 ? 'where' : 'orWhere';
+
+                    // agrupamos las condiciones de cada palabra
+                    $q->$method(function ($sub) use ($like, $term) {
+                        $sub->where('servicios.name', 'like', $like)
+                            ->orWhere('servicios.description', 'like', $like)
+                            ->orWhereRaw('SOUNDEX(servicios.name) = SOUNDEX(?)', [$term])
+                            ->orWhereRaw('SOUNDEX(servicios.description) = SOUNDEX(?)', [$term]);
+                    });
+                }
+            });
+        }
+
+        return $query;
     }
     public function orderBy($by, $direction)
     {
@@ -726,7 +750,7 @@ class Servicios extends Component
     {
         $this->validate($this->rules);
         DB::beginTransaction();
-        try{
+        try {
             if ($this->service->brand_id == '') {
                 $this->service->brand_id = null;
             }
@@ -734,9 +758,9 @@ class Servicios extends Component
             $this->service->save();
             $sid = $this->service->id;
 
-             // Transferir relaciones del servicio principal
+            // Transferir relaciones del servicio principal
             foreach ($this->mergeItems as $itemArrayForm) {
-                $item = servicio::with('categorias', 'files', 'asignaciones','excepciones')->find($itemArrayForm['id']);
+                $item = servicio::with('categorias', 'files', 'asignaciones', 'excepciones')->find($itemArrayForm['id']);
                 if ($item->id != $sid) {
                     //relacionar categorias         
                     $itemCategories = $item->categorias->pluck('id');

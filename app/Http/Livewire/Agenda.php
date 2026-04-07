@@ -33,6 +33,7 @@ use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use App\Http\Controllers\DataResourceGrid as DRG;
 use App\Http\Controllers\DataSales as DS;
+use App\Http\Livewire\Servicios;
 
 class Agenda extends Component
 {
@@ -226,16 +227,10 @@ class Agenda extends Component
     public function updatedQueryServices()
     {
         try {
+            $search = $this->queryServices;
+            $query = servicio::basicQuery();
 
-            $this->servicios = servicio::where('salon_id', Auth::user()->salon->id)
-                ->where('visibility', 'visible')
-                ->where('name', '!=', 'Servicio eliminado')
-                ->where(function ($q) {
-                    $q->where('name', 'like', "%{$this->queryServices}%")
-                        ->orWhere('description', 'like', "%{$this->queryServices}%");
-                })
-                ->orderBy('name', 'asc')
-                ->get();
+            $this->servicios = Servicios::searchService($query, $search)->orderBy('name', 'asc')->get();
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Agenda"]);
         }
@@ -2326,21 +2321,13 @@ class Agenda extends Component
     {
         try {
             if (!empty($this->search)) {
-                $q = $this->search;
-                $query = producto::where('salon_id', Auth::user()->salon->id)
-                    ->where('visibility', 'visible')
-                    ->where('name', '!=', 'Producto eliminado')
-                    ->where(function ($qry) use ($q) {
-                        $qry->where('name', 'like', "%{$q}%")
-                            ->orWhere('description', 'like', "%{$q}%")
-                            ->orWhere('sku', "{$q}")
-                            ->orWhere('intern_sku', "{$q}");
-                    })
-                    ->orderBy('name', 'asc')
-                    ->get();
+                $search = $this->search;
+
+                $query = producto::basicQuery();
+                $query = Productos::searchProduct($query, $search)->orderBy('name', 'asc')->get();
             } else {
 
-                $query =  producto::where('salon_id', Auth::user()->salon->id)->orderBy('stock_qty', 'asc')->get();
+                $query =  producto::basicQuery()->get();
             }
             return $query;
         } catch (\Throwable $th) {
@@ -2350,27 +2337,16 @@ class Agenda extends Component
     private function loadServicios()
     {
         try {
-            if (!empty($this->search)) {
-                $query = servicio::where('salon_id', Auth::user()->salon->id)
-                    ->where('visibility', 'visible')
-                    ->where('name', '!=', 'Servicio eliminado')
-                    ->where(function ($q) {
-                        $q->where('name', 'like', "%{$this->search}%")
-                            ->orWhere('description', 'like', "%{$this->search}%");
-                    })
-                    ->orderBy('name', 'asc')
-                    ->get();
-            } else {
-                $query = servicio::where('salon_id', Auth::user()->salon->id)
-                    ->where('visibility', 'visible')
-                    ->where('name', '!=', 'Servicio eliminado')
-                    ->where(function ($q) {
-                        $q->where('name', 'like', "%{$this->search}%")
-                            ->orWhere('description', 'like', "%{$this->search}%");
-                    })
-                    ->orderBy('name', 'asc')
-                    ->get();
+            if (empty($this->search)) {
+                return [];
             }
+
+            $search = $this->search;
+
+            $query = servicio::basicQuery();
+
+            $query = Servicios::searchService($query, $search)->orderBy('name', 'asc')->get();
+
             return $query;
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1040369Agenda"]);
@@ -3716,8 +3692,8 @@ class Agenda extends Component
         session()->put('rfcSelected', $rfcid);
         session()->save();
     }
-    
-    public static function setCustomDate($date=null)
+
+    public static function setCustomDate($date = null)
     {
         if (session()->has('customDate') && Auth::user()->salon->simulador) {
             Carbon::setTestNow($date);

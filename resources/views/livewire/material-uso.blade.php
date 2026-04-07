@@ -42,7 +42,7 @@
 
                             <ul x-show="open" class="list-group float-right" style="width: 30rem; position: absolute; z-index:1; max-height: 300px; overflow-y: auto;">
                             @foreach ($productos as $index => $item)
-                                <li wire:click="$emit('add', {{ $item->id }})" @click="open=false;" class="list-group-item list-group-item-action" style=" cursor:pointer; color:#6E6E6E">{{ $item->name }}{{ $item->type_product == 'simple' ? '| (Mercancía)' : '' }}</li>
+                                <li wire:click="$emit('add', {{ $item->id }})" @click="open=false;" class="list-group-item list-group-item-action" style=" cursor:pointer; color:#6E6E6E">{{ $item->name }}{{ $item->type_product == 'simple' ? ' (Mercancía)' : '' }}</li>
                             @endforeach 
                             </ul>
 

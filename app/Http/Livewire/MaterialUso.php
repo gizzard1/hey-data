@@ -19,25 +19,24 @@ class MaterialUso extends Component
 {
     use WithPagination;
 
-    public $search, $query=[],$queryMaterial, $queryCust, $empleados, $productos=[], $clientes=[];
+    public $search, $query = [], $queryMaterial, $queryCust, $empleados, $productos = [], $clientes = [];
     public $customer, $customerId;
-    public $type=0,$view=1,$itemSelected=null;
-    public Collection $cart,$cartS;
+    public $type = 0, $view = 1, $itemSelected = null;
+    public Collection $cart, $cartS;
     protected $paginationTheme = 'bootstrap';
 
     public function mount()
     {
-        if($this->view === 1){
+        if ($this->view === 1) {
 
             $this->cart = $this->recuperarCart('cartMaterials');
-            if($this->type){
+            if ($this->type) {
                 $this->cartS = $this->recuperarCart('cartS');
-            }else{
+            } else {
                 $this->cartS = new Collection;
             }
-            $this->empleados = Empleado::where('salon_id',Auth::user()->salon_id)->where('visible',1)->orderBy('first_name')->get();
-        
-        } 
+            $this->empleados = Empleado::where('salon_id', Auth::user()->salon_id)->where('visible', 1)->orderBy('first_name')->get();
+        }
     }
     public function viewDetails($item_id)
     {
@@ -64,26 +63,25 @@ class MaterialUso extends Component
         } else {
             return new Collection;
         }
-
     }
 
     public function searching($searchText)
     {
-        try{
+        try {
             $this->search = trim($searchText);
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5853MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 5853MaterialUso"]);
         }
     }
     public function loadProducts()
     {
         $this->cargarProductos();
     }
-    
+
     public function updateEmpleado($uid, $selectedEmpleado, $item_id = null)
     {
-        try{
-            $oldItem = $this->setOldItem($item_id,$uid);
+        try {
+            $oldItem = $this->setOldItem($item_id, $uid);
 
             $newItem = $oldItem;
             if (!$oldItem) {
@@ -91,20 +89,17 @@ class MaterialUso extends Component
             }
             $newItem['vendedor'] = $selectedEmpleado;
 
-            $this->desvincularElementoAnterior($item_id,$uid,$newItem);
+            $this->desvincularElementoAnterior($item_id, $uid, $newItem);
 
             $this->save();
-
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 766369MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 766369MaterialUso"]);
         }
-
     }
-    private function desvincularElementoAnterior($item_id,$uid,$newItem)
+    private function desvincularElementoAnterior($item_id, $uid, $newItem)
     {
-        try{
-            
+        try {
+
             // Encuentra el índice o clave del elemento a reemplazar
             $key = $this->cart->search(function ($product) use ($uid, $item_id) {
                 return $product['id'] === $uid || $product['mid'] === $item_id;
@@ -114,66 +109,62 @@ class MaterialUso extends Component
             if ($key !== false) {
                 $this->cart[$key] = $newItem;
             }
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 811369MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 811369MaterialUso"]);
         }
     }
-    private function setOldItem($item_id,$uid)
+    private function setOldItem($item_id, $uid)
     {
-        try{
-            $mycart = $this->cart; 
+        try {
+            $mycart = $this->cart;
 
             if ($item_id == null) {
                 $oldItem = $mycart->where('id', $uid)->first();
             } else {
-                $oldItem = $mycart->where('mid',$item_id)->first();
+                $oldItem = $mycart->where('mid', $item_id)->first();
             }
             return $oldItem;
-            
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 787369MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 787369MaterialUso"]);
         }
     }
 
     private function cargarProductos()
     {
-        try{
+        try {
             $this->resetPage();
             if (!empty($this->search)) {
-                $q = $this->search;
-                $product = producto::where('salon_id', Auth::user()->salon->id)
-                    ->where('visibility', 'visible')
-                    ->where('name', '!=', 'Producto eliminado')
-                    ->where(function ($qry) use ($q) {
-                        $qry->where('name', 'like', "%{$q}%")
-                        ->orWhere('description', 'like', "%{$q}%")
-                        ->orWhere('sku', "{$q}")
-                        ->orWhere('intern_sku', "{$q}");
-                    })
-                    ->orderBy('name', 'asc')
-                    ->get();
-            }else{
-                $product='';
+                $search = $this->search;
+
+                $query = producto::basicQuery();
+                $product = Productos::searchProduct($query, $search)->orderBy('name', 'asc')->get();
+            } else {
+                $product = '';
             }
             // Verifica si se encontró un producto
             if ($product) {
                 // Llama a la función para agregar el producto al carrito
                 $this->addProductFromCart($product);
-
             }
-        
+
             // Restablece el valor de búsqueda después de agregar el producto
             $this->search = '';
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 7054MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 7054MaterialUso"]);
         }
     }
     protected $listeners = [
         'refresh' => '$refresh',
         'search' => 'searching',
-        'add' => 'addProductFromCart','updateEmpleado','newCust',
-        'removeItemCart', 'updateQty','clear-cart' => 'clear','setCustomerId',
-        'enviarCliente' => 'recibirClienteNuevo','cleanFormasPago'
+        'add' => 'addProductFromCart',
+        'updateEmpleado',
+        'newCust',
+        'removeItemCart',
+        'updateQty',
+        'clear-cart' => 'clear',
+        'setCustomerId',
+        'enviarCliente' => 'recibirClienteNuevo',
+        'cleanFormasPago'
     ];
     public function cleanFormasPago()
     {
@@ -190,13 +181,13 @@ class MaterialUso extends Component
 
     public function setCustomerId($customer)
     {
-        try{
-            if($customer!=null){
+        try {
+            if ($customer != null) {
                 $this->customer = cliente::with('tarjetaPuntos')->find($customer);
-                $this->customerId = $customer; 
+                $this->customerId = $customer;
                 $this->clientes = [];
             }
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
         }
     }
     public function unsetCustomer()
@@ -210,87 +201,70 @@ class MaterialUso extends Component
     }
     public function clear()
     {
-        try{
+        try {
             $this->cart = new Collection;
             session()->forget('cartMaterials');
             $this->clearCliente();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 68379MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 68379MaterialUso"]);
         }
     }
     // Función que muestra el listado de productos cuando se consulta en una cita.
     public function mostrarListado($id)
     {
-        try{
-            if(!isset($this->query[$id])){
+        try {
+            if (!isset($this->query[$id])) {
                 return;
             }
 
-            $q = $this->query[$id];
-            $this->productos[$id] = producto::where('salon_id', Auth::user()->salon->id)
-                ->where('visibility', 'visible')
-                ->where('name', '!=', 'Producto eliminado')
-                ->where(function ($qry) use ($q) {
-                    $qry->where('name', 'like', "%{$q}%")
-                    ->orWhere('description', 'like', "%{$q}%")
-                    ->orWhere('sku', "{$q}")
-                    ->orWhere('intern_sku', "{$q}");
-                })
-                ->orderBy('name', 'asc')
-                ->get();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097CartView"] );
+            $search = $this->query[$id];
+            $query = producto::basicQuery();
+            $this->productos[$id] = Productos::searchProduct($query, $search)->orderBy('name', 'asc')->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097MaterialUso"]);
         }
     }
     // Función que muestra los productos desde la pestaña de Uso en la ruta Productos.
     public function updatedQueryMaterial()
     {
-        try{
+        try {
             $this->productos = [];
 
             if (!isset($this->queryMaterial)) {
                 return;
             }
-            
-            $q = $this->queryMaterial;
-            $this->productos = producto::where('salon_id', Auth::user()->salon->id)
-                ->where('visibility', 'visible')
-                ->where('name', '!=', 'Producto eliminado')
-                ->where(function ($qry) use ($q) {
-                    $qry->where('name', 'like', "%{$q}%")
-                    ->orWhere('description', 'like', "%{$q}%")
-                    ->orWhere('sku', "{$q}")
-                    ->orWhere('intern_sku', "{$q}");
-                })
-                ->orderBy('name', 'asc')
-                ->get();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097CartView"] );
+
+            $search = $this->queryMaterial;
+            $query = producto::basicQuery();
+
+            $this->productos = Productos::searchProduct($query, $search)->orderBy('name', 'asc')->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097MaterialUso"]);
         }
     }
 
     public function updatedQueryCust()
     {
-        try{
-            $q =$this->queryCust;
+        try {
+            $q = $this->queryCust;
 
             $this->clientes = cliente::where(function ($query) {
                 $words = preg_split('/\s+/', trim($this->queryCust));
-            
+
                 foreach ($words as $word) {
                     $query->where(function ($q) use ($word) {
                         $q->where('first_name', 'like', "%{$word}%")
-                          ->orWhere('last_name', 'like', "%{$word}%")
-                          ->orWhere(DB::raw("CONCAT_WS(' ', TRIM(first_name), TRIM(last_name))"), 'like', "%{$word}%")
-                          ->orWhere('email', 'like', "%{$word}%")
-                          ->orWhere('phone', 'like', "%{$word}%")
-                          ->orWhereRaw("SOUNDEX(first_name) = SOUNDEX(?)", [$word])
-                          ->orWhereRaw("SOUNDEX(last_name) = SOUNDEX(?)", [$word]);
+                            ->orWhere('last_name', 'like', "%{$word}%")
+                            ->orWhere(DB::raw("CONCAT_WS(' ', TRIM(first_name), TRIM(last_name))"), 'like', "%{$word}%")
+                            ->orWhere('email', 'like', "%{$word}%")
+                            ->orWhere('phone', 'like', "%{$word}%")
+                            ->orWhereRaw("SOUNDEX(first_name) = SOUNDEX(?)", [$word])
+                            ->orWhereRaw("SOUNDEX(last_name) = SOUNDEX(?)", [$word]);
                     });
                 }
             })
-            ->where('salon_id', Auth::user()->salon->id)
-            ->orderByRaw("
+                ->where('salon_id', Auth::user()->salon->id)
+                ->orderByRaw("
                 CASE
                     WHEN first_name LIKE '{$q}%' THEN 1
                     WHEN last_name LIKE '{$q}%' THEN 2
@@ -301,19 +275,18 @@ class MaterialUso extends Component
                     ELSE 7
                 END
             ")
-            ->get();
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097MaterialUso"] );
+                ->get();
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097MaterialUso"]);
         }
     }
 
     public function render()
     {
-        if($this->view === 1){
-            return view('livewire.material-uso',['productos' => $this->productos,'cartInfo' => $this->cart,'cartServices' => $this->cartS]);
-        }elseif ($this->view === 2){
-            return view('livewire.historial-uso',['usos' => $this->loadUsos()]);
+        if ($this->view === 1) {
+            return view('livewire.material-uso', ['productos' => $this->productos, 'cartInfo' => $this->cart, 'cartServices' => $this->cartS]);
+        } elseif ($this->view === 2) {
+            return view('livewire.historial-uso', ['usos' => $this->loadUsos()]);
         }
     }
 
@@ -325,14 +298,14 @@ class MaterialUso extends Component
     public function deleteUso()
     {
         $this->deleteMov();
-        foreach($this->itemSelected as $material){
+        foreach ($this->itemSelected as $material) {
             $mat = Material::find($material['id']);
             $mat->delete();
         }
     }
     private function cancelarStock()
     {
-        foreach($this->itemSelected as $material){
+        foreach ($this->itemSelected as $material) {
             $product = producto::find($material['producto']['id']);
             $product->stock_qty += $material['qty'];
             $product->save();
@@ -341,49 +314,48 @@ class MaterialUso extends Component
 
     private function loadUsos()
     {
-        $usos = Material::where('salon_id',Auth::user()->salon_id)
-            ->with('producto','customer','empleado','user')
-            ->orderBy('created_at','desc')
+        $usos = Material::where('salon_id', Auth::user()->salon_id)
+            ->with('producto', 'customer', 'empleado', 'user')
+            ->orderBy('created_at', 'desc')
             ->get()
-            ->groupBy(function($item) {
+            ->groupBy(function ($item) {
                 return $item->asignacion_id  ?? $item->created_at->format('Y-m-d H:i:s');
             });;
-            
+
         return $usos;
     }
-    public function addProductFromCart(producto $product,$vendedor=null,$sid=null,$uid=null)
+    public function addProductFromCart(producto $product, $vendedor = null, $sid = null, $uid = null)
     {
-        $this->AddProduct($product,1, $vendedor,$sid,$uid);
+        $this->AddProduct($product, 1, $vendedor, $sid, $uid);
     }
-    private function inCart($product_id,$sid=null)
+    private function inCart($product_id, $sid = null)
     {
-        try{
+        try {
             $mycart = $this->cart;
-            if($sid!==null){
-                $material = $mycart->where('mid', $product_id)->where('asignacion_id',$sid)->count();
+            if ($sid !== null) {
+                $material = $mycart->where('mid', $product_id)->where('asignacion_id', $sid)->count();
                 return  $material > 0 ? true : false;
-            }else{
+            } else {
                 $cont = $mycart->where('mid', $product_id)->count();
                 return  $cont > 0 ? true : false;
             }
-
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 40068MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 40068MaterialUso"]);
         }
     }
     private function sellersInCart()
     {
-        try{
+        try {
             $mycart = $this->cart;
             $withoutSeller = $mycart->whereNull('vendedor')->count();
             return $withoutSeller > 0 ? false : true;
-        } catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369MaterialUso"]);
         }
     }
     public function updateQty($uid, $cant = 1, $product_id = null)
     {
-        try{
+        try {
             if (!is_numeric($cant)) {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => $cant . ' NO ES UNA CANTIDAD VÁLIDA']);
                 return;
@@ -399,19 +371,19 @@ class MaterialUso extends Component
             $newItem  = $oldItem;
 
             $newItem['qty'] = $product_id == null ? intval($cant) : intval($newItem['qty'] + $cant);
-            
-            $this->desvincularElementoAnterior($product_id,$uid,$newItem);
+
+            $this->desvincularElementoAnterior($product_id, $uid, $newItem);
             $this->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41369MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41369MaterialUso"]);
         }
     }
 
-    private function AddProduct($product, $qty = 1,$empleado=NULL,$sid=null,$asignacion_id=null)
+    private function AddProduct($product, $qty = 1, $empleado = NULL, $sid = null, $asignacion_id = null)
     {
-        try{
+        try {
             // validar si ya existe en el carrito
-            if ($this->inCart($product->id,$sid)) {
+            if ($this->inCart($product->id, $sid)) {
                 $this->updateQty(null, $qty, $product->id);
                 return; // => con esta línea se agrupan los productos por nombre dentro del carrito
             }
@@ -437,39 +409,39 @@ class MaterialUso extends Component
             $itemCart = Arr::add($coll, null, null);
             $this->cart->push($itemCart);
             $this->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 32966MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 32966MaterialUso"]);
         }
     }
     function save()
     {
-        try{
+        try {
             session()->put('cartMaterials', $this->cart);
             session()->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 38967MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 38967MaterialUso"]);
         }
     }
     public function removeItemCart($id)
     {
-        try{
+        try {
             $this->cart = $this->cart->reject(function ($product) use ($id) {
                 return $product['id'] === $id;
             });
 
             $this->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065MaterialUso"]);
         }
     }
     public function Store()
     {
-        try{
+        try {
             Agenda::setCustomDate(Carbon::parse(session('customDate')));
 
             $user = Auth::user();
             $salon_id = $user->salon->id;
-            if (count($this->cart)<=0) {
+            if (count($this->cart) <= 0) {
                 $this->dispatchBrowserEvent('noty-error', ['msg' => 'NO HAY MATERIALES AGREGADOS']);
                 return;
             }
@@ -479,8 +451,8 @@ class MaterialUso extends Component
                 return;
             }
 
-            if(count($this->cart)>0){
-                foreach($this->cart as $item){
+            if (count($this->cart) > 0) {
+                foreach ($this->cart as $item) {
                     $movimiento = new Material;
                     $movimiento->producto_id = $item['mid'];
                     $movimiento->sale_price = $item['sale_price'];
@@ -497,18 +469,18 @@ class MaterialUso extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => "SOLICITUD PROCESADA CON ÉXITO"]);
             $this->clear();
             Agenda::setCustomDate();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 31065MaterialUso"]);
         }
     }
     private function ajustarStock($item)
     {
-        try{
+        try {
             $product = producto::find($item['mid']);
             $product->stock_qty -= $item['qty'];
             $product->save();
-        }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369MaterialUso"] );
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1134369MaterialUso"]);
         }
     }
 }

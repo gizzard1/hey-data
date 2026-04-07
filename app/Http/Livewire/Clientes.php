@@ -1531,17 +1531,11 @@ class Clientes extends Component
             // Consulta específica para el ID del servicio
             if (isset($this->filtros) && $this->filtros->contains('uid', $uid)) {
                 $filtro = $this->filtros->where('uid', $uid)->first();
-                $query = $filtro['query'] ?? '';
+                $search = $filtro['query'] ?? '';
 
-                $this->servicios[$uid] = servicio::where('salon_id', Auth::user()->salon->id)
-                    ->where('visibility', 'visible')
-                    ->where('name', '!=', 'Servicio eliminado')
-                    ->where(function ($q) use ($query) {
-                        $q->where('name', 'like', "%{$query}%")
-                            ->orWhere('description', 'like', "%{$query}%");
-                    })
-                    ->orderBy('name', 'asc')
-                    ->get();
+                $query = servicio::basicQuery();
+
+                $this->servicios[$uid] = Servicios::searchService($query, $search)->orderBy('name', 'asc')->get();
             }
         } catch (\Throwable $th) {
             // Registrar el error para mayor información
@@ -1581,18 +1575,10 @@ class Clientes extends Component
             // Consulta específica para el ID del servicio
             if (isset($this->filtros) && $this->filtros->contains('uid', $uid)) {
                 $filtro = $this->filtros->where('uid', $uid)->first();
-                $query = $filtro['query'] ?? '';
-                $this->productos[$uid] = producto::where('salon_id', Auth::user()->salon->id)
-                    ->where('visibility', 'visible')
-                    ->where('name', '!=', 'Producto eliminado')
-                    ->where(function ($qry) use ($query) {
-                        $qry->where('name', 'like', "%{$query}%")
-                            ->orWhere('description', 'like', "%{$query}%")
-                            ->orWhere('sku', "{$query}")
-                            ->orWhere('intern_sku', "{$query}");
-                    })
-                    ->orderBy('name', 'asc')
-                    ->get();
+                $search = $filtro['query'] ?? '';
+
+                $query = producto::basicQuery();
+                $this->productos[$uid] = Productos::searchProduct($query, $search)->orderBy('name', 'asc')->get();
             }
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 2097Clientes"]);

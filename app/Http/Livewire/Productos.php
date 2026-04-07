@@ -333,7 +333,6 @@ class Productos extends Component
     }
     function loadProducts($wP = 1)
     {
-
         try {
             $visibility = $this->orderByMostOrLessSelled === 'archives' ? 'hide' : 'visible';
             $query = producto::with('marca', 'categorias', 'asignaciones')
@@ -351,11 +350,7 @@ class Productos extends Component
 
             // Si hay búsqueda, agregar las condiciones
             if (!empty($this->search)) {
-                $query->where(function ($q) {
-                    $q->where('productos.name', 'like', "%{$this->search}%")
-                        ->orWhere('productos.sku', 'like', "%{$this->search}%")
-                        ->orWhere('productos.description', 'like', "%{$this->search}%");
-                });
+                $query = $this->searchProduct($query, $this->search);
             }
 
             // Ordenar por más o menos vendidos
@@ -390,6 +385,35 @@ class Productos extends Component
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 94234Productos"]);
         }
+    }
+    public static function searchProduct($query,$search)
+    {
+
+        $terms = collect(preg_split('/\s+/', trim($search)))
+            ->filter(fn($term) => strlen($term) >= 2)   // ignorar palabras de 1 carácter
+            ->unique();
+
+        if ($terms->isNotEmpty()) {
+            $query->where(function ($q) use ($terms) {
+                foreach ($terms as $index => $term) {
+                    // escapamos comodines para evitar comportamientos raros
+                    $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $term) . '%';
+                    $method = $index === 0 ? 'where' : 'orWhere';
+
+                    // agrupamos las condiciones de cada palabra
+                    $q->$method(function ($sub) use ($like, $term) {
+                        $sub->where('productos.name', 'like', $like)
+                            ->orWhere('productos.sku', 'like', $like)
+                            ->orWhere('productos.description', 'like', $like)
+                            ->orWhereRaw('SOUNDEX(productos.name) = SOUNDEX(?)', [$term])
+                            ->orWhereRaw('SOUNDEX(productos.description) = SOUNDEX(?)', [$term])
+                            ->orWhereRaw('SOUNDEX(productos.sku) = SOUNDEX(?)', [$term]);
+                    });
+                }
+            });
+        }
+
+        return $query;
     }
     public function orderBy($by, $direction)
     {

@@ -84,5 +84,11 @@ class producto extends Model
             });
         }
     }
+    public function scopeBasicQuery()
+    {
+        return producto::where('salon_id', Auth()->user()->salon->id)
+            ->where('visibility', 'visible')
+            ->where('name', '!=', 'Producto eliminado');
+    }
 
 }
