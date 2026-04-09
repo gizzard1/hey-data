@@ -47,15 +47,15 @@ class DataSales extends Controller
             $total_date = $data_details['total_date'];
             $total_items = $data_details['total_items'];
             $keptIds = $data_details['keptIds'];
-            $keptGiftCardIds = $data_details['keptGiftCardIds'];
 
             // Obtener las asignaciones actuales de la venta
             $asignacionesToDelete = Asignacion_venta::where('venta_id', $sale_id)
                 ->whereNotIn('id', $keptIds)
                 ->get();
 
-            // Eliminar las giftcards que ya no están asociadas a la venta
-            // coupon::whereIn('id', $keptGiftCardIds)->whereNotIn('id', $keptGiftCardIds)->delete();
+            // Eliminar las giftcards asociadas a las asignaciones que se eliminarán
+            $giftCardIdsToDelete = $asignacionesToDelete->pluck('id')->toArray();
+            coupon::whereIn('asignacion_venta_id', $giftCardIdsToDelete)->delete();
 
             // Actualizar el stock de los productos eliminados
             self::updateStockAfterSale($asignacionesToDelete);
@@ -169,14 +169,12 @@ class DataSales extends Controller
 
                 // Guardamos los IDs que quedan vigentes
                 $keptIds[] = $asignacion->id;
-                $keptGiftCardIds[] = $giftcard['id'] ?? null;
             }
             return [
                 'total_rp' => $total_rp,
                 'total_date' => $total_date,
                 'total_items' => $total_items,
                 'keptIds' => $keptIds,
-                'keptGiftCardIds' => $keptGiftCardIds,
             ];
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
