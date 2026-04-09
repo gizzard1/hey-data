@@ -14,6 +14,7 @@ class coupon extends Model
         'acumulable',
         'password',
         'asignacion_venta_id',
+        'redeemed',
     ];
     function asignaciones()
     {

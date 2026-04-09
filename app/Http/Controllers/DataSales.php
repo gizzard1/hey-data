@@ -10,8 +10,10 @@ use App\Models\Empleado;
 use App\Http\Controllers\DataResourceGrid as DRG;
 use App\Http\Controllers\DataMaterials as DM;
 use App\Models\Asignacion_venta;
+use App\Models\coupon;
 use App\Models\producto;
 use App\Models\Propina;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DataSales extends Controller
@@ -141,6 +143,21 @@ class DataSales extends Controller
                         'type_comision_calculated' => $comisionItem['type'],
                     ]
                 );
+
+                $giftcard = $detail['giftCard'] ?? null;
+                if ($giftcard) {
+                    coupon::updateOrCreate(
+                        ['id' => $giftcard['id'] ?? null],
+                        [
+                            'value_amount' => $giftcard['value_amount'],
+                            'expires_at' => Carbon::parse($giftcard['expires_at']),
+                            'acumulable' => $giftcard['acumulable'],
+                            'password' => $giftcard['password'],
+                            'asignacion_venta_id' => $asignacion->id,
+                            'redeemed' => $giftcard['redeemed'] ?? false,
+                        ]
+                    );
+                }
                 // Actualizar el stock del producto
                 $product = producto::find($detail['selected_item']);
                 $product->stock_qty -= $detail['quantity'] - $qty_before_update;
