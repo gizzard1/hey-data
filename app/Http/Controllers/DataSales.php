@@ -47,11 +47,15 @@ class DataSales extends Controller
             $total_date = $data_details['total_date'];
             $total_items = $data_details['total_items'];
             $keptIds = $data_details['keptIds'];
+            $keptGiftCardIds = $data_details['keptGiftCardIds'];
 
             // Obtener las asignaciones actuales de la venta
             $asignacionesToDelete = Asignacion_venta::where('venta_id', $sale_id)
                 ->whereNotIn('id', $keptIds)
                 ->get();
+
+            // Eliminar las giftcards que ya no están asociadas a la venta
+            // coupon::whereIn('id', $keptGiftCardIds)->whereNotIn('id', $keptGiftCardIds)->delete();
 
             // Actualizar el stock de los productos eliminados
             self::updateStockAfterSale($asignacionesToDelete);
@@ -144,13 +148,13 @@ class DataSales extends Controller
                     ]
                 );
 
-                $giftcard = $detail['giftCard'] ?? null;
+                $giftcard = $detail['gift_card'] ?? null;
                 if ($giftcard) {
                     coupon::updateOrCreate(
                         ['id' => $giftcard['id'] ?? null],
                         [
                             'value_amount' => $giftcard['value_amount'],
-                            'expires_at' => Carbon::parse($giftcard['expires_at']),
+                            'expires_at' => isset($giftcard['expires_at']) ? Carbon::parse($giftcard['expires_at']) : null,
                             'acumulable' => $giftcard['acumulable'],
                             'password' => $giftcard['password'],
                             'asignacion_venta_id' => $asignacion->id,
@@ -165,12 +169,14 @@ class DataSales extends Controller
 
                 // Guardamos los IDs que quedan vigentes
                 $keptIds[] = $asignacion->id;
+                $keptGiftCardIds[] = $giftcard['id'] ?? null;
             }
             return [
                 'total_rp' => $total_rp,
                 'total_date' => $total_date,
                 'total_items' => $total_items,
-                'keptIds' => $keptIds
+                'keptIds' => $keptIds,
+                'keptGiftCardIds' => $keptGiftCardIds,
             ];
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
@@ -287,7 +293,8 @@ class DataSales extends Controller
                             DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
                             DB::raw("color_preset as color")
                         );
-                    }
+                    },
+                    'giftCard:id,value_amount,expires_at,password,asignacion_venta_id,redeemed,acumulable'
                 ]);
             }, 'metodosPago' => function ($q) {
                 $q->select(
