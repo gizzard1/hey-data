@@ -38,7 +38,8 @@
                     <input
                         wire:change="updateQty( '{{ $item['id'] }}', $event.target.value)"
                         class="form-control text-center" type="number" style="background-color: transparent;border-color:transparent;border-bottom:1px solid black;" 
-                        value="{{ $item['qty'] }}" min="1">
+                        value="{{ $item['qty'] }}" min="1"
+                        {{ $item['pid'] === 99999 ? 'readonly' : '' }}>
 
                 </td>
                 <td class="input-container d-flex">
