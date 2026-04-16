@@ -186,4 +186,16 @@ return [
         // 'Example' => App\Facades\Example::class,
     ])->toArray(),
 
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Class fb_app_id
+    |--------------------------------------------------------------------------
+    |
+    | This value is used to store the Facebook App ID for your application.
+    | You can set this value in your .env file.
+    |
+    */
+    'fb_app_id' => env('FB_APP_ID', 'your-facebook-app-id'),
+
 ];
