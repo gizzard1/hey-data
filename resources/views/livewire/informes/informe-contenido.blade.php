@@ -270,8 +270,8 @@
             <tr>
                 <td class="nombre-column">${item.name}</td>
                 <td>${item.total_cust}</td>
-                <td>$${item.total_d_neto.toLocaleString()}</td>
-                <td>$${item.total_v_neto.toLocaleString()}</td>
+                <td>$${item.total_d.toLocaleString()}</td>
+                <td>$${item.total_v.toLocaleString()}</td>
                 <td>$${item.amount.toLocaleString()}</td>
             </tr>
         `;
