@@ -21,7 +21,7 @@ function confirmDelete() {
     });
 }
 document.addEventListener('livewire:load', function () {      
-    Livewire.emit('loadSearchBox', 0);
+    Livewire.emit('loadSearchBox', 2);
     
     // Obtiene el dato de sesión de PHP y lo pasa a JavaScript
     var recorrido = @json(session('recorrido'));

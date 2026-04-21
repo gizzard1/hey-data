@@ -18,6 +18,7 @@ use App\Models\categoria_cliente;
 use App\Models\cliente;
 use App\Http\Livewire\Agenda;
 use Illuminate\Support\Facades\DB;
+use App\Http\Livewire\Search;
 
 class Productos extends Component
 {
@@ -264,7 +265,8 @@ class Productos extends Component
         'viewProduct',
         'changeWindow',
         'StoreReview',
-        'reseñaCliente'
+        'reseñaCliente',
+        'selectedProductToEdit'
     ];
 
     public function toggleItem($itemId)
@@ -314,6 +316,7 @@ class Productos extends Component
         if ($movimiento_id != null) {
             $this->emit('enviarMovimiento', $movimiento_id);
         }
+        Search::loadSearchBox(1);
     }
     public function render()
     {
@@ -449,6 +452,10 @@ class Productos extends Component
 
         $this->emit('refresh');
         $this->dispatchBrowserEvent('noty', ['msg' => 'SOLICITUD PROCESADA CON ÉXITO']);
+    }
+    public function selectedProductToEdit($item)
+    {
+        $this->viewProduct(producto::find($item));
     }
 
     public function Edit($id = null)

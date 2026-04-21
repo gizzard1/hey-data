@@ -211,7 +211,8 @@ class Servicios extends Component
         'removeItem',
         'updateQty',
         'help',
-        'categoriaAgregada'
+        'categoriaAgregada',
+        'selectedServiceToEdit'
     ];
 
     public function searchSKU($searchText)
@@ -537,6 +538,10 @@ class Servicios extends Component
         $this->resetValidation();
         $this->loadDefault();
         // $this->clear();  
+    }
+    public function selectedServiceToEdit($item)
+    {
+        $this->viewService(servicio::find($item));
     }
 
     function viewService(servicio $service)

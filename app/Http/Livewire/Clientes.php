@@ -364,7 +364,7 @@ class Clientes extends Component
         'activateCardWithBalance',
         'activateModalForm',
         'categoriaAgregada',
-        'selectedItemToEdit' => 'viewCust',
+        'selectedItemToEdit',
         'viewTaxData'
     ];
     public function categoriaAgregada()
@@ -1292,6 +1292,15 @@ class Clientes extends Component
         $this->emit('refresh');
         $this->viewCust();
         $this->dispatchBrowserEvent('noty', ['msg' => 'SOLICITUD PROCESADA CON ÉXITO']);
+    }
+    public function selectedItemToEdit($itemId)
+    {
+        if ($this->action == 3) {
+            $this->emit('enviarCliente', $itemId);
+            $this->dispatchBrowserEvent('closeModalCust');
+        } else {
+            $this->viewCust($itemId);
+        }
     }
     public function viewCust($cliente = null)
     {

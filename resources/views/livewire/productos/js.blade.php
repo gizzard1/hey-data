@@ -44,7 +44,7 @@ function reloadCheck()
 
 document.addEventListener('livewire:load', function () {    
     
-Livewire.emit('loadSearchBox', 0);
+Livewire.emit('loadSearchBox', 1);
 
 Livewire.on('createModalForm',function(){
     initializeTomSelect()

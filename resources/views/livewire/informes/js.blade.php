@@ -1,6 +1,8 @@
 @push('my-scripts')
 <script>
     document.addEventListener('livewire:load', function () {
+    Livewire.emit('loadSearchBox', 0);
+        
     Livewire.on('refrescarCharts',data =>{
         var eData=JSON.parse(data.dataEmpleados);
 

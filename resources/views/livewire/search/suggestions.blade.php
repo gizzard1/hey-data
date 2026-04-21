@@ -16,7 +16,11 @@
         <div>
             <ul x-show="open" class="list-group float-right" style="position: absolute; z-index:1; max-height: 300px; overflow-y: auto;">
                 @foreach ($sugerencias as $sugerencia)
-                    <li wire:click="selectedItem('{{ $sugerencia->id }}')" @click="open = false;" class="list-group-item list-group-item-action" style="cursor: pointer; color: #6E6E6E;">{{ $sugerencia->first_name }} {{ $sugerencia->last_name }} | {{ $sugerencia->phone }}</li>
+                    @if(isset($sugerencia->first_name))
+                        <li wire:click="selectedItem('{{ $sugerencia->id }}')" @click="open = false;" class="list-group-item list-group-item-action" style="cursor: pointer; color: #6E6E6E;">{{ $sugerencia->first_name }} {{ $sugerencia->last_name }} | {{ $sugerencia->phone }}</li>
+                    @else
+                        <li wire:click.prevent="selectedItem('{{ $sugerencia->id }}')" @click="open = false;" class="list-group-item list-group-item-action" style="cursor: pointer; color: #6E6E6E;">{{ $sugerencia->name }}</li>
+                    @endif
                 @endforeach 
             </ul>
         </div>
