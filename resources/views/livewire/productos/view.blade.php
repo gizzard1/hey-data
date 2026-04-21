@@ -24,7 +24,7 @@
                                 <div class="carousel-inner">
                                     @foreach($productSelected->photos as $index => $file)
                                         <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
-                                            <img class="d-block w-100" style="max-height: 14rem;" src="{{ asset($file) }}" alt="Slide {{ $index + 1 }}">
+                                            <img class="d-block w-100" style="max-height: 14rem;object-fit: contain;" src="{{ asset($file) }}" alt="Slide {{ $index + 1 }}">
                                         </div>
                                     @endforeach
                                 </div>
