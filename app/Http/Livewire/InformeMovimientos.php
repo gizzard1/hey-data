@@ -335,6 +335,7 @@ class InformeMovimientos extends Component
             $this->setBalance($info);
             if (count($info['citas']) > 0) {
                 $this->acumularDescuentos($info['citas']);
+                $this->acumularDescuentos($info['citas'], 'details_product');
                 $this->setBalanceDisccounts($info['citas']);
             }
             if (count($info['ventas']) > 0) {
@@ -354,10 +355,10 @@ class InformeMovimientos extends Component
         }
         return $qty;
     }
-    private function acumularDescuentos($transacciones)
+    private function acumularDescuentos($transacciones, $relation = 'details')
     {
         foreach ($transacciones as $transaccion) {
-            foreach ($transaccion->details as $detail) {
+            foreach ($transaccion->$relation as $detail) {
                 // Obtener cantidad de ítems
                 $items_qty = $detail->quantity ?? 1;
                 // Calcular descuento total
@@ -469,6 +470,7 @@ class InformeMovimientos extends Component
                 $this->itemSelected = cita::with('etiquetas', 'details_product.product', 'details_product.empleado', 'details.servicio', 'details.empleado', 'propinas', 'metodosPago.metodoPago', 'customer.tarjetaPuntos')->find($item_id);
                 $this->pictures = $this->itemSelected->photos;
                 $this->acumularDescuentos([$this->itemSelected]);
+                $this->acumularDescuentos([$this->itemSelected], 'details_product');
             } elseif ($key == 'usos' || $key == 'entradas') {
                 $key == 'usos' ? $this->type = 'uso' : $this->type = 'entrada';
                 // Limpiar caracteres de control (si es necesario)

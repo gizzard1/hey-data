@@ -89,7 +89,13 @@
                     <td>{{ $detail->product->name }}</td>
                     <td>{{ $detail->empleado->first_name }}</td>
                     <td>{{ $detail->quantity }}</td>
-                    <td> {{ number_format($detail->disccount_percent,2,'.',',') }}% </td>
+                    <td> 
+                        {{ 
+                            ($detail->discount_type == 'Cantidad' ? '$' : '') . 
+                            number_format($detail->discount_qty, 2, '.', ',') . 
+                            ($detail->discount_type == 'Porcentaje' ? '%' : '') 
+                        }}
+                    </td>
                     <td> {{ number_format(($detail->iva)*100,2,'.') }}% </td>
                     <td> ${{ number_format($detail->disccount_price>0 ? $detail->disccount_price : $detail->current_price,2,'.',',') }} </td>
                     <td> ${{ number_format($detail->current_price*$detail->quantity,2,'.',',') }} </td>
