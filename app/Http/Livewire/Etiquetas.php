@@ -36,6 +36,10 @@ class Etiquetas extends Component
     {
         return view('livewire.etiquetas.etiquetas',['etiquetas'=>Auth::user()->salon->etiquetas]);
     }
+    public function updateColor($color)
+    {
+        $this->color = $color;
+    }
     public function create()
     {
         $this->loadDefault();
@@ -65,7 +69,6 @@ class Etiquetas extends Component
             $this->dispatchBrowserEvent('hideModalTags');
             $this->dispatchBrowserEvent('noty', ['msg' =>  "SOLICITUD PROCESADA CON ÉXITO"] );
         }catch(\Throwable $th){
-            dd($th);
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41180CatGastos"] );
         }
     }

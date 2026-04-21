@@ -10,27 +10,14 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-group">
-                            <input wire:model.defer="name" type="text" placeholder="Nombre" class="form-control form-control">
+                            <div class="d-flex">
+                                <input wire:model.defer="name" type="text" placeholder="Nombre" class="form-control form-control">
+                                @include('livewire.ajustes.modulos.modal.dropdown-color')
+
+                            </div>
+
                             <label>Nombre</label>
                             @error('name') <span class="text-danger">*Este campo es obligatorio </span> @enderror
-                        </div>
-                        <div class="form-group">
-                            <div>
-                                <select  wire:model="color" style="color:white;background-color:{{ $color }}" class="form-control" name="color" id="presetColors">
-                                    
-                                @php
-                                    $presetColors = ['#6f42c1', '#e83e8c', '#e63946', '#1d3557', '#278d46', '#3A82EF', '#FFAB2D'];
-                                @endphp
-
-                                @foreach($presetColors as $colorOption)
-                                    <option {{ $color == $colorOption ? 'selected' : '' }} value="{{ $colorOption }}" style="color:white;background-color: {{ $colorOption }};">Elige un color
-                                    </option>
-                                @endforeach
-                                </select>
-                            </div>
-                            
-                            <label>Color</label>
-                            @error('color') <span class="text-danger">*Este campo es obligatorio </span> @enderror
                         </div>
                     </div>
                 </div>
