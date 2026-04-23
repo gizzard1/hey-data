@@ -19,10 +19,7 @@
                         <td class="badge" style="display: revert;background-color:{{ $item->status == 'Agendada' ? '#4978BC' : ($item->status == 'Pagada' ? '#28A745' : ($item->status == 'Cancelada' ? '#E63946' : ($item->status == 'Confirmada' ? '#4978BC' : ($item->status == 'Pendiente' ? '#FFAB2D' : '#e63946')))) }}"><button
                                 class="details-badge"
                                 data-original-text="{{ $item->status }}" 
-                                data-hover-text="Detalles"
-                                onclick="event.stopPropagation()" 
-                                onmouseover="changeBadgeText(this, 'hover')" 
-                                onmouseout="changeBadgeText(this, 'original')">{{ $item->status }}</button></td>
+                                onclick="event.stopPropagation()" >{{ $item->status }}</button></td>
                         <td> {{ date_format(new DateTime($item->created_at),'d-m-Y') }} </td>
                         <td> ${{ number_format($item->total,2,'.',',') }} </td>
                         <td> {{ isset($item->customer) ? $item->customer->first_name : 'Cliente eliminado' }} {{ isset($item->customer) ? $item->customer->last_name : '' }}</td>
@@ -63,10 +60,7 @@
                         <td class="badge" style="display: revert;background-color:{{ $item->status == 'Agendada' ? '#4978BC' : ($item->status == 'Pagada' ? '#28A745' : ($item->status == 'Cancelada' ? '#E63946' : ($item->status == 'Confirmada' ? '#4978BC' : ($item->status == 'Pendiente' ? '#FFAB2D' : '#e63946')))) }}"><button
                                 class="details-badge"
                                 data-original-text="{{ $item->status }}" 
-                                data-hover-text="Detalles"
-                                onclick="event.stopPropagation()" 
-                                onmouseover="changeBadgeText(this, 'hover')" 
-                                onmouseout="changeBadgeText(this, 'original')">{{ $item->status }}</button></td>
+                                onclick="event.stopPropagation()" >{{ $item->status }}</button></td>
                         <td> {{ date_format(new DateTime($item->created_at),'d-m-Y') }} </td>
                         <td> ${{ number_format($item->total,2,'.',',') }} </td>
                         <td> {{ isset($item->customer) ? $item->customer->first_name : 'Cliente eliminado' }} {{ isset($item->customer) ? $item->customer->last_name : '' }}</td>
@@ -107,10 +101,7 @@
                         <td class="badge" style="display: revert;background-color:{{ $item->status == 'Agendada' ? '#4978BC' : ($item->status == 'vigente' ? '#28A745' : ($item->status == 'cancelado' ? '#E63946' : ($item->status == 'default' ? '#4978BC' : ($item->status == 'Pendiente' ? '#FFAB2D' : '#e63946')))) }}"><button
                                 class="details-badge"
                                 data-original-text="{{ $item->status }}" 
-                                data-hover-text="Detalles"
-                                onclick="event.stopPropagation()" 
-                                onmouseover="changeBadgeText(this, 'hover')" 
-                                onmouseout="changeBadgeText(this, 'original')">{{ $item->status }}</button></td>
+                                onclick="event.stopPropagation()" >{{ $item->status }}</button></td>
                         <td> {{ date_format(new DateTime($item->created_at),'d-m-Y') }} </td>
                         <td> ${{ number_format($item->total,2,'.',',') }} </td>
                         <td> -</td>
