@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DataCashRegister;
 use App\Http\Controllers\DataCustomers;
 use App\Http\Controllers\DataProducts;
 use App\Http\Controllers\DataResourceGrid;
 use App\Http\Controllers\DataServices;
 use App\Http\Controllers\DataEmployees;
+use App\Http\Controllers\DataFiles;
 use App\Http\Controllers\DataIncomes;
 use App\Http\Controllers\DataMaterials;
 use App\Http\Controllers\DataPayment;
@@ -81,6 +83,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/update-user-data', [AuthController::class, 'updateUserData']);
 
     Route::get('/data-transactions', [DataTransactions::class, 'loadTransactions']);
+
+    Route::get('/verify-opening', [DataCashRegister::class, 'verifyOpening']);
+    Route::get('/get-cash-float', [DataCashRegister::class, 'getCashFloat']);
+    Route::post('/open-cash-register', [DataCashRegister::class, 'openCashRegister']);
 });
 
 // Rutas públicas (sin autenticación)
