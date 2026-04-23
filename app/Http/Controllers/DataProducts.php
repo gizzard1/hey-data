@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\producto;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\DataFiles as DF;
 use Illuminate\Support\Facades\Log;
 
 class DataProducts extends Controller
@@ -77,7 +77,10 @@ class DataProducts extends Controller
                 ]
             );
 
-            return ['producto' => $newProduct];
+            // Guardar imágenes
+            $msg = DF::updateOrCreateFile($product['files'] ?? [],$newProduct->id);
+
+            return ['producto' => $newProduct, 'msg' => $msg];
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
