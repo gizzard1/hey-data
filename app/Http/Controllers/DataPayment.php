@@ -10,6 +10,7 @@ use App\Models\Propina;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\DataResourceGrid as DRG;
+use App\Http\Controllers\DataCashRegister as DCR;
 use App\Models\metodo_pago_venta;
 use App\Models\venta;
 
@@ -52,6 +53,10 @@ class DataPayment extends Controller
     public static function updateMethods(Request $request)
     {
         try {
+            $isOpenedCashRegister = DCR::verifyOpening($request);
+            if (!$isOpenedCashRegister['open']) {
+                return response()->json(['msg' => 'no_cash_register_opened']);
+            }
             $sale_id = null;
             $data = $request->input('methods');
 
