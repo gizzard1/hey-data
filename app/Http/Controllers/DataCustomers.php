@@ -73,6 +73,23 @@ class DataCustomers extends Controller
                     'categorias' => function ($q) {
                         $q->select('categoria_clientes.id', 'categoria_clientes.name');
                     },
+                    // Cargar citas del cliente ordenadas por fecha de creación descendente
+                    'citas' => function ($q) {
+                        $q->select(
+                            'id',
+                            'customer_id',
+                            'start',
+                            'end',
+                        )->with(['details.empleado' => function ($q) {
+                            $q->select(
+                                'id',
+                                DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as name"),
+                                DB::raw("color_preset as color")
+                            );
+                        }])->with(['details.servicio' => function ($q) {
+                            $q->select('id', 'name');
+                        }])->orderBy('start', 'desc');
+                    },
                 ])
                 ->withAvg('calificaciones', 'puntaje')
                 ->find($cust_id);
