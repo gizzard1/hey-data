@@ -25,11 +25,11 @@ class gasto extends Model
     ];
     public function marca()
     {
-        return $this->belongsTo(marca::class,'marca_id');
+        return $this->belongsTo(marca::class, 'marca_id');
     }
     public function salon()
     {
-        return $this->belongsTo(Salon::class,'salon_id');
+        return $this->belongsTo(Salon::class, 'salon_id');
     }
     public function user()
     {
@@ -45,24 +45,31 @@ class gasto extends Model
     }
     public function files()
     {
-        return $this->morphMany(File::class,'model');
+        return $this->morphMany(File::class, 'model');
     }
 
     public function latestImage()
     {
         //recent file
-        return $this->morphOne(File::class,'model')->latestOfMany();
+        return $this->morphOne(File::class, 'model')->latestOfMany();
     }
     public function getPhotosAttribute()
     {
         if (count($this->files)) {
             return $this->files->map(function ($file) {
-                if(file_exists('storage/gastos/' . $file->file)){
+                if (file_exists('storage/gastos/' . $file->file)) {
                     return "storage/gastos/" . $file->file;
-                }else{
+                } else {
                     return 'storage/Image-not-found.png';
                 }
             });
         }
+    }
+    public function scopeFloatCashBetweenDates($query, $salon_id, $start, $end)
+    {
+        return $query->select('id', 'total', 'payment_method', 'status', 'updated_at', 'date', 'created_at', 'salon_id')
+            ->where('salon_id', $salon_id)
+            ->where('payment_method', 'Caja chica')
+            ->whereBetween('date', [$start, $end]);
     }
 }

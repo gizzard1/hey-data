@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Models\User;
 use App\Models\cliente;
 use App\Models\Asignacion_servicio;
-use App\Models\metodo_pago;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
@@ -166,5 +165,15 @@ class cita extends Model
             ->where('salon_id', $salon_id)
             ->whereBetween('start', [$start, $end])
             ->orderBy('start', 'desc');
+    }
+    public function scopeTransactionsBetweenDatesClosing($query, $salon_id, $start, $end)
+    {
+        return $query->where('salon_id', $salon_id)
+            ->whereBetween('updated_at', [$start, $end])
+            ->where(function ($query) {
+                $query->where('status', 'Pagada')
+                    ->orWhere('status', 'Pendiente');
+            })
+            ->with('abonos', 'details', 'metodosPago.metodoPago', 'propinas.metodoPago', 'customer');
     }
 }

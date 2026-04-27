@@ -102,7 +102,7 @@
                                 class="details-badge"
                                 data-original-text="{{ $item->status }}" 
                                 onclick="event.stopPropagation()" >{{ $item->status }}</button></td>
-                        <td> {{ date_format(new DateTime($item->created_at),'d-m-Y') }} </td>
+                        <td> {{ date_format(new DateTime($item->date),'d-m-Y') }} </td>
                         <td> ${{ number_format($item->total,2,'.',',') }} </td>
                         <td> -</td>
                         <td> Última act. {{ date_format(new DateTime($item->updated_at),'d-m-Y') }} </td>

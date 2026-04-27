@@ -73,7 +73,10 @@ class venta extends Model
                 'details.product:id,name',
                 'customer' => function ($q) {
                     $q->select(
-                        'id','first_name','last_name','phone',
+                        'id',
+                        'first_name',
+                        'last_name',
+                        'phone',
                         DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"),
                         DB::raw("phone as telefono"),
                     );
@@ -101,7 +104,10 @@ class venta extends Model
                 'details.product:id,name',
                 'customer' => function ($q) {
                     $q->select(
-                        'id','first_name','last_name','phone',
+                        'id',
+                        'first_name',
+                        'last_name',
+                        'phone',
                         DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"),
                         DB::raw("phone as telefono"),
                     );
@@ -116,5 +122,15 @@ class venta extends Model
             ])
             ->whereBetween('created_at', [$start, $end])
             ->orderBy('created_at', 'desc');
+    }
+    public function scopeTransactionsBetweenDatesClosing($query, $salon_id, $start, $end)
+    {
+        return $query->where('salon_id', $salon_id)
+            ->whereBetween('created_at', [$start, $end])
+            ->where(function ($query) {
+                $query->where('status', 'Pagada')
+                    ->orWhere('status', 'Pendiente');
+            })
+            ->with('abonos', 'details', 'metodosPago.metodoPago', 'propinas.metodoPago', 'customer');
     }
 }

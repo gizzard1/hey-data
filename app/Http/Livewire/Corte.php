@@ -218,26 +218,11 @@ class Corte extends Component
             $apertura = $this->getLatestOpening();
             $aperturaTime = $apertura->created_at->format('Y-m-d H:i:s');
             $this->caja_chica = $apertura->caja_chica;
-            $gastos = gasto::where('salon_id',$salon_id)
-                ->where('payment_method','Caja chica')
-                ->whereBetween('created_at', [$aperturaTime, $now]);
+            $gastos = gasto::floatCashBetweenDates($salon_id, $aperturaTime, $now);
             $this->gastos_qty = $gastos->sum('total');
             $this->gastos = $gastos->get();
-            $this->ventas = venta::where('salon_id',$salon_id)
-                ->whereBetween('created_at', [$aperturaTime, $now])
-                ->where(function($query) {
-                    $query->where('status', 'Pagada')
-                          ->orWhere('status', 'Pendiente');
-                })
-                ->with('abonos','details','metodosPago.metodoPago','propinas.metodoPago','customer')->get();
-            $this->citas = cita::where('salon_id', $salon_id)
-                ->whereBetween('updated_at', [$aperturaTime, $now])
-                ->where(function($query) {
-                    $query->where('status', 'Pagada')
-                          ->orWhere('status', 'Pendiente');
-                })
-                ->with('abonos', 'details', 'metodosPago.metodoPago', 'propinas.metodoPago','customer')
-                ->get();
+            $this->ventas = venta::transactionsBetweenDatesClosing($salon_id, $aperturaTime, $now)->get();
+            $this->citas = cita::transactionsBetweenDatesClosing($salon_id, $aperturaTime, $now)->get();
             $this->acumularTransacciones($this->ventas,0);
             $this->acumularTransacciones($this->citas,1);
         }catch(\Throwable $th){
