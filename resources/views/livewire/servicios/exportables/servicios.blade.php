@@ -13,6 +13,7 @@
     <thead class="thead-primary">
         <tr>
             <th>Nombre</th>
+            <th>Proveedor</th>
             <th>Descripción</th>
             <th>Precio público</th>
             <th>Precio descuento</th>
@@ -25,6 +26,7 @@
     @foreach($servicios as $servicio)
         <tr>
             <td>{{ $servicio->name }}</td>
+            <td>{{ $servicio->marca?->name }}</td>
             <td>{{ $servicio->description }}</td>
             <td>{{ $servicio->gross_price }}</td>
             <td>{{ $servicio->disccount_price }}</td>
