@@ -10,7 +10,8 @@ class caja_apertura extends Model
     use HasFactory;
     protected $fillable = [
         'caja_corte_id',
-        'caja_chica'
+        'caja_chica',
+        'user_id',
     ];
     public function user()
     {

@@ -78,7 +78,7 @@ class Corte extends Component
                 }
             }
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 743271Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 743271Corte"] );
         }
     }
     private function acumularMetodos($metodos,$isPending,$type,$isDate)
@@ -116,7 +116,7 @@ class Corte extends Component
             }
             return $total_methods;
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 12457Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 12457Corte"] );
         }
     }
     private function calculateTaxes($transaccion)
@@ -206,7 +206,7 @@ class Corte extends Component
                 $this->totalCorte_neto += $total_taxes;
             }
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 15558Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 15558Corte"] );
         }
     }
     
@@ -226,7 +226,7 @@ class Corte extends Component
             $this->acumularTransacciones($this->ventas,0);
             $this->acumularTransacciones($this->citas,1);
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 19760Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 19760Corte"] );
         }
     }
 
@@ -252,7 +252,7 @@ class Corte extends Component
                 return $valorNumerico;
             }
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 51312Agenda"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 51312Corte"] );
         }
     }
 
@@ -262,7 +262,7 @@ class Corte extends Component
             $qty = $this->eliminarCaracteres($qty);
             $this->totalCashReal = $qty;
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 308335Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 308335Corte"] );
         }
     }
 
@@ -311,7 +311,7 @@ class Corte extends Component
             $this->caja_chica = 0;
             $this->caja_chica_real = 0;
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 24062Ventas"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 24062Corte"] );
         }
     }
     
@@ -369,6 +369,7 @@ class Corte extends Component
             $apertura->caja_corte_id = $corte->id;
             $apertura->save();
         }catch(\Throwable $th){
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 24062Corte"] );
         }
     }
     public function cancelarCorte()
@@ -417,7 +418,7 @@ class Corte extends Component
             }
             $this->calculateTotal();
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1442369Agenda"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1442369Corte"] );
         }
     }
     
@@ -442,7 +443,7 @@ class Corte extends Component
                 return;
             }
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1454369Agenda"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1454369Corte"] );
         }
     }
     public function changeQty($type,$forma_pago,$qty)
@@ -463,7 +464,7 @@ class Corte extends Component
             }
             $this->calculateTotal();
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1468369Agenda"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1468369Corte"] );
         }
     }
     
@@ -484,7 +485,7 @@ class Corte extends Component
                 $this->total_p += $cantidades['real'];
             }
         }catch(\Throwable $th){
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1500369Agenda"] );
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1500369Corte"] );
         }
     }
     public function StoreCorte()

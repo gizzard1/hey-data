@@ -67,7 +67,8 @@ class gasto extends Model
     }
     public function scopeFloatCashBetweenDates($query, $salon_id, $start, $end)
     {
-        return $query->select('id', 'total', 'payment_method', 'status', 'updated_at', 'date', 'created_at', 'salon_id')
+        return $query->select('id', 'total', 'payment_method', 'status', 'updated_at', 'date', 'created_at', 'salon_id', 'user_id')
+            ->with('user:id,name')
             ->where('salon_id', $salon_id)
             ->where('payment_method', 'Caja chica')
             ->whereBetween('date', [$start, $end]);

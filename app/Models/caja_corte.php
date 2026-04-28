@@ -12,15 +12,28 @@ class caja_corte extends Model
         'description',
         'total_bruto',
         'total_neto',
+        'ganancia',
+        'total_ventas',
+        'total_servicios',
         'total_cash',
         'total_NF',
         'total_points',
         'tips',
         'comissions',
         'user_id',
-        'ganancia',
-        'total_ventas',
-        'total_servicios',
+        'total_cash_real',
+        'total_tarjeta',
+        'total_tarjeta_real',
+        'total_NF_real',
+        'propinas_efectivo_real',
+        'propinas_banorte_real',
+        'propinas_efectivo',
+        'propinas_banorte',
+        'propinas_tarjeta',
+        'propinas_tarjeta_real',
+        'caja_chica_real',
+        'caja_chica',
+        'gastos',
     ];
     public function user()
     {
@@ -50,7 +63,7 @@ class caja_corte extends Model
     public function scopeTransactionsBetweenDatesBetweenTotal($query, $salon_id, $start, $end, $minTotal, $maxTotal)
     {
         return $query->with('user')
-                ->whereBetween('ganancia', [$minTotal ?? 0, $maxTotal ?? PHP_INT_MAX])
+            ->whereBetween('ganancia', [$minTotal ?? 0, $maxTotal ?? PHP_INT_MAX])
             ->whereHas('user', function ($query) use ($salon_id) {
                 $query->where('salon_id', $salon_id);
             })

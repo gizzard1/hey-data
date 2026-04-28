@@ -174,6 +174,21 @@ class cita extends Model
                 $query->where('status', 'Pagada')
                     ->orWhere('status', 'Pendiente');
             })
-            ->with('abonos', 'details', 'metodosPago.metodoPago', 'propinas.metodoPago', 'customer');
+            ->with([
+                'abonos',
+                'details.servicio',
+                'metodosPago.metodoPago',
+                'propinas.metodoPago',
+                'customer' => function ($q) {
+                    $q->select(
+                        'id',
+                        'first_name',
+                        'last_name',
+                        'phone',
+                        DB::raw("CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')) as nombre"),
+                        DB::raw("phone as telefono"),
+                    );
+                }
+            ]);
     }
 }

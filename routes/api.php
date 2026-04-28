@@ -87,6 +87,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/verify-opening', [DataCashRegister::class, 'verifyOpening']);
     Route::get('/get-cash-float', [DataCashRegister::class, 'getCashFloat']);
     Route::post('/open-cash-register', [DataCashRegister::class, 'openCashRegister']);
+    Route::get('/closing-data', [DataCashRegister::class, 'closeCashRegister']);
+    Route::post('/close-cash-register', [DataCashRegister::class, 'storeCashRegister']);
 });
 
 // Rutas públicas (sin autenticación)
