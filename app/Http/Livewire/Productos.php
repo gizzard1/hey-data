@@ -389,31 +389,25 @@ class Productos extends Component
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 94234Productos"]);
         }
     }
-    public static function searchProduct($query,$search)
+    public static function searchProduct($query, $search)
     {
 
-        $terms = collect(preg_split('/\s+/', trim($search)))
-            ->filter(fn($term) => strlen($term) >= 2)   // ignorar palabras de 1 carácter
-            ->unique();
+        $query->where(function ($q) use ($search) {
+            $words = preg_split('/\s+/', trim($search));
 
-        if ($terms->isNotEmpty()) {
-            $query->where(function ($q) use ($terms) {
-                foreach ($terms as $index => $term) {
-                    // escapamos comodines para evitar comportamientos raros
-                    $like = '%' . str_replace(['%', '_'], ['\%', '\_'], $term) . '%';
-                    $method = $index === 0 ? 'where' : 'orWhere';
+            foreach ($words as $word) {
+                $q->where(function ($q) use ($word) {
+                    $q->where('name', 'like', "%{$word}%")
+                        ->orWhere('description', 'like', "%{$word}%")
+                        ->orWhere('sku', 'like', "%{$word}%")
+                        ->orWhereRaw("SOUNDEX(name) = SOUNDEX(?)", [$word]);
+                });
+            }
+        });
 
-                    // agrupamos las condiciones de cada palabra
-                    $q->$method(function ($sub) use ($like, $term) {
-                        $sub->where('productos.name', 'like', $like)
-                            ->orWhere('productos.sku', 'like', $like)
-                            ->orWhere('productos.description', 'like', $like)
-                            ->orWhereRaw('SOUNDEX(productos.name) = SOUNDEX(?)', [$term])
-                            ->orWhereRaw('SOUNDEX(productos.description) = SOUNDEX(?)', [$term])
-                            ->orWhereRaw('SOUNDEX(productos.sku) = SOUNDEX(?)', [$term]);
-                    });
-                }
-            });
+        if ($query->count() == 0) {
+            $query->where('name', 'like', "%{$search}%")
+                ->orWhere('sku', 'like', "%{$search}%");
         }
 
         return $query;
