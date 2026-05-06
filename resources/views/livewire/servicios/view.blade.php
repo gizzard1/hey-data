@@ -1,5 +1,5 @@
 @if($serviceSelected !=null)
-<div id="modalViewService" class="modal fade" role="dialog"  data-bs-backdrop="static" data-bs-keyboard="false">
+<div id="modalViewService" class="modal fade" role="dialog"  data-bs-backdrop="static" data-bs-keyboard="false" aria-hidden="true">
     <div class="modal-dialog">
         <!-- Contenido del modal-->
         <div class="modal-content">
