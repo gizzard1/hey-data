@@ -19,7 +19,8 @@
                     @if(isset($sugerencia->first_name))
                         <li wire:click="selectedItem('{{ $sugerencia->id }}')" @click="open = false;" class="list-group-item list-group-item-action" style="cursor: pointer; color: #6E6E6E;">{{ $sugerencia->first_name }} {{ $sugerencia->last_name }} | {{ $sugerencia->phone }}</li>
                     @else
-                        <li wire:click.prevent="selectedItem('{{ $sugerencia->id }}')" @click="open = false;" class="list-group-item list-group-item-action" style="cursor: pointer; color: #6E6E6E;">{{ $sugerencia->name }}</li>
+                        <li wire:click.prevent="selectedItem('{{ $sugerencia->id }}')" @click="open = false;" class="list-group-item list-group-item-action" style="cursor: pointer; color: #6E6E6E;">{{ $sugerencia->name }} | <span class="{{ $sugerencia->disccount_price > 0 ? "line-t text-gray-400" : "text-green" }}">{{ number_format($sugerencia->gross_price,2,'.',',') }}</span> @if($sugerencia->disccount_price>0) <span class="text-green">{{ number_format($sugerencia->disccount_price,2,'.',',') }}</span> @endif</li>
+
                     @endif
                 @endforeach 
             </ul>
