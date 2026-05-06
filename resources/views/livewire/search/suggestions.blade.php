@@ -36,7 +36,7 @@
         })
 
         function simulateEnter() {
-            Livewire.emit('searchGlobal',4);
+            Livewire.emit('searchGlobal');
         }
 
     </script>
