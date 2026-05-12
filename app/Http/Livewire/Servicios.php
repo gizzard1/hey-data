@@ -588,6 +588,14 @@ class Servicios extends Component
     function Store()
     {
         $this->validate($this->rules);
+        
+        if ($this->gallery) {
+            // Validar que sólo exista un archivo en el arreglo
+            if (count($this->gallery) > 2) {
+                $this->dispatchBrowserEvent('noty-error', ['msg' => 'SOLO SE PERMITE SUBIR DOS ARCHIVOS POR SERVICIO']);
+                return;
+            }
+        }
         try {
 
             $this->service->disccount_price = $this->service->disccount_price ? $this->service->disccount_price : null;

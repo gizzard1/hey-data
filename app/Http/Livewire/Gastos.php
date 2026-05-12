@@ -16,6 +16,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 use Livewire\WithFileUploads;
+use App\Http\Livewire\Agenda;
 
 class Gastos extends Component
 {
@@ -526,10 +527,16 @@ class Gastos extends Component
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "El folio fiscal ya existe en el sistema. Verifique la información."]);
             return;
         }
-        try {
-            if (session()->has('customDate')) {
-                Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
+        
+        if ($this->gallery) {
+            // Validar que sólo exista un archivo en el arreglo
+            if (count($this->gallery) > 10) {
+                $this->dispatchBrowserEvent('noty-error', ['msg' => 'SOLO SE PERMITE SUBIR DIEZ ARCHIVOS POR GASTO']);
+                return;
             }
+        }
+        try {
+            Agenda::setCustomDate(Carbon::parse(session('customDate')));
 
             if ($this->editing) {
                 $oldGasto = $this->gasto;
@@ -557,9 +564,7 @@ class Gastos extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => 'SOLICITUD PROCESADA CON ÉXITO']);
             $this->loadDefault();
 
-            if (session()->has('customDate')) {
-                Carbon::setTestNow();
-            }
+            Agenda::setCustomDate();
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 340235Gastos"]);
         }

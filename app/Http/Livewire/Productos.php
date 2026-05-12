@@ -528,6 +528,14 @@ class Productos extends Component
     function Store($enviar = 0)
     {
         $this->validate($this->rules);
+        
+        if ($this->gallery) {
+            // Validar que sólo exista un archivo en el arreglo
+            if (count($this->gallery) > 1) {
+                $this->dispatchBrowserEvent('noty-error', ['msg' => 'SOLO SE PERMITE SUBIR UNA ARCHIVO POR PRODUCTO']);
+                return;
+            }
+        }
         try {
             Agenda::setCustomDate(Carbon::parse(session('customDate')));
 

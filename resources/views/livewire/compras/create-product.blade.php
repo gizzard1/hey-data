@@ -133,11 +133,8 @@
                                     </div>
                                 @endif
                                 <div class="form-group">
-                                    <label>Subir fotos</label>
-                                    <input style="background-color: transparent  !important;border-color:transparent !important;" multiple type="file" class="form-control" wire:model="gallery" accept="image/x-png,image/jpeg">
-                                    @error('gallery.*')
-                                    <span style="color: red;">*Corrige este campo* </span>
-                                    @enderror
+                                    <label>Subir foto</label>
+                                    <input style="background-color: transparent  !important;border-color:transparent !important;" type="file" class="form-control" wire:model="gallery" accept="image/x-png,image/jpeg">
                                 </div>
                             </div>
                            

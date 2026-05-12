@@ -2667,6 +2667,13 @@ class Agenda extends Component
                 'usoCfdi' => 'required',
             ]);
         }
+        if ($this->gallery) {
+            // Validar que sólo exista un archivo en el arreglo
+            if (count($this->gallery) > 10) {
+                $this->dispatchBrowserEvent('noty-error', ['msg' => 'SOLO SE PERMITE SUBIR DIEZ ARCHIVOS POR CITA']);
+                return;
+            }
+        }
         try {
             $this->setCustomDate(Carbon::parse(session('customDate')));
 
