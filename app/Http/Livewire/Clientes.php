@@ -365,8 +365,33 @@ class Clientes extends Component
         'activateModalForm',
         'categoriaAgregada',
         'selectedItemToEdit',
-        'viewTaxData'
+        'viewTaxData',
+        'saveRecord'
     ];
+
+    public function saveRecord($data)
+    {
+        try {
+            // Validar tamaño del json. Limitar a 10,000 caracteres para evitar problemas de rendimiento o almacenamiento
+            if (strlen(json_encode($data['ops'] ?? [])) > 10000) {
+                $this->dispatchBrowserEvent('noty-error', ['msg' =>  "El contenido del expediente es demasiado grande."]);
+                return;
+            }
+            $record = $this->customerSelected->record = $data['ops'];
+            $this->customerSelected->save();
+            $this->emit('refresh');
+
+            if ($record) {
+                $this->dispatchBrowserEvent('noty', ['msg' =>  "Expediente actualizado correctamente."]);
+                $this->dispatchBrowserEvent('closeRecordModal');
+                $this->dispatchBrowserEvent('updateReadOnlyRecord', ['content' => $record]);
+            } else {
+                $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Error al guardar el expediente."]);
+            }
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1132Clientes"]);
+        }
+    }
     public function categoriaAgregada()
     {
         $this->categorias = Auth::user()->salon->categoriasClientes;
@@ -1332,6 +1357,7 @@ class Clientes extends Component
 
             $this->action = 2;
             $this->emit('refresh');
+            $this->dispatchBrowserEvent('initRecord',$this->customerSelected->record);
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 15913Clientes"]);
         }

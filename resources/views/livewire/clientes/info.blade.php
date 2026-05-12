@@ -1,6 +1,7 @@
 <div class="col-md-12">
     @if($infoSelected==1)
         @include('livewire.clientes.cust-data')
+        @include('livewire.clientes.modals.record')
     @endif
 </div>
 

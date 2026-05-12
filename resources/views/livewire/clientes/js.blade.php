@@ -470,6 +470,19 @@ function initializeFlat(){
     window.addEventListener('closeModalCust', event => {   
       $('#modalClientesForm').modal('hide')
    })
+    window.addEventListener('closeRecordModal', event => {   
+      $('#modalRecord').modal('hide');
+    
+      // Destruir la instancia de Quill para evitar problemas al abrir el modal nuevamente
+      document.getElementById('record').remove();
+   })
+    window.addEventListener('initRecord', function (event) {  
+        initQuill(false, 'recordReadOnly');
+        setQuillContent(event.detail, 'recordReadOnly');
+   })
+   window.addEventListener('updateReadOnlyRecord', function (event) {  
+        setQuillContent(event.detail.content, 'recordReadOnly');
+    });
 
    
     let recorrido = @json(session('recorrido'));
@@ -527,6 +540,55 @@ document.addEventListener('DOMContentLoaded', function () {
 
 })
 
+function setQuillContent(content, id = 'record') {
+    var dataParsed = content instanceof Object ? content : JSON.parse(content);
+    
+    const quillInstance = Quill.find(document.getElementById(id));
+    if (quillInstance && content) {
+        quillInstance.setContents(dataParsed);
+    }
+
+    if (!content && quillInstance) {
+        quillInstance.setContents([]);
+    }
+}
+
+
+function initQuill(enabled = true, id = 'record'){
+    const quillInstance = Quill.find(document.getElementById(id));
+    
+    // Validar si existe una instancia de Quill antes de crear una nueva
+    if (quillInstance) {
+        return; // Si ya existe, no hacer nada
+    }
+
+    const toolbarOptions = id === 'record' ? ['bold', 'italic', 'underline', 'strike', { 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' },'clean'] : false;
+
+    const quillContainer = document.getElementById(id);
+    if (!quillContainer) {
+        // Crear el contenedor si no existe
+        const newContainer = document.createElement('div');
+        newContainer.id = id;
+        newContainer.classList.add('form-group');
+        newContainer.setAttribute('wire:ignore', '');
+        const classPath = id === 'record' ? '#modal-body-record .row .col-md-12' : '.card-body-record .row .col-md-6';
+        document.querySelector(classPath).appendChild(newContainer);
+    }
+    
+    var quill = new Quill('#' + id, {
+        theme: 'snow',
+        modules: {
+            toolbar: toolbarOptions,
+        },
+        readOnly: !enabled,        
+    });
+}
+function saveRecord() {
+    var quill = Quill.find(document.getElementById('record'));
+    var recordContent = quill.getContents();
+    
+    Livewire.emit('saveRecord', recordContent);
+}
 
 function changeTo(type){
         var pestañas = {

@@ -5,7 +5,7 @@
             <div class="mr-auto">
                 <h4 class="card-title mb-1"><a wire:click="regresarListado">Clientes</a>/{{
                     $customerSelected->first_name }} {{ $customerSelected->last_name }} </h4>
-                <p class="fs-14 mb-0"> Expediente Registrado</p>
+                <p class="fs-14 mb-0"> Información Registrada</p>
             </div>
         </div>
 
@@ -95,9 +95,10 @@
                                     @endif>
                                 </p>
 
-                                <p><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-receipt-tax"
-                                        width="25" height="25" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50"
-                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <p><svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-receipt-tax" width="25" height="25"
+                                        viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                         <path d="M9 14l6 -6" />
                                         <circle cx="9.5" cy="8.5" r=".5" fill="currentColor" />
@@ -121,24 +122,28 @@
                                     $customerSelected->edad . ' años' : '' }} {{ $customerSelected->birth_date ? '(' .
                                     $customerSelected->birth_date . ')' : 'N/A' }}</p>
                                 @if(isset($customerSelected->tarjetaPuntos))
-                                <a wire:click.prevent="editCard('{{ $customerSelected->tarjetaPuntos->intern_barcode }}')">
+                                <a
+                                    wire:click.prevent="editCard('{{ $customerSelected->tarjetaPuntos->intern_barcode }}')">
                                     <p><svg xmlns="http://www.w3.org/2000/svg"
                                             class="icon icon-tabler icon-tabler-heart-dollar" width="25" height="25"
                                             viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none"
                                             stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <path d="M13 19l-1 1l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 0 1 8.785 4.254" />
+                                            <path
+                                                d="M13 19l-1 1l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 0 1 8.785 4.254" />
                                             <path d="M21 15h-2.5a1.5 1.5 0 0 0 0 3h1a1.5 1.5 0 0 1 0 3h-2.5" />
                                             <path d="M19 21v1m0 -8v1" />
                                         </svg> {{ isset($customerSelected->tarjetaPuntos) ?
                                         ($customerSelected->tarjetaPuntos->balance!=null ?
-                                        $customerSelected->tarjetaPuntos->balance : 0 ). ' pts.' : 'Tarjeta no activa' }}
+                                        $customerSelected->tarjetaPuntos->balance : 0 ). ' pts.' : 'Tarjeta no activa'
+                                        }}
                                     </p>
                                 </a>
                                 @else
-                                <p><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-heart-dollar"
-                                        width="25" height="25" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50"
-                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <p><svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-heart-dollar" width="25" height="25"
+                                        viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                         <path d="M13 19l-1 1l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 0 1 8.785 4.254" />
                                         <path d="M21 15h-2.5a1.5 1.5 0 0 0 0 3h1a1.5 1.5 0 0 1 0 3h-2.5" />
@@ -157,14 +162,16 @@
                                         <path
                                             d="M21.121 20.121a3 3 0 1 0 -4.242 0c.418 .419 1.125 1.045 2.121 1.879c1.051 -.89 1.759 -1.516 2.121 -1.879z" />
                                         <path d="M19 18v.01" />
-                                    </svg> <small>Procedencia:</small> {{ $customerSelected->procedencia->name ?? 'N/A' }}
+                                    </svg> <small>Procedencia:</small> {{ $customerSelected->procedencia->name ?? 'N/A'
+                                    }}
                                 </p>
 
                                 <a style="color:black"
                                     href="https://www.google.com/maps/search/?api=1&query={{ $customerSelected->postcode }}">
-                                    <p><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-map-2"
-                                            width="25" height="25" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50"
-                                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <p><svg xmlns="http://www.w3.org/2000/svg"
+                                            class="icon icon-tabler icon-tabler-map-2" width="25" height="25"
+                                            viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none"
+                                            stroke-linecap="round" stroke-linejoin="round">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                             <path d="M12 18.5l-3 -1.5l-6 3v-13l6 -3l6 3l6 -3v7.5" />
                                             <path d="M9 4v13" />
@@ -172,7 +179,8 @@
                                             <path
                                                 d="M21.121 20.121a3 3 0 1 0 -4.242 0c.418 .419 1.125 1.045 2.121 1.879c1.051 -.89 1.759 -1.516 2.121 -1.879z" />
                                             <path d="M19 18v.01" />
-                                        </svg> <small>Código postal:</small> {{ $customerSelected->postcode ?? 'N/A' }}</p>
+                                        </svg> <small>Código postal:</small> {{ $customerSelected->postcode ?? 'N/A' }}
+                                    </p>
                                 </a>
 
                                 <p><svg xmlns="http://www.w3.org/2000/svg"
@@ -195,13 +203,14 @@
                                     </svg> <small>Creado el:</small> {{ $customerSelected->created_at ?? 'N/A' }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="tags-container">
                             @if(count($customerSelected->categorias)>0)
                             @foreach($customerSelected->categorias as $categoria)
                             <div class="tag">
                                 <span class="tag-name">{{ $categoria->name }}</span>
-                                <input type="button" value="x" class="remove-tag" wire:click="unsetCat('{{ $categoria->id }}')">
+                                <input type="button" value="x" class="remove-tag"
+                                    wire:click="unsetCat('{{ $categoria->id }}')">
                             </div>
                             @endforeach
                             @endif
@@ -209,56 +218,22 @@
                     </div>
                 </div>
             </div>
-
-            {{-- Servicios más solicitados --}}
-            
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Servicios más solicitados</h3>
-                        <div class="btn-group toggle-btns">
-                            <button class="btn btn-outline-secondary btn-sm" wire:click="$set('orderRankingTable', 'service')">Servicio</button>
-                            <button class="btn btn-outline-secondary btn-sm" wire:click="$set('orderRankingTable', 'category')">Categoría</button>
-                        </div>
-                    </div>
-                    <div class="card-body card-body-data">
-                        <div class="row">
-                            <div class="col-md-12 d-flex flex-col">
-                                <div class="ranking-table-container">
-                                    <table class="table table-fixed-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Nombre</th>
-                                            <th wire:click="$set('orderRankingTable', 'times_consumed')">Veces consumido</th>
-                                            <th wire:click="$set('orderRankingTable', 'total')">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tableServices"></tbody>
-                                    @foreach($orderRankingTable == 'service' ? $customerSelected->top10ServicesConsumed()->get() : $customerSelected->top10ServicesCategoriesConsumed()->get() as $index => $item)
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td class="nombre-column">{{ $orderRankingTable == 'service' ? ($item->servicio->name ?? 'Servicio Desconocido') : ($item->category_name ?? 'Sin Categoría') }}</td>
-                                            <td>{{ $item->times_consumed }}</td>
-                                            <td>${{ number_format($item->total_spent,2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @if ($customerSelected->record)
+            @include('livewire.clientes.widgets.record')
+            @else
+            @include('livewire.clientes.widgets.services-most-demanded')
+            @endif
         </div>
-        
+
+
+
         <div class="row">
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Visitas finalizadas: {{
                             count($customerSelected->citas->where('status','Pagada')) }}</h3>
-                            
+
                         <a href="{{ route('historico-cliente',['search'=>$customerSelected->id,'pestaña'=>3]) }}">Ver
                             más</a>
                     </div>
@@ -303,13 +278,13 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Visitas programadas: {{
                             count($customerSelected->citas->where('status','Agendada')) }}</h3>
-                            
+
                         <a href="{{ route('historico-cliente',['search'=>$customerSelected->id,'pestaña'=>5]) }}">Ver
                             más</a>
                     </div>
@@ -355,6 +330,13 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            @if($customerSelected->record)
+                @include('livewire.clientes.widgets.services-most-demanded')
+            @else
+                @include('livewire.clientes.widgets.record')
+            @endif
+        </div>
     </div>
 </div>
 
@@ -375,6 +357,7 @@
     .flex-col {
         flex-direction: column;
     }
+
     .table tbody tr td {
         white-space: break-spaces;
         max-width: 22dvh;

@@ -73,6 +73,15 @@ class cliente extends Model
     {
         return $query->withCount('citas', 'compras');
     }
+
+    public function visitsTodayCount(?string $date = null): int
+    {
+        $targetDate = $date ?? now()->toDateString();
+
+        return $this->citas()
+            ->whereDate('start', $targetDate)
+            ->count();
+    }
     public function scopeVisitsBetween(Builder $query, $fecha_inicio = null, $fecha_fin = null)
     {
         $inicio = $fecha_inicio ?? request('start_date');
