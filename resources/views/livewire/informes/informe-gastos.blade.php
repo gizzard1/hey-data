@@ -20,7 +20,7 @@
     @endphp
     @foreach($gastos as $item)
     <tr>
-        <td>{{ $item->description }}</td>
+        <td>{{ $item->tipo?->name }}</td>
         <td>{{ $item->note }}</td>
         <td>{{ $item->categoria->name ?? '' }}</td>
         <td>${{ number_format(floatval($item->total),2,".",",") }}</td>
