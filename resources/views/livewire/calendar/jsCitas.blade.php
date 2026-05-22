@@ -125,6 +125,7 @@ document.addEventListener('livewire:load', function () {
                 @this.emit('changeDate', selectedDate)
             }
         })
+        initializeTomTags();
     })
 
     Livewire.on('reloadFlat',function(){
