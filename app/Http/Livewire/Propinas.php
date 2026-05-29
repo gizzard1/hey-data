@@ -186,8 +186,8 @@ class Propinas extends Component
             $propinas = $this->acumularPropinas($dataPropinas,true);
 
             foreach($propinas as $propina){
-                if($propina->payment_method_id != 1 && $propina->payment_method_id != 2 && $propina->payment_method_id != 3 && $propina->payment_method_id != 4 && $propina->payment_method_id != 5){
-                    $terminales[] = $propina->metodoPago->Payment_method;
+                if($propina->payment_method_id > 5){
+                    $terminales[$propina->payment_method_id] = $propina->metodoPago->Payment_method;
                 }
             }
             $this->terminales = $terminales;

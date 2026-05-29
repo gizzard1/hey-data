@@ -9,9 +9,9 @@
             <td>Empleado</td>
             <td>Propinas recibidas</td>
             <td>Pago en Efectivo</td>
-            <td>Pago en Banorte</td>
-            @foreach($terminales as $key => $terminalArray)
-                <td>{{ $key }}</td>
+            <td>Pago en MSI</td>
+            @foreach($terminales as $terminal)
+                <td>{{ $terminal }}</td>
             @endforeach
             <td>Total Propinas</td>
         </tr>

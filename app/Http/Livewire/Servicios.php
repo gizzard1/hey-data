@@ -211,7 +211,6 @@ class Servicios extends Component
         'removeItem',
         'updateQty',
         'help',
-        'categoriaAgregada',
         'selectedServiceToEdit'
     ];
 
@@ -304,10 +303,6 @@ class Servicios extends Component
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent("noty-error", ['msg' => 'Código de error: 1223Servicios']);
         }
-    }
-    public function categoriaAgregada()
-    {
-        $this->categorias = Auth::user()->salon->categoriaServicios;
     }
     public function updatedPercent()
     {
