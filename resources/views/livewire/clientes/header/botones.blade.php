@@ -80,6 +80,7 @@
             <a wire:click="exportarFormulario"><ul>Exportar formulario</ul></a>
             @endif
             <a wire:click="exportarClientes"><ul>Exportar clientes</ul></a>
+            <a wire:click="exportarClientesCompleto"><ul>Exportar clientes (completo)</ul></a>
         </li>
     </div>
 </div>

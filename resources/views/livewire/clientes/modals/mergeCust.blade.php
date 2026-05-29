@@ -16,9 +16,9 @@
                                 <table class="table table-responsive-md table-hover  text-left">
                                     <thead class="thead-primary">
                                         <tr>
-                                            <th style="background-color:transparent;color:#9D1466 !important"></th>
+                                            <th style="background-color:transparent;color:#1D3557 !important"></th>
                                             @foreach($merge as $cust)
-                                                <th style="background-color:transparent;color:#9D1466 !important">{{ $cust->first_name }} {{ $cust->last_name }}</th>
+                                                <th style="background-color:transparent;color:#1D3557 !important">{{ $cust->first_name }} {{ $cust->last_name }}</th>
                                             @endforeach
                                         </tr>
                                     </thead>
@@ -135,6 +135,39 @@
                                             @endforeach
                                         </tr>
                                         <tr>
+                                            <td>Fecha de creación
+                                                @error('cliente.created_at') <span class="text-danger">*Corrige este campo* </span> @enderror
+                                            </td>
+                                            @foreach($merge as $cust)
+                                                <td>
+                                                    <input class="form-check-input" type="radio" name="created_at" wire:model.defer="cliente.created_at" value="{{ $cust->created_at }}" id="created_at{{$cust->id}}">
+                                                    <label class="form-check-label" for="created_at{{$cust->id}}">{{ $cust->created_at }}</label>
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                        <tr>
+                                            <td>Procedencia
+                                                @error('cliente.procedencia') <span class="text-danger">*Corrige este campo* </span> @enderror
+                                            </td>
+                                            @foreach($merge as $cust)
+                                                <td>
+                                                    <input class="form-check-input" type="radio" name="procedencia" wire:model.defer="cliente.procedencia_id" value="{{ $cust->procedencia_id }}" id="procedencia{{$cust->id}}">
+                                                    <label class="form-check-label" for="procedencia{{$cust->id}}">{{ $cust->procedencia()->name ?? '-' }}</label>
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                        <tr>
+                                            <td>Expediente
+                                                @error('cliente.record') <span class="text-danger">*Corrige este campo* </span> @enderror
+                                            </td>
+                                            @foreach($merge as $cust)
+                                                <td>
+                                                    <input class="form-check-input" type="radio" name="record" wire:model.defer="cliente.record" value="{{ $cust->record }}" id="record{{$cust->id}}">
+                                                    <div class="form-group" id="recordReadOnly{{$cust->id}}" for="record{{$cust->id}}"></div>
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                        <tr>
                                             <td>Puntos acumulados
                                             </td>
                                                 <td colspan="2">
@@ -178,35 +211,4 @@
         </div>
     </div>
 </div>
-<style>
-strong{
-    color:#9D1466;
-}
-    
-.tags-container {
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.tag {
-    background-color: #e4e6eb;
-    border-radius: 16px;
-    padding: 4px 8px;
-    margin: 4px;
-    display: flex;
-    align-items: center;
-    width: fit-content;
-}
-
-.tag-name {
-    margin-right: 8px;
-}
-
-.remove-tag {
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    color: #555;
-    font-weight: bold;
-}
-</style>
+@include('livewire.clientes.modals.mergeStyles')

@@ -132,6 +132,10 @@ window.addEventListener('openTaxDataModal', event => {
 function initializeTomSelect() {
 var elTom = document.querySelector('#tomCategory');
 
+    if (elTom.tomselect) {
+        elTom.tomselect.destroy() // Destruye cualquier instancia previa para evitar conflictos
+    }
+    
 var myurl ="{{ route('data.categoriesCustomer') }}"
     new TomSelect(elTom, {
     valueField: 'id',
@@ -448,8 +452,8 @@ function initializeFlat(){
     })
    })
     window.addEventListener('activateModal', event => {   
+        initializeTomSelect();                 
         $('#modalClientesForm').modal('show')
-        initializeTomSelect()                 
    })
     window.addEventListener('activateCardCustomer', event => {   
       $('#modalActivateCard').modal('show')
@@ -477,10 +481,10 @@ function initializeFlat(){
       document.getElementById('record').remove();
    })
     window.addEventListener('initRecord', function (event) {  
-        initQuill(false, 'recordReadOnly');
-        setQuillContent(event.detail, 'recordReadOnly');
-   })
-   window.addEventListener('updateReadOnlyRecord', function (event) {  
+        initQuill(false, 'recordReadOnly' + (event.detail.id ?? ''));
+        setQuillContent(event.detail.content, 'recordReadOnly' + (event.detail.id ?? ''));
+    })
+    window.addEventListener('updateReadOnlyRecord', function (event) {  
         setQuillContent(event.detail.content, 'recordReadOnly');
     });
 

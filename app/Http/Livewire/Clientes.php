@@ -4,6 +4,7 @@ namespace App\Http\Livewire;
 
 use App\Exports\Formulario;
 use App\Exports\reporteClientes;
+use App\Exports\reporteClientesExtended;
 use App\Models\categoria_servicio;
 use App\Models\cliente;
 use App\Models\categoria_cliente;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Livewire\Agenda;
 
 class Clientes extends Component
 {
@@ -90,6 +92,8 @@ class Clientes extends Component
         'cliente.want_offers' => 'nullable',
         'cliente.want_custom_messages' => 'nullable',
         'cliente.platform_id' => 'nullable',
+        'cliente.record' => 'nullable',
+        'cliente.created_at' => 'nullable',
 
 
         'tax_data.rfc' => ['required', 'regex:/^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/i'],
@@ -193,6 +197,8 @@ class Clientes extends Component
             $this->cliente->procedencia_id = $cust->procedencia_id;
             $this->cliente->email = $cust->email;
             $this->cliente->phone = $cust->phone;
+            $this->cliente->record = $cust->record;
+            $this->dispatchBrowserEvent('initRecord', ['content' => $cust->record, 'id' => $cust->id]);
         }
     }
     public function mergeCustomers()
@@ -201,8 +207,15 @@ class Clientes extends Component
             'cliente.postcode' => "nullable",
             'cliente.procedencia_id' => "nullable",
         ]);
+    
+        // Validar tamaño del json. Limitar a 10,000 caracteres para evitar problemas de rendimiento o almacenamiento
+        if (strlen(json_encode($this->cliente->record)) > 10000) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "El contenido del expediente es demasiado grande."]);
+            return;
+        }
 
         try {
+            DB::beginTransaction();
 
             $had_card = false;
 
@@ -217,6 +230,8 @@ class Clientes extends Component
                 'sexo' => $this->cliente->sexo,
                 'postcode' => $this->cliente->postcode,
                 'procedencia_id' => $this->cliente->procedencia_id,
+                'record' => $this->cliente->record,
+                'created_at' => $this->cliente->created_at,
             ]);
 
             if (session()->has('customDate')) {
@@ -287,11 +302,13 @@ class Clientes extends Component
 
                 $this->endMerge();
             }
+            DB::commit();
 
             if (session()->has('customDate')) {
                 Carbon::setTestNow();
             }
         } catch (\Throwable $th) {
+            DB::rollBack();
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 41340Clientes"]);
         }
     }
@@ -382,7 +399,7 @@ class Clientes extends Component
             $this->emit('refresh');
 
             if ($record) {
-                $this->dispatchBrowserEvent('noty', ['msg' =>  "Expediente actualizado correctamente."]);
+                $this->dispatchBrowserEvent('noty', ['msg' =>  "SOLICITUD PROCESADA CON ÉXITO"]);
                 $this->dispatchBrowserEvent('closeRecordModal');
                 $this->dispatchBrowserEvent('updateReadOnlyRecord', ['content' => $record]);
             } else {
@@ -411,11 +428,11 @@ class Clientes extends Component
     }
     public function activateModalForm($custId = null)
     {
-        $this->selectedItems[0] = $custId;
-        $this->dispatchBrowserEvent('activateModal');
-        if ($custId) {
+        if($custId) {
+            $this->selectedItems[0] = $custId;
             $this->Edit();
         }
+        $this->dispatchBrowserEvent('activateModal');
     }
     private function loadEmpleados()
     {
@@ -1241,16 +1258,16 @@ class Clientes extends Component
 
         try {
 
-            if (session()->has('customDate')) {
-                Carbon::setTestNow(Carbon::createFromFormat('Y-m-d', session('customDate')));
-            }
+            Agenda::setCustomDate(Carbon::parse(session('customDate')));
 
             if ($this->cliente->phone) {
                 $this->cliente->phone = $this->lada . $this->cliente->phone;
             } else {
                 $this->cliente->phone = null; // O manejarlo según tus necesidades
             }
-
+            if (!$this->cliente->created_at) {
+                $this->cliente->created_at = Carbon::now();
+            }
 
             $this->cliente->salon_id = Auth::user()->salon->id;
             //save
@@ -1297,9 +1314,7 @@ class Clientes extends Component
                 $this->loadDefault();
             }
 
-            if (session()->has('customDate')) {
-                Carbon::setTestNow();
-            }
+            Agenda::setCustomDate();
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 96202Marcas"]);
         }
@@ -1357,7 +1372,7 @@ class Clientes extends Component
 
             $this->action = 2;
             $this->emit('refresh');
-            $this->dispatchBrowserEvent('initRecord',$this->customerSelected->record);
+            $this->dispatchBrowserEvent('initRecord',['content' => $this->customerSelected->record]);
         } catch (\Throwable $th) {
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 15913Clientes"]);
         }
@@ -2033,6 +2048,19 @@ class Clientes extends Component
         } catch (\Throwable $th) {
 
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 497363Cliente"]);
+        }
+    }
+    public function exportarClientesCompleto()
+    {
+        try {
+            set_time_limit(0);
+            $clientes = $this->loadCustomers(0);
+            $date = Carbon::now()->format('Y_m_d_H_i_s');
+            $fileName = 'clientes_' . $date . '.xlsx';
+            return Excel::download(new reporteClientesExtended($clientes, $this->filtros), $fileName);
+        } catch (\Throwable $th) {
+            dd($th);
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 4973323Cliente"]);
         }
     }
 
