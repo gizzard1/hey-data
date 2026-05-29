@@ -1076,9 +1076,9 @@ class DataResourceGrid extends Controller
         }
     }
 
-    public static function deleteRelations($date)
+    public static function deleteRelations($date, $files_deletion = true)
     {
-        if (isset($date->files)) self::deleteFiles($date->files);
+        if ($files_deletion && isset($date->files)) self::deleteFiles($date->files);
         if (isset($date->metodosPago)) self::deleteItems($date->metodosPago);
         if (isset($date->propinas)) self::deleteItems($date->propinas);
         // if(isset($date->mensajesEnviados)) self::deleteItems($date->mensajesEnviados);

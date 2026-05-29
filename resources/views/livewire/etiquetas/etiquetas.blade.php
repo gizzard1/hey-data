@@ -22,6 +22,14 @@
             </tr>
         </thead>
         <tbody>
+            <tr>
+                <td>Primer cita</td>
+                <td><span class="color-box" style="background-color: #278d46;"></span></td>
+            </tr>
+            <tr>
+                <td>Cumpleaños</td>
+                <td><span class="color-box" style="background-color: #e83e8c;"></span></td>
+            </tr>
             @if(isset($etiquetas))
             @forelse($etiquetas as $etiqueta)
             <tr>

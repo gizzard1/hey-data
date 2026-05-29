@@ -47,7 +47,7 @@ document.addEventListener('livewire:load', function () {
 Livewire.emit('loadSearchBox', 1);
 
 Livewire.on('createModalForm',function(){
-    initializeTomSelect()
+    initializeTomSelect();
     $('#modalProductForm').modal('show')
 })
 Livewire.on('closeCreateModalForm',function(){
@@ -68,7 +68,7 @@ window.addEventListener('hideModal', event => {
     Livewire.emit('categoriaAgregada'); // Llamar al método de Livewire
 })
 window.addEventListener('createProduct', event => {   
-    initializeTomSelect()                 
+    initializeTomSelect();                 
 })
 window.addEventListener('closeCreateModalForm', event => {   
     $('#modalCreateForm').modal('hide')
@@ -229,7 +229,11 @@ function initializeTomSelect() {
 
     var elTom = document.querySelector('#tomCategoryP');
 
-var myurl ="{{ route('data.categories') }}"
+    if (elTom.tomselect) {
+        elTom.tomselect.destroy() // Destruye cualquier instancia previa para evitar conflictos
+    }
+
+    var myurl ="{{ route('data.categories') }}"
         new TomSelect(elTom, {
         valueField: 'id',
         labelField: 'name',
@@ -258,7 +262,7 @@ var myurl ="{{ route('data.categories') }}"
         </div>`;
         },      
         },
-        })
-    }
+    });
+}
 
 </script>

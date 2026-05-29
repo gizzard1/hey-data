@@ -38,13 +38,13 @@ window.addEventListener('view-service', event => {
 
 window.addEventListener('hideModal', event => {   
     $('#modalForm').modal('hide')
-    Livewire.emit('categoriaAgregada'); // Llamar al método de Livewire
 })
 
 window.addEventListener('closeCreate', event => {   
     $('#modalCreateForm').modal('hide')
 })
 window.addEventListener('openCreate', event => {   
+    initializeTomSelect();
     $('#modalCreateForm').modal('show')
 })
 window.addEventListener('hideModalRewardForm', event => {   
@@ -123,8 +123,12 @@ function play()
 function initializeTomSelect() {
 
     var elTom = document.querySelector('#tomCategoryS');
+    
+    if (elTom.tomselect) {
+        elTom.tomselect.destroy() // Destruye cualquier instancia previa para evitar conflictos
+    }
 
-var myurl ="{{ route('data.categoriesS') }}"
+    var myurl ="{{ route('data.categoriesS') }}"
         new TomSelect(elTom, {
         valueField: 'id',
         labelField: 'name',
@@ -147,14 +151,14 @@ var myurl ="{{ route('data.categoriesS') }}"
         return `<div >
             <div >
                 <div >                
-                    <span style="color:#B59377"> ${ escape(item.name) }</span>
+                    <span style="color:#1d3557 "> ${ escape(item.name) }</span>
                 </div>
             </div>
         </div>`;
         },      
         },
-        })
-    }
+    });
+}
 
 </script>
 

@@ -289,7 +289,7 @@ class Agenda extends Component
     public function clear()
     {
         $this->initializeCollections();
-        $this->clearSession(['cartS', 'cartMaterials', 'cartPV', 'rfcSelected']);
+        $this->clearSession(['cartS', 'cartMaterials', 'cartPV', 'rfcSelected', 'appendDates']);
         $this->clearCliente();
         $this->itemSelected = null;
         $this->description = '';
@@ -625,7 +625,37 @@ class Agenda extends Component
             $this->loadCartTotales();
             $this->totalPropinas();
         } catch (\Throwable $th) {
-            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 18959citas"]);
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 18952citas"]);
+        }
+    }
+    public function showVisits()
+    {
+        try {
+            $dates = $this->customer->visitsSameDate($this->start)->get();
+            $this->initializeCollections();
+            $this->clearSession(['cartMaterials']);
+            $dateAppend = $this->itemSelected->id;
+
+            $this->listTags = null;
+            $this->description = '';
+            $this->pictures = [];
+            foreach ($dates as $date) {
+                $this->itemSelected = $date;
+                $this->description .= ' ' . $date->description;
+                $this->listTags .= ',' . implode(", ", $date->etiquetas->pluck('name')->toArray());
+                if ($date->photos) foreach ($date->photos as $photo) $this->pictures[] = $photo;
+                $this->loadCart(1, true);
+            }
+
+            $this->enviarFechas();
+            $this->dispatchBrowserEvent('close-form');
+            $this->emit('reloadFlat');
+            $this->action = 2;
+            $this->loadCartTotales();
+            $this->totalPropinas();
+            $this->appendDates($dateAppend);
+        } catch (\Throwable $th) {
+            $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 189523citas"]);
         }
     }
 
@@ -1362,7 +1392,7 @@ class Agenda extends Component
                 $this->itemSelected = $asignacion->date;
                 $this->pictures = $this->itemSelected->photos;
                 $this->description = $this->itemSelected->description;
-                $this->listTags = implode(", ", $this->itemSelected->etiquetas->pluck('id')->toArray());
+                $this->listTags = implode(", ", $this->itemSelected->etiquetas->pluck('name')->toArray());
                 $this->loadStartEndDateCarbon(Carbon::parse($this->itemSelected->start)->format('H:i'));
                 $this->end_date = Carbon::parse($this->itemSelected->end)->format('H:i');
                 $this->setCustomerId($asignacion->date->customer_id, false);
@@ -1408,7 +1438,7 @@ class Agenda extends Component
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 59031Agenda"]);
         }
     }
-    private function loadCart($withPnS = 1)
+    private function loadCart($withPnS = 1, $append = false)
     {
         try {
             if (isset($this->itemSelected)) {
@@ -1430,9 +1460,11 @@ class Agenda extends Component
                     }
                     if (count($details_sales) > 0) {
                         $this->ventaConstrained = 1;
-                        $cartP = new Collection();
-                        session()->put('cartPV', $cartP);
-                        session()->save();
+                        if (!$append || !session()->has('cartPV') || !(session('cartPV') instanceof Collection)) {
+                            $cartP = new Collection();
+                            session()->put('cartPV', $cartP);
+                            session()->save();
+                        }
                         foreach ($details_sales as $detail) {
                             $product = $detail->product;
                             $this->AddProduct($product, $detail->quantity, $detail->discount_qty, $detail->iva, $detail->empleado_id, $detail->current_price, $detail->disccount_price, $detail->quantity, $detail->discount_type, $detail->base_comision);
@@ -1516,6 +1548,9 @@ class Agenda extends Component
             );
             $itemCart = Arr::add($coll, null, null);
             $cartP = session('cartPV');
+            if (!($cartP instanceof Collection)) {
+                $cartP = new Collection();
+            }
             $cartP->push($itemCart);
             session()->put('cartPV', $cartP);
             session()->save();
@@ -2675,6 +2710,7 @@ class Agenda extends Component
             }
         }
         try {
+            DB::beginTransaction();
             $this->setCustomDate(Carbon::parse(session('customDate')));
 
             session()->put('cust', $this->customer);
@@ -2722,6 +2758,19 @@ class Agenda extends Component
                     }
                 }
                 $this->deleteRelations();
+
+                if (session()->has('appendDates')) {
+                    $datesToDelete = $this->customer->visitsSameDate($this->start)->where('id', '!=', session('appendDates'))->get();
+
+                    foreach ($this->pictures as $picture) {
+                        $picture_name = explode('/', $picture);
+                        $picture_name = end($picture_name);
+                        $this->respaldoFiles[] = file::where('file', $picture_name)->first()->id;
+                    }
+                    foreach ($datesToDelete as $date) {
+                        DRG::deleteRelations($date, false);
+                    }
+                }
             }
 
             $movimiento = null;
@@ -2877,19 +2926,24 @@ class Agenda extends Component
                 $listTags = array_map(function ($item) {
                     $catName = trim($item);
                     // verificar si el elemento no es numérico
-                    if (!is_numeric($catName)) {
+                    if (!is_numeric($catName) && !empty($catName)) {
                         // buscar el ID de la categoría en la tabla correspondiente
                         $categoria = etiquetas_cita::where('name', $catName)
                             ->where('salon_id', Auth::user()->salon->id)
+                            ->orWhere('salon_id', null)
                             ->first();
                         // reemplazar el elemento con el ID de la categoría si existe
-                        if ($categoria) {
+                        if ($categoria && $categoria->id) {
                             return $categoria->id;
                         }
                     }
-                    // devolver el elemento sin cambios
                     return $item;
                 }, $listTags);
+
+                // Eliminar elementos vacíos del array
+                $listTags = array_filter($listTags, function ($item) {
+                    return !empty($item);
+                });
 
                 // Sincronizar etiquetas
                 $listTags !== null
@@ -2939,7 +2993,9 @@ class Agenda extends Component
             if ($this->vista === 'livewire.calendar.edit') {
                 $this->dispatchBrowserEvent('returnCustomersView');
             }
+            DB::commit();
         } catch (\Throwable $th) {
+            DB::rollBack();
             $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 1169Agenda"]);
         }
     }
@@ -3699,7 +3755,11 @@ class Agenda extends Component
         session()->put('rfcSelected', $rfcid);
         session()->save();
     }
-
+    private function appendDates($dateAppend)
+    {
+        session()->put('appendDates', $dateAppend);
+        session()->save();
+    }
     public static function setCustomDate($date = null)
     {
         if (session()->has('customDate') && Auth::user()->salon->simulador) {

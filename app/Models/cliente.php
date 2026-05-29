@@ -14,7 +14,7 @@ class cliente extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['first_name', 'last_name', 'email', 'phone', 'birth_date', 'description', 'want_custom_messages', 'want_offers', 'sexo', 'postcode', 'procedencia_id', 'salon_id'];
+    protected $fillable = ['first_name', 'last_name', 'email', 'phone', 'birth_date', 'description', 'want_custom_messages', 'want_offers', 'sexo', 'postcode', 'procedencia_id', 'record', 'salon_id', 'created_at'];
 
 
     public function salon()
@@ -74,13 +74,21 @@ class cliente extends Model
         return $query->withCount('citas', 'compras');
     }
 
-    public function visitsTodayCount(?string $date = null): int
+    public function visitsTodayCount($date = null)
     {
         $targetDate = $date ?? now()->toDateString();
 
         return $this->citas()
             ->whereDate('start', $targetDate)
             ->count();
+    }
+    public function visitsSameDate($date = null)
+    {
+        $targetDate = $date ?? now()->toDateString();
+
+        return $this->citas()
+            ->with('details.materiales.producto', 'etiquetas', 'metodosPago', 'propinas', 'abonos')
+            ->whereDate('start', $targetDate);
     }
     public function scopeVisitsBetween(Builder $query, $fecha_inicio = null, $fecha_fin = null)
     {

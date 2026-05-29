@@ -13,7 +13,9 @@
 
             <div class="modal-footer">
                 <div style="display:-webkit-box">
-                    <div style="margin-right: 14rem;" id="remember">
+                    <div style="
+                        margin-right: 14dvh;
+                        align-content: center;" id="remember">
                         <label for="rememberDate">Recordar cita </label>
                         <input type="checkbox" id="rememberDate" name="rememberDate" wire:model.defer="remember">
                     </div>
@@ -22,8 +24,17 @@
                         <button id="agendar" class="btn-sm input-group-text" wire:click="Agendar" onclick="next()" {{ $asignacion_id ? 'hidden' : '' }}>Agendar</button>
                         @if($asignacion_id!==null)
                         <button id="endoredit" class="btn-sm input-group-text" wire:click="storeDate" data-dismiss="modal">{{ $itemSelected->status !== 'Pagada' ? 'Editar cita' : 'Finalizar cita' }}</button>
+                                            
                         @endif
-                        <button class="btn-sm input-group-text" wire:click.prevent="showAdvanced">Vista avanzada</button>
+                        <div class="d-flex">
+                            <button class="btn-sm input-group-text" wire:click.prevent="showAdvanced" onclick="next()" id="showAdvanced">Vista avanzada</button>
+                            @if($customer?->visitsTodayCount($start) > 1 && $itemSelected)
+                            <div class="input-group-append">
+                                <button id="orderBy" class="btn btn-sm input-group-text dropdown-toggle"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+                                @include('livewire.calendar.dropdown.advanced-options')
+                            </div>
+                            @endif
+                        </div>
                         @if($asignacion_id!==null)
                         <button onclick="CancelDate()" class="btn tp-btn btn-xxs btn-danger "><i class="fa fa-trash fa-lg"></i></button>
                         @endif
