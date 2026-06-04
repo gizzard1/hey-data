@@ -33,6 +33,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/update-appointment/{type?}/{isDate?}', [DataResourceGrid::class, 'updateAppointment']);
     Route::put('/update-details', [DataResourceGrid::class, 'updateDetails']);
     Route::put('/update-blocking', [DataResourceGrid::class, 'updateBlocking']);
+    Route::put('/cancel-date', [DataResourceGrid::class, 'cancelDate']);
     
     Route::delete('/delete-date', [DataResourceGrid::class, 'deleteDate']);
     Route::delete('/delete-blocking', [DataResourceGrid::class, 'deleteBlocking']);

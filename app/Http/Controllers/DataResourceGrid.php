@@ -1131,4 +1131,21 @@ class DataResourceGrid extends Controller
             Log::error($th->getMessage());
         }
     }
+    public static function cancelDate(Request $request)
+    {
+        try {
+            $date_id = $request->input('date_id');
+            $reason = $request->input('reason');
+            $date = cita::find($date_id);
+            if (!$date) {
+                return response()->json(['message' => 'not_found']);
+            }
+            $date->status = 'Cancelada';
+            $date->motivoCancelacion = $reason;
+            $date->save();
+            return response()->json(['success' => true]);
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+        }
+    }
 }
