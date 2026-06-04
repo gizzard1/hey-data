@@ -3174,7 +3174,7 @@ class Agenda extends Component
             $asignacion->discount_qty = floatval($item['disccount_percent']);
             $asignacion->discount_type = $item['discount_type'];
             $totalPrice = $item['disccount_price'] > 0 && $item['sale_price'] > $item['disccount_price'] ? $item['disccount_price'] : $item['sale_price'];
-            $asignacion->generated_points = DRG::calculateRewardPoints($item[$is_service ? 'sid' : 'pid'], $is_service, $totalPrice, null, $this->customer?->id, Auth::user()->salon->recompensaGeneral());
+            $asignacion->generated_points = DRG::calculateRewardPoints($item[$is_service ? 'sid' : 'pid'], $is_service, $totalPrice, null, $this->customer?->id, Auth::user()->salon->recompensaGeneral);
             $asignacion->current_price = floatval($item['gross_price'] > $item['sale_price'] ? $item['gross_price'] : $item['sale_price']);
             $asignacion->disccount_price = floatval($item['disccount_price']);
             $asignacion->iva = floatval($item['ind_iva']);

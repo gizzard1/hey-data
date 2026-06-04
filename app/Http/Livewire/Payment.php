@@ -977,7 +977,7 @@ class Payment extends Component
             foreach ($cart as $item) {
                 $comission = DS::defineComisionProduct($item);
                 $final_price = $item['gross_price'] > $item['sale_price'] ? $item['gross_price'] : $item['sale_price'];
-                $rewardPoints = DRG::calculateRewardPoints($item['pid'], false, $final_price, null, $this->customerId, Auth::user()->salon->recompensaGeneral());
+                $rewardPoints = DRG::calculateRewardPoints($item['pid'], false, $final_price, null, $this->customerId, Auth::user()->salon->recompensaGeneral);
                 $asignacion = new Asignacion_venta([
                     'selected_item' => $item['pid'],
                     'venta_id' => $sale->id,
