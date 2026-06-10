@@ -80,7 +80,7 @@ class DataProducts extends Controller
             // Guardar imágenes
             $msg = DF::updateOrCreateFile($product['files'] ?? [],$newProduct->id);
 
-            return ['producto' => $newProduct, 'msg' => $msg];
+            return ['product' => $newProduct, 'msg' => $msg];
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
