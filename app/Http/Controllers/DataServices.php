@@ -7,6 +7,7 @@ use App\Models\servicio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\DataFiles as DF;
 
 class DataServices extends Controller
 {
@@ -80,7 +81,10 @@ class DataServices extends Controller
                 ]
             );
 
-            return $newService;
+            // Guardar imágenes
+            $msg = DF::updateOrCreateFile($service['files'] ?? [],$newService->id);
+
+            return ['service' => $newService, 'msg' => $msg];
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
