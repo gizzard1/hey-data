@@ -40,9 +40,8 @@ class DataEmployees extends Controller
     public static function isUniqueEmployeeEmail(Request $request)
     {
         try{
-            $salon_id = $request->user()->salon_id;
             $email = $request->input('email');
-            $user_id = $request->input('user_id');
+            $user_id = $request->input('user_id') ?? $request->user()->id;
 
             $query = User::where('email', $email);
 
@@ -94,6 +93,11 @@ class DataEmployees extends Controller
                 );
                 $employee->user_id = $user->id;
                 $employee->save();
+            }
+
+            // Si el empleado se crea por primera vez, se crea una comisión para él
+            if (!$employeeData['id']) {
+                DataCommission::createCommission($employee->id);
             }
 
             return ['employee' => $employee, 'user' => $user ?? null];
