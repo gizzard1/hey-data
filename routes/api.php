@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DataCashRegister;
+use App\Http\Controllers\DataCommission;
 use App\Http\Controllers\DataCustomers;
 use App\Http\Controllers\DataProducts;
 use App\Http\Controllers\DataResourceGrid;
@@ -90,6 +91,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/open-cash-register', [DataCashRegister::class, 'openCashRegister']);
     Route::get('/closing-data', [DataCashRegister::class, 'closeCashRegister']);
     Route::post('/close-cash-register', [DataCashRegister::class, 'storeCashRegister']);
+
+    Route::post('/commission', [DataCommission::class, 'createOrUpdateCommission']);
 });
 
 // Rutas públicas (sin autenticación)

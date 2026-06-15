@@ -12,34 +12,45 @@ use Illuminate\Support\Facades\Hash;
 class DataEmployees extends Controller
 {
     public static function loadEmployees(Request $request)
-    {    
-        try{
+    {
+        try {
             $salon_id = $request->user()->salon_id;
 
-            $employees = Empleado::select(
-                    'id',
-                    'first_name',
-                    'last_name',
-                    'email',
-                    'phone_number',
-                    'color_preset',
-                    'birth_date',
-                    'visible',
-                    'user_id',
-                )
-                ->with('user:id,name,email,role')
-                ->where('salon_id', $salon_id)
+            $relations = $request->input('relations', '');
+
+            $q = Empleado::select(
+                'id',
+                'first_name',
+                'last_name',
+                'email',
+                'phone_number',
+                'color_preset',
+                'birth_date',
+                'visible',
+                'user_id',
+            );
+            if ($relations === 'comision') {
+                $q->with([
+                    'comision.excepcion_producto.producto',
+                    'comision.excepcion_cat_producto.cat_producto',
+                    'comision.excepcion_servicio.servicio',
+                    'comision.excepcion_cat_servicio.cat_servicio',
+                ])->where('visible', 1);
+            } else {
+                $q->with('user:id,name,email,role');
+            }
+
+            $employees = $q->where('salon_id', $salon_id)
                 ->orderBy('first_name', 'asc')
                 ->get();
-
             return ['employees' => $employees];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function isUniqueEmployeeEmail(Request $request)
     {
-        try{
+        try {
             $email = $request->input('email');
             $user_id = $request->input('user_id') ?? $request->user()->id;
 
@@ -52,13 +63,13 @@ class DataEmployees extends Controller
             $exists = $query->exists();
 
             return ['is_unique' => !$exists];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
     public static function updateOrCreateEmployee(Request $request)
     {
-        try{
+        try {
             $salon_id = $request->user()->salon_id;
             $employeeData = $request->input('employee');
             $userData = $employeeData['user'] ?? [];
@@ -78,7 +89,7 @@ class DataEmployees extends Controller
                 ]
             );
 
-            if(!empty($userData) && isset($userData['name']) && isset($userData['email']) && isset($userData['role']) && isset($userData['password'])){
+            if (!empty($userData) && isset($userData['name']) && isset($userData['email']) && isset($userData['role']) && isset($userData['password'])) {
                 $user = User::updateOrCreate(
                     [
                         'id' => $employee->user_id ?? null,
@@ -101,7 +112,7 @@ class DataEmployees extends Controller
             }
 
             return ['employee' => $employee, 'user' => $user ?? null];
-        }catch(\Throwable $th){
+        } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
     }
