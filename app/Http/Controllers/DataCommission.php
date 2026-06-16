@@ -35,29 +35,34 @@ class DataCommission extends Controller
             Log::error($th->getMessage());
         }
     }
+    private static function getExceptionByType($type)
+    {
+        $model = null;
+        $relation_key = null;
+        switch ($type) {
+            case '0':
+                $model = 'App\\Models\\excepcion_servicio';
+                $relation_key = 'servicio_id';
+                break;
+            case '1':
+                $model = 'App\\Models\\excepcion_cat_servicio';
+                $relation_key = 'categoria_servicio_id';
+                break;
+            case '2':
+                $model = 'App\\Models\\excepcion_producto';
+                $relation_key = 'producto_id';
+                break;
+            case '3':
+                $model = 'App\\Models\\excepcion_cat_producto';
+                $relation_key = 'categoria_producto_id';
+                break;
+        }
+        return [$model, $relation_key];
+    }
     private static function updateOrCreateException($type, $newCommission, $comision_id)
     {
         try {
-            $model = null;
-            $relation_key = null;
-            switch ($type) {
-                case '0':
-                    $model = 'App\\Models\\excepcion_servicio';
-                    $relation_key = 'servicio_id';
-                    break;
-                case '1':
-                    $model = 'App\\Models\\excepcion_cat_servicio';
-                    $relation_key = 'categoria_servicio_id';
-                    break;
-                case '2':
-                    $model = 'App\\Models\\excepcion_producto';
-                    $relation_key = 'producto_id';
-                    break;
-                case '3':
-                    $model = 'App\\Models\\excepcion_cat_producto';
-                    $relation_key = 'categoria_producto_id';
-                    break;
-            }
+            [$model, $relation_key] = self::getExceptionByType($type);
             $updated = $model::updateOrCreate(
                 [
                     'id' => $newCommission['id'] ?? null,
@@ -70,9 +75,7 @@ class DataCommission extends Controller
                 ]
             );
             return $model::with(
-                $relation_key === 'servicio_id' ? 'servicio' :
-                    ($relation_key === 'categoria_servicio_id' ? 'cat_servicio' :
-                        ($relation_key === 'producto_id' ? 'producto' : 'cat_producto'))
+                $relation_key === 'servicio_id' ? 'servicio' : ($relation_key === 'categoria_servicio_id' ? 'cat_servicio' : ($relation_key === 'producto_id' ? 'producto' : 'cat_producto'))
             )->find($updated->id);
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
@@ -98,6 +101,24 @@ class DataCommission extends Controller
                 return json_encode(['success' => true, 'commission' => $exception]);
             } else {
                 return json_encode(['success' => false, 'message' => 'failed_update']);
+            }
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+        }
+    }
+    public static function deleteCommission(Request $request)
+    {
+        try {
+            $type = $request->input('type');
+            $id = $request->id;
+
+            [$model, ] = self::getExceptionByType($type);
+            $record = $model::find($id);
+            if ($record) {
+                $record->delete();
+                return json_encode(['success' => true]);
+            } else {
+                return json_encode(['success' => false, 'message' => 'record_not_found']);
             }
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
