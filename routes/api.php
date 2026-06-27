@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DataCashRegister;
 use App\Http\Controllers\DataCategories;
@@ -9,7 +10,7 @@ use App\Http\Controllers\DataProducts;
 use App\Http\Controllers\DataResourceGrid;
 use App\Http\Controllers\DataServices;
 use App\Http\Controllers\DataEmployees;
-use App\Http\Controllers\DataFiles;
+use App\Http\Controllers\DataGlobalReport;
 use App\Http\Controllers\DataIncomes;
 use App\Http\Controllers\DataMaterials;
 use App\Http\Controllers\DataPayment;
@@ -97,10 +98,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/commission/{id}', [DataCommission::class, 'deleteCommission']);
 
     Route::get('/categories', [DataCategories::class, 'loadCategories']);
+
+    Route::get('/global-report', [DataGlobalReport::class, 'loadGlobalReport']);
 });
 
 // Rutas públicas (sin autenticación)
 Route::post('login', [AuthController::class, 'login']);
+Route::post('register', [AuthController::class, 'register']);
 // Route::post('register', [AuthController::class, 'register']);
 // Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
 

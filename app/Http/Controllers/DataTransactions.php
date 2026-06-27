@@ -89,7 +89,7 @@ class DataTransactions extends Controller
         $end = Carbon::parse($end)->endOfDay();
         return [$start, $end];
     }
-    private static function castBoolean($value)
+    public static function castBoolean($value)
     {
         if (is_string($value)) {
             return strtolower($value) === 'true';

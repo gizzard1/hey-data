@@ -12,7 +12,7 @@ class DataSalon extends Controller
     public static function loadSalon(Request $request)
     {
         try {
-            return Salon::select('id','name', 'email', 'webPage', 'facebook', 'instagram', 'youtube', 'tiktok', 'phone', 'logoFile', 'rfc', 'start', 'end')
+            return Salon::select('id', 'name', 'email', 'webPage', 'facebook', 'instagram', 'youtube', 'tiktok', 'phone', 'logoFile', 'rfc', 'start', 'end')
                 ->with('file')
                 ->find($request->user()->salon_id);
         } catch (\Throwable $th) {
@@ -41,7 +41,7 @@ class DataSalon extends Controller
 
             $salon = Salon::find($salonId);
             if ($salon) {
-                $salon->updateOrCreate(['id' => $salonId],[
+                $salon->updateOrCreate(['id' => $salonId], [
                     'name' => $data['name'],
                     'email' => $data['email'] ?? null,
                     'webPage' => $data['webPage'] ?? null,
@@ -72,6 +72,19 @@ class DataSalon extends Controller
             $is_service = $request->input('is_service', true);
 
             return DRG::calculateRewardPoints($item_id, $is_service, $total, $request);
+        } catch (\Throwable $th) {
+            Log::error($th->getMessage());
+        }
+    }
+    public static function createDefaultSalon($invitation_code = null)
+    {
+        try {
+            $salon = new Salon;
+            $salon->start = "08:00:00";
+            $salon->end = "17:00:00";
+            $salon->invitation_code = $invitation_code;
+            $salon->save();
+            return $salon;
         } catch (\Throwable $th) {
             Log::error($th->getMessage());
         }
