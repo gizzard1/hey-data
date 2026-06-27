@@ -142,4 +142,9 @@ class cliente extends Model
             ->orderByDesc('times_consumed')
             ->limit(10);
     }
+    public function scopeNewClientsBetweenDates($query, $salon_id, $start, $end)
+    {
+        return $query->where('salon_id', $salon_id)
+            ->whereBetween('created_at', [$start, $end]);
+    }
 }

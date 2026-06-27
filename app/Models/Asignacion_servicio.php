@@ -33,7 +33,7 @@ class Asignacion_servicio extends Model
     ];
     function servicio()
     {
-        return $this->belongsTo(servicio::class,'selected_service');
+        return $this->belongsTo(servicio::class, 'selected_service');
     }
     function empleado()
     {
@@ -41,10 +41,21 @@ class Asignacion_servicio extends Model
     }
     function date()
     {
-        return $this->belongsTo(cita::class,'cita_id');
+        return $this->belongsTo(cita::class, 'cita_id');
     }
     function materiales()
     {
-        return $this->hasMany(Material::class,'asignacion_id');
+        return $this->hasMany(Material::class, 'asignacion_id');
+    }
+    public function scopeReportBetweenDates($query, $citaIds, $start, $end)
+    {
+        return $query->select('cita_id', 'empleado_id', 'disccount_price', 'iva', 'current_price', 'start')
+            ->with([
+                'date' => function ($q) {
+                    $q->select('customer_id', 'id');
+                }
+            ])
+            ->whereIn('cita_id', $citaIds)
+            ->whereBetween('start', [$start, $end]);
     }
 }

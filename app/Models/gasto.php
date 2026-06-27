@@ -73,4 +73,9 @@ class gasto extends Model
             ->where('payment_method', 'Caja chica')
             ->whereBetween('date', [$start, $end]);
     }
+    public function scopeReportBetweenDates($query, $salon_id, $start, $end)
+    {
+        return $query->where('salon_id', $salon_id)
+            ->whereBetween('date', [$start, $end]);
+    }
 }

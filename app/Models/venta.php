@@ -148,4 +148,14 @@ class venta extends Model
                 },
             ]);
     }
+    public function scopeReportBetweenDates($query, $salon_id, $start, $end)
+    {
+        return $query->select('disccount', 'total', 'id', 'status')
+            ->where('salon_id', $salon_id)
+            ->with([
+                'details' => function ($q) {
+                    $q->select('venta_id', 'empleado_id', 'disccount_price', 'iva', 'current_price');
+                },
+            ])->whereBetween('created_at', [$start, $end]);
+    }
 }

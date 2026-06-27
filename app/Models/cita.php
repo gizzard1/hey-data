@@ -191,4 +191,43 @@ class cita extends Model
                 }
             ]);
     }
+    public function scopeReportBetweenDates($query, $salon_id, $start, $end)
+    {
+        return $query->select('disccount', 'total', 'id', 'status', 'customer_id', 'start')
+            ->where('salon_id', $salon_id)
+            ->with([
+                'details' => function ($q) {
+                    $q->select('cita_id', 'empleado_id', 'disccount_price', 'iva', 'current_price', 'start', 'selected_service')
+                        ->with(['servicio' => function ($q) {
+                            $q->select('name', 'id')->with('categorias:id,name');
+                        }, 'empleado' => function ($q) {
+                            $q->select('first_name', 'last_name', 'id', 'color_preset');
+                        }]);
+                },
+                'details_product' => function ($q) {
+                    $q->select('cita_id', 'quantity', 'empleado_id', 'disccount_price', 'iva', 'current_price');
+                },
+                'customer' => function ($q) {
+                    $q->select('first_name', 'last_name', 'id');
+                },
+            ])->whereBetween('start', [$start, $end]);
+    }
+    public function scopeReportNextDates($query, $salon_id, $start)
+    {
+        return $query->select('id', 'status', 'customer_id', 'start')
+            ->where('salon_id', $salon_id)
+            ->with([
+                'details' => function ($q) {
+                    $q->select('cita_id', 'empleado_id', 'start', 'selected_service')
+                        ->with(['servicio' => function ($q) {
+                            $q->select('name', 'id');
+                        }, 'empleado' => function ($q) {
+                            $q->select('first_name', 'last_name', 'id', 'color_preset');
+                        }]);
+                },
+                'customer' => function ($q) {
+                    $q->select('first_name', 'last_name', 'id');
+                },
+            ])->where('start', '>=', $start);
+    }
 }

@@ -52,6 +52,11 @@ class Informe extends Component
     private $ranking_services = null, $ranking_categories = null;
     private $global_services_counter = 0, $global_categories_counter = 0;
 
+    public static function getGlobalReportData($salonId, $start, $end)
+    {
+        return app(self::class)->calculateGlobalReportData($salonId, $start, $end);
+    }
+
     public function mount()
     {
         if (!$this->validateSuscription()) {
@@ -95,6 +100,8 @@ class Informe extends Component
             session()->put('selectedDates', $selectedDates);
             session()->save();
             $this->is_interval = true;
+            $currentDateC = Carbon::now()->startOfDay();
+            $currentDateCEnd = Carbon::now()->endOfDay();
             if (count($selectedDates) >= 2) {
                 // Actualizar las fechas según la lógica que necesites
                 $currentDateC = Carbon::parse($selectedDates[0]);
@@ -185,6 +192,146 @@ class Informe extends Component
     public function loadCharts()
     {
         $this->loadChartsWithNewPeriod();
+    }
+
+    public function calculateGlobalReportData($salonId, $start, $end)
+    {
+        $this->resetCalculatedState();
+        $this->applyReportPeriod(Carbon::parse($start)->startOfDay(), Carbon::parse($end)->endOfDay());
+        $this->useDate($salonId);
+
+        return $this->buildGlobalReportPayload();
+    }
+
+    private function applyReportPeriod($start, $end)
+    {
+        $this->currentDateC = Carbon::parse($start)->startOfDay();
+        $this->currentDateCEnd = Carbon::parse($end)->endOfDay();
+        $this->currentDate = $this->currentDateC->locale('es')->isoFormat('dddd, D MMMM YYYY');
+        $this->start = $this->currentDateC->toDateString();
+        $this->currentDateEnd = $this->currentDateCEnd->locale('es')->isoFormat('dddd, D MMMM YYYY');
+        $this->end = $this->currentDateCEnd->toDateString();
+        $this->is_interval = !$this->currentDateC->isSameDay($this->currentDateCEnd);
+        $this->diff_period = $this->currentDateC->diffInDays($this->currentDateCEnd);
+        $this->lastCurrentDateC = $this->currentDateC->copy()->subDays($this->diff_period + 1);
+        $this->lastCurrentDateCEnd = $this->currentDateCEnd->copy()->subDays($this->diff_period + 1);
+    }
+
+    private function resetCalculatedState()
+    {
+        $this->total_s = 0;
+        $this->total_v = 0;
+        $this->comisiones = 0;
+        $this->gastos_a = 0;
+        $this->gastos_n = 0;
+        $this->gastos_a_neto = 0;
+        $this->gastos_n_neto = 0;
+        $this->total_citas_pagadas = 0;
+        $this->total_ventas_pagadas = 0;
+        $this->total_citas_pendientes = 0;
+        $this->duracion_citas = 0;
+        $this->clientes_nuevos = 0;
+        $this->clientes_nuevos_last_period = 0;
+        $this->comparison_table = [
+            'incomes' => 0,
+            'pending_dates' => 0,
+            'new_custs' => 0,
+            'dates' => 0,
+            'sales' => 0,
+        ];
+        $this->dataSales = null;
+        $this->dataExpenses = null;
+        $this->totalIncomes = null;
+        $this->totales = null;
+        $this->iva = null;
+        $this->iva_s = null;
+        $this->ingresoTotal = 0;
+        $this->ingresoTotalPasado = 0;
+        $this->ingresoTotal_neto = 0;
+        $this->ingresoTotal_neto_s = 0;
+        $this->ingresoTotal_neto_p = 0;
+        $this->ingresoTarjeta = [];
+        $this->ingresoEfectivo = 0;
+        $this->ingresoCard = 0;
+        $this->puntosCanjeados = 0;
+        $this->ingresoMsi = 0;
+        $this->ingresoTarjetaPropina = [];
+        $this->total_ventas = 0;
+        $this->total_ventas_neto = 0;
+        $this->total_cust = 0;
+        $this->total_servicios = 0;
+        $this->total_servicios_neto = 0;
+        $this->dataSalesPdf = [];
+        $this->dataExpensesList = null;
+        $this->totalGastos = 0;
+        $this->gastosAcreditables = [];
+        $this->gastosNoAcreditables = [];
+        $this->gastos = [];
+        $this->dataExpensesFinal = [];
+        $this->uniqueCustomerIds = [];
+        $this->clientesAtendidos = 0;
+        $this->totalTips = 0;
+        $this->totalTipsNeto = 0;
+        $this->nextDates = [];
+        $this->dataPeriodNormalizado = null;
+        $this->ranking_services = [];
+        $this->ranking_categories = [];
+        $this->global_services_counter = 0;
+        $this->global_categories_counter = 0;
+    }
+
+    private function buildGlobalReportPayload()
+    {
+        return [
+            'dataSales' => $this->decodeJsonPayload($this->dataSales),
+            'dataEmpleados' => $this->decodeJsonPayload($this->dataEmpleados),
+            'totales' => $this->totales,
+            'comparison_table' => $this->comparison_table,
+            'totalTips' => $this->totalTips,
+            'nextDates' => $this->groupNextDatesByStart($this->nextDates),
+        ];
+    }
+
+    private function groupNextDatesByStart($nextDates)
+    {
+        if ($nextDates instanceof \Illuminate\Support\Collection) {
+            return $nextDates
+                ->groupBy(function ($date) {
+                    return $date->status ?? 'Sin estatus';
+                })
+                ->map(function ($dates, $status) {
+                    return [
+                        'status' => $status,
+                        'groups' => $dates
+                            ->groupBy(function ($date) {
+                                return Carbon::parse($date->start)->toDateString();
+                            })
+                            ->map(function ($items, $start) {
+                                return [
+                                    'start' => $start,
+                                    'items' => $items->values()->toArray(),
+                                ];
+                            })
+                            ->values()
+                            ->toArray(),
+                    ];
+                })
+                ->values()
+                ->toArray();
+        }
+
+        return $nextDates;
+    }
+
+    private function decodeJsonPayload($payload)
+    {
+        if (!is_string($payload)) {
+            return $payload;
+        }
+
+        $decoded = json_decode($payload, true);
+
+        return json_last_error() === JSON_ERROR_NONE ? $decoded : $payload;
     }
 
     #función que actualiza las gráficas con la nueva fecha
@@ -397,73 +544,18 @@ class Informe extends Component
     private function loadFinancialInfo($ventas, $citas, $collIds)
     {
         try {
-            $metodos_citas = metodo_pago_servicio::select('cita_id', 'amount', 'payment_method_id', 'change', 'created_at')
-                ->with([
-                    'metodoPago' => function ($q) {
-                        $q->select('Payment_method', 'id');
-                    },
-                ])
-                ->whereBetween('created_at', [$this->currentDateC, $this->currentDateCEnd])
-                ->whereIn('cita_id', $collIds['citaIds'])
-                ->get();
-
-            $metodos_ventas = metodo_pago_venta::select('venta_id', 'amount', 'payment_method_id', 'change', 'created_at')
-                ->with([
-                    'metodoPago' => function ($q) {
-                        $q->select('Payment_method', 'id');
-                    },
-                ])
-                ->whereIn('venta_id', $collIds['ventaIds'])
-                ->whereBetween('created_at', [$this->currentDateC, $this->currentDateCEnd])
-                ->get();
+            // Datos del periodo actual
+            $metodos_citas = metodo_pago_servicio::reportBetweenDates($collIds['citaIds'], $this->currentDateC, $this->currentDateCEnd)->get();
+            $metodos_ventas = metodo_pago_venta::reportBetweenDates($collIds['ventaIds'], $this->currentDateC, $this->currentDateCEnd)->get();
 
             // Datos del periodo anterior
-            $metodos_citas_pasado = metodo_pago_servicio::select('cita_id', 'amount', 'payment_method_id', 'change', 'created_at')
-                ->with([
-                    'metodoPago' => function ($q) {
-                        $q->select('Payment_method', 'id');
-                    },
-                ])
-                ->whereBetween('created_at', [$this->lastCurrentDateC, $this->lastCurrentDateCEnd])
-                ->whereIn('cita_id', $collIds['citaIds'])
-                ->get();
-
-            $metodos_ventas_pasado = metodo_pago_venta::select('venta_id', 'amount', 'payment_method_id', 'change', 'created_at')
-                ->with([
-                    'metodoPago' => function ($q) {
-                        $q->select('Payment_method', 'id');
-                    },
-                ])
-                ->whereIn('venta_id', $collIds['ventaIds'])
-                ->whereBetween('created_at', [$this->lastCurrentDateC, $this->lastCurrentDateCEnd])
-                ->get();
+            $metodos_citas_pasado = metodo_pago_servicio::reportBetweenDates($collIds['citaIds'], $this->lastCurrentDateC, $this->lastCurrentDateCEnd)->get();
+            $metodos_ventas_pasado = metodo_pago_venta::reportBetweenDates($collIds['ventaIds'], $this->lastCurrentDateC, $this->lastCurrentDateCEnd)->get();
 
             $this->ingresoTotalPasado = $this->acumularMetodosPeriodoPasado([$metodos_citas_pasado, $metodos_ventas_pasado]);
 
-            $citaPropinas = Propina::select('venta_id', 'cita_id', 'amount', 'payment_method_id', 'created_at')
-                ->with([
-                    'metodoPago' => function ($q) {
-                        $q->select('Payment_method', 'id');
-                    },
-                ])
-                ->whereIn('cita_id', $collIds['citaIds'] ?? [])
-                ->whereBetween('created_at', [$this->currentDateC, $this->currentDateCEnd])
-                ->get();
-
-
-            $ventaPropinas = Propina::select('venta_id', 'cita_id', 'amount', 'payment_method_id', 'created_at')
-                ->with([
-                    'metodoPago' => function ($q) {
-                        $q->select('Payment_method', 'id');
-                    },
-                ])
-                ->whereIn('venta_id', $collIds['ventaIds'] ?? [])
-                ->whereBetween('created_at', [$this->currentDateC, $this->currentDateCEnd])
-                ->get();
-
-            $this->nextDates = $citas->clone()
-                ->where('start', '>=', $this->currentDateC)
-                ->get();
+            $citaPropinas = Propina::reportAppointmentsBetweenDates($collIds['citaIds'], $this->currentDateC, $this->currentDateCEnd)->get();
+            $ventaPropinas = Propina::reportSalesBetweenDates($collIds['ventaIds'], $this->currentDateC, $this->currentDateCEnd)->get();
 
             $ventas_pasado = $ventas->clone()->whereBetween('created_at', [$this->lastCurrentDateC, $this->lastCurrentDateCEnd])->get();
             $citas_pasado = $citas->clone()->whereBetween('start', [$this->lastCurrentDateC, $this->lastCurrentDateCEnd])->get();
@@ -506,8 +598,27 @@ class Informe extends Component
             //Arreglo asociativo para mostrar en la primer gráfica
             $dataSales = [
                 'label' => ['Efectivo', 'Tarjeta', 'MSI', 'Propina', 'Otros'],
-                'amount' => [number_format($this->ingresoEfectivo, 2, '.', ','), number_format($this->ingresoCard, 2, '.', ','), number_format($this->ingresoMsi, 2, '.', ','), number_format($this->totalTips, 2, '.', ','), number_format($other_total, 2, '.', ',')],
-                'percent' => [number_format($this->ingresoEfectivo / $total_donut, 2, '.', ','), number_format($this->ingresoCard / $total_donut, 2, '.', ','), number_format($this->ingresoMsi / $total_donut, 2, '.', ','), number_format($this->totalTips / $total_donut, 2, '.', ','), number_format($other_total / $total_donut, 2, '.', ',')],
+                'amount' => [
+                    number_format($this->ingresoEfectivo, 2, '.', ','),
+                    number_format($this->ingresoCard, 2, '.', ','),
+                    number_format($this->ingresoMsi, 2, '.', ','),
+                    number_format($this->totalTips, 2, '.', ','),
+                    number_format($other_total, 2, '.', ',')
+                ],
+                'value' => [
+                    $this->ingresoEfectivo,
+                    $this->ingresoCard,
+                    $this->ingresoMsi,
+                    $this->totalTips,
+                    $other_total
+                ],
+                'percent' => [
+                    number_format($this->ingresoEfectivo / $total_donut, 2, '.', ','),
+                    number_format($this->ingresoCard / $total_donut, 2, '.', ','),
+                    number_format($this->ingresoMsi / $total_donut, 2, '.', ','),
+                    number_format($this->totalTips / $total_donut, 2, '.', ','),
+                    number_format($other_total / $total_donut, 2, '.', ',')
+                ],
                 'color' => ['#3DC5AB', '#41B8D5', '#2E8BBA', '#EBD99E', '#5E7391'],
                 'index' => [1, 2, 3, 4, 5],
             ];
@@ -515,6 +626,7 @@ class Informe extends Component
             foreach ($this->ingresoTarjeta as $label => $qty) {
                 $dataSales['label'][] = $label;
                 $dataSales['amount'][] = number_format($qty, 2, '.', ',');
+                $dataSales['value'][] = $qty;
                 $dataSales['percent'][] = number_format($qty / $total_donut, 2, '.', ',');
                 $dataSales['color'][] = '#5E7391';
                 $dataSales['index'][] = count($dataSales) + 1;
@@ -704,7 +816,7 @@ class Informe extends Component
 
                     //Se  obtiene el valor total
                     $priceOutOfDiscount = DRG::determinatePriceOutOfDiscounts($asignacion);
-                    
+
                     $dataEmpleados[$index]['total_v'] += $priceOutOfDiscount;
                     $this->total_ventas += $priceOutOfDiscount;
                     $qty_bruto = $priceOutOfDiscount;
@@ -729,7 +841,7 @@ class Informe extends Component
                     $index = $empleados->search(function ($item) use ($asignacion) {
                         return $item->id == $asignacion->empleado_id;
                     });
-                    
+
                     if ($index != false || $index === 0) {
                         //Se  obtiene el valor total
                         $priceOutOfDiscount = DRG::determinatePriceOutOfDiscounts($asignacion);
@@ -818,88 +930,36 @@ class Informe extends Component
     //         $this->dispatchBrowserEvent('noty-error', ['msg' =>  "Código de error: 266135Informe"] );
     //     }
     // }
-    private function useDate()
+    private function useDate($salonId = null)
     {
         try {
-            $salon_id = Auth::user()->salon_id;
+            $salon_id = $salonId ?? Auth::user()->salon_id;
             $empleados = Empleado::where('salon_id', $salon_id)->get();
 
-            $ventasQuery = venta::select('disccount', 'total', 'id', 'status')
-                ->where('salon_id', Auth::user()->salon_id)
-                ->with([
-                    'details' => function ($q) {
-                        $q->select('venta_id', 'empleado_id', 'disccount_price', 'iva', 'current_price');
-                    },
-                ]);
-
-            $ventasQuery->whereBetween('created_at', [$this->lastCurrentDateC, $this->currentDateCEnd]);
-
             // Obtener IDs de citas válidas en una sola consulta
+            $ventasQuery = venta::reportBetweenDates($salon_id, $this->lastCurrentDateC, $this->currentDateCEnd);
             $ventaIds = $ventasQuery->pluck('id');
 
-            $citasQuery = cita::select('disccount', 'total', 'id', 'status', 'customer_id')
-                ->where('salon_id', Auth::user()->salon_id)
-                ->with([
-                    'details' => function ($q) {
-                        $q->select('cita_id', 'empleado_id', 'disccount_price', 'iva', 'current_price', 'start', 'selected_service')
-                            ->with(['servicio' => function ($q) {
-                                $q->select('name', 'id')->with('categorias:id,name');
-                            }, 'empleado' => function ($q) {
-                                $q->select('first_name', 'last_name', 'id');
-                            }]);
-                    },
-                    'details_product' => function ($q) {
-                        $q->select('cita_id', 'quantity', 'empleado_id', 'disccount_price', 'iva', 'current_price');
-                    },
-                    'customer' => function ($q) {
-                        $q->select('first_name', 'last_name', 'id');
-                    },
-                ]);
-
-            $citasQuery->whereBetween('start', [$this->lastCurrentDateC, $this->currentDateCEnd]);
-
             // Obtener IDs de citas válidas en una sola consulta
+            $citasQuery = cita::reportBetweenDates($salon_id, $this->lastCurrentDateC, $this->currentDateCEnd);
             $citaIds = $citasQuery->pluck('id');
 
-            $gastos = gasto::where('salon_id', $salon_id)
-                ->whereBetween('date', [$this->currentDateC, $this->currentDateCEnd])
-                ->get();
+            $gastos = gasto::reportBetweenDates($salon_id, $this->currentDateC, $this->currentDateCEnd)->get();
 
             // Obtener todos los detalles filtrados por citas y fecha, con relaciones
-            $asignaciones_servicios = Asignacion_servicio::select('cita_id', 'empleado_id', 'disccount_price', 'iva', 'current_price', 'start')
-                ->with([
-                    'date' => function ($q) {
-                        $q->select('customer_id', 'id');
-                    }
-                ])
-                ->whereIn('cita_id', $citaIds)
-                ->whereBetween('start', [$this->currentDateC, $this->currentDateCEnd])
-                ->get();
+            $asignaciones_servicios = Asignacion_servicio::reportBetweenDates($citaIds, $this->currentDateC, $this->currentDateCEnd)->get();
 
-            $asignaciones_venta_cita = Asignacion_venta::select('cita_id', 'empleado_id', 'disccount_price', 'iva', 'current_price', 'created_at')
-                ->whereIn('cita_id', $citaIds)
-                ->whereBetween('created_at', [$this->currentDateC, $this->currentDateCEnd])
-                ->get();
+            $asignaciones_venta_cita = Asignacion_venta::reportOnAppointmentBetweenDates($citaIds, $this->currentDateC, $this->currentDateCEnd)->get();
 
-            $venta_producto = Asignacion_venta::select('venta_id', 'empleado_id', 'disccount_price', 'iva', 'current_price', 'created_at')
-                ->with([
-                    'sale' => function ($q) {
-                        $q->select('customer_id', 'id');
-                    }
-                ])
-                ->whereIn('venta_id', $ventaIds)
-                ->whereBetween('created_at', [$this->currentDateC, $this->currentDateCEnd])
-                ->get();
+            $venta_producto = Asignacion_venta::reportBetweenDates($ventaIds, $this->currentDateC, $this->currentDateCEnd)->get();
 
-            $this->clientes_nuevos = cliente::where('salon_id', $salon_id)
-                ->whereBetween('created_at', [$this->currentDateC, $this->currentDateCEnd])
-                ->count();
+            $this->clientes_nuevos = cliente::newClientsBetweenDates($salon_id, $this->currentDateC, $this->currentDateCEnd)->count();
 
-            $this->clientes_nuevos_last_period = cliente::where('salon_id', $salon_id)
-                ->whereBetween('created_at', [$this->lastCurrentDateC, $this->lastCurrentDateCEnd])
-                ->count();
+            $this->clientes_nuevos_last_period = cliente::newClientsBetweenDates($salon_id, $this->lastCurrentDateC, $this->lastCurrentDateCEnd)->count();
 
             $this->comparison_table['new_custs'] = $this->calculatePercentageChange($this->clientes_nuevos_last_period, $this->clientes_nuevos);
+
+            $this->nextDates = cita::reportNextDates($salon_id, $this->currentDateC)->get();
 
             $info = [
                 'ventas' => $ventasQuery,
@@ -1290,6 +1350,7 @@ class Informe extends Component
                 $empleado['percent'] = $percent;
                 $empleado['label'] = $empleado['name'];
                 $empleado['amount'] = $empleado['total_v'] + $empleado['total_d'];
+                $empleado['value'] = $empleado['total_v'] + $empleado['total_d'];
             }
 
             // Asegurarse de desvincular la referencia al último elemento del array
