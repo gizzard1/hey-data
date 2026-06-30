@@ -82,7 +82,6 @@ class DataSalon extends Controller
             $salon = new Salon;
             $salon->start = "08:00:00";
             $salon->end = "17:00:00";
-            $salon->invitation_code = $invitation_code;
             $salon->save();
             return $salon;
         } catch (\Throwable $th) {
